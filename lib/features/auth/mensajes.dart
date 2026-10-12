@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../core/network/api_exception.dart';
 
 class MensajesAuth {
   MensajesAuth._();
@@ -13,6 +14,8 @@ class MensajesAuth {
   static const errorRed =
       'No se pudo conectar. Revisa tu conexión e inténtalo de nuevo.';
   static const camposVacios = 'Ingresa tu correo y tu contraseña.';
+  static const errorRegistroGeneral =
+      'Ocurrió un error al crear la cuenta. Inténtalo de nuevo.';
 
   static String mensajeDeInicioSesion(Object error) {
     if (error is FirebaseAuthException) {
@@ -31,5 +34,26 @@ class MensajesAuth {
       }
     }
     return errorRed;
+  }
+
+  static String mensajeDeRegistro(Object error) {
+    if (error is ApiException) {
+      if (error.statusCode == 409) {
+        return 'Ese correo ya tiene una cuenta';
+      }
+      if (error.statusCode == 400) {
+        return error.mensaje;
+      }
+      if (error.statusCode >= 500) {
+        return 'La API no está disponible. Intenta más tarde.';
+      }
+      return error.mensaje;
+    }
+    if (error is FirebaseAuthException) {
+      if (error.code == 'network-request-failed') {
+        return errorRed;
+      }
+    }
+    return errorRegistroGeneral;
   }
 }

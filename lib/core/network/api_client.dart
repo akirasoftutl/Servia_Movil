@@ -18,4 +18,26 @@ class ApiClient {
     };
     return _client.get(url, headers: headers);
   }
+
+  Future<http.Response> post(
+    String endpoint, {
+    String? token,
+    String? body,
+    Map<String, String>? headers,
+  }) {
+    final url = Uri.parse('$baseUrl$endpoint');
+    final requestHeaders = <String, String>{
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+    if (headers != null) {
+      requestHeaders.addAll(headers);
+    }
+    return _client.post(
+      url,
+      headers: requestHeaders,
+      body: body,
+    );
+  }
 }
