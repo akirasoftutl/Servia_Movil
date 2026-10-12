@@ -46,3 +46,8 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Configuración de Firebase (se deriva a lib/core/firebase/firebase_options.dart)
+/android/app/google-services.json
+/ios/Runner/GoogleService-Info.plist
+/lib/core/firebase/firebase_options.dart
