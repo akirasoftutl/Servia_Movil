@@ -21,6 +21,7 @@ Asegúrate de tener instalado y configurado en tu entorno local:
    ```bash
    git clone [https://github.com/Akirasoft/Servia_FE.git](https://github.com/Akirasoft Servia_FE.git)
    cd Servia_FE
+   ```
 
 2. **Instalar Dependencias**
     Comando: flutter pub get
@@ -33,3 +34,9 @@ Asegúrate de tener instalado y configurado en tu entorno local:
 
 **Ejecutar la suite de pruebas unitarias y de widgets**
     Comando: flutter test
+
+## Integración continua
+
+GitHub Actions realiza una revisión automática en cada pull request hacia `dev` y `main`, y en cada push a esas ramas. El workflow **Integración continua** ejecuta el job **Verificar la app** en Ubuntu con Flutter del canal estable.
+
+La revisión instala las dependencias con `flutter pub get`, analiza el código con `flutter analyze` y ejecuta las pruebas con `flutter test`. Si algún paso falla, la revisión queda en rojo; si todos pasan, queda en verde. Consulta el resultado en la pestaña **Checks** del pull request o en **Actions** del repositorio.
