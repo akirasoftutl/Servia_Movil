@@ -23,6 +23,22 @@ jobs:
       - name: Instalar dependencias
         run: flutter pub get
 
+      - name: Crear la configuración de Firebase de prueba
+        run: |
+          mkdir -p lib/core/firebase
+          cat > lib/core/firebase/firebase_options.dart <<'DART'
+          import 'package:firebase_core/firebase_core.dart';
+
+          abstract final class DefaultFirebaseOptions {
+            static const FirebaseOptions currentPlatform = FirebaseOptions(
+              apiKey: 'ci-api-key-falsa',
+              appId: 'ci-app-id-falsa',
+              messagingSenderId: '000000000000',
+              projectId: 'ci-proyecto-falso',
+            );
+          }
+          DART
+
       - name: Revisar el código con lint
         run: flutter analyze
 

@@ -39,4 +39,6 @@ Asegúrate de tener instalado y configurado en tu entorno local:
 
 GitHub Actions realiza una revisión automática en cada pull request hacia `dev` y `main`, y en cada push a esas ramas. El workflow **Integración continua** ejecuta el job **Verificar la app** en Ubuntu con Flutter del canal estable.
 
+El CI crea `lib/core/firebase/firebase_options.dart` solo en el runner con valores ficticios y sin secretos, porque el archivo está ignorado en Git y el código lo necesita para el análisis.
+
 La revisión instala las dependencias con `flutter pub get`, analiza el código con `flutter analyze` y ejecuta las pruebas con `flutter test`. Si algún paso falla, la revisión queda en rojo; si todos pasan, queda en verde. Consulta el resultado en la pestaña **Checks** del pull request o en **Actions** del repositorio.
