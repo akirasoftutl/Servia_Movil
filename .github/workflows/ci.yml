@@ -1,0 +1,46 @@
+name: Integración continua
+
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev, main]
+
+jobs:
+  verificar:
+    name: Verificar la app
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Configurar Flutter estable
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Instalar dependencias
+        run: flutter pub get
+
+      - name: Crear la configuración de Firebase de prueba
+        run: |
+          mkdir -p lib/core/firebase
+          cat > lib/core/firebase/firebase_options.dart <<'DART'
+          import 'package:firebase_core/firebase_core.dart';
+
+          abstract final class DefaultFirebaseOptions {
+            static const FirebaseOptions currentPlatform = FirebaseOptions(
+              apiKey: 'ci-api-key-falsa',
+              appId: 'ci-app-id-falsa',
+              messagingSenderId: '000000000000',
+              projectId: 'ci-proyecto-falso',
+            );
+          }
+          DART
+
+      - name: Revisar el código con lint
+        run: flutter analyze
+
+      - name: Ejecutar las pruebas
+        run: flutter test
