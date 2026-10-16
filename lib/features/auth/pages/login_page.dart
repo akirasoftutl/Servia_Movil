@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/auth_service.dart';
 import '../mensajes.dart';
+import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key, this.mensajeInicial, this.authService});
@@ -263,7 +264,38 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          "¿No tienes cuenta?",
+                          style: TextStyle(color: Colors.grey, fontSize: 13),
+                        ),
+                        TextButton(
+                          onPressed: _cargando
+                              ? null
+                              : () {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const RegisterPage(),
+                                    ),
+                                  );
+                                },
+                          child: const Text(
+                            "Regístrate",
+                            style: TextStyle(
+                              color: Color(0xFF7B1FA2),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
                     SizedBox(
                       width: double.infinity,
                       height: 52,
