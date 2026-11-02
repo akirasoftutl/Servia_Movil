@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:servia/core/network/api_client.dart';
 import 'package:servia/core/network/api_exception.dart';
 import 'package:servia/features/negocios/data/categoria.dart';
 import 'package:servia/features/negocios/data/negocio.dart';
@@ -201,14 +203,25 @@ void main() {
       expect(find.text(MensajesNegocios.noDisponible), findsOneWidget);
       expect(find.text('Reintentar'), findsNothing);
     });
-    testWidgets('id inválido no consulta ni el perfil ni las categorías', (
-      tester,
-    ) async {
-      final servicio = NegociosServiceFalso();
-      await mostrarPerfil(tester, servicio, id: 'a/b');
-      expect(servicio.consultas, 0);
-      expect(servicio.consultasCategorias, 0);
+    testWidgets('id inválido muestra el negocio no disponible', (tester) async {
+      var peticiones = 0;
+      final servicio = NegociosService(
+        api: ApiClient(
+          client: MockClient((_) async {
+            peticiones++;
+            return http.Response('{}', 500);
+          }),
+        ),
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: PerfilNegocioPage(negocioId: 'a/b', negociosService: servicio),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(peticiones, 0);
       expect(find.text(MensajesNegocios.noDisponible), findsOneWidget);
+      expect(find.text('Reintentar'), findsNothing);
     });
   });
 }

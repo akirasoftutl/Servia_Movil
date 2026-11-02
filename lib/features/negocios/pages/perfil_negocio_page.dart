@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/network/api_exception.dart';
 import '../data/negocio.dart';
 import '../data/negocios_service.dart';
 import '../formatos.dart';
@@ -42,13 +41,6 @@ class _PerfilNegocioPageState extends State<PerfilNegocioPage> {
       _estado = _EstadoPerfil.cargando;
       _error = null;
     });
-    if (!esIdValido(widget.negocioId)) {
-      setState(() {
-        _estado = _EstadoPerfil.error;
-        _error = const ApiException(404, MensajesNegocios.noDisponible);
-      });
-      return;
-    }
     try {
       final negocio = await _service.obtenerNegocio(widget.negocioId);
       if (!mounted) return;
