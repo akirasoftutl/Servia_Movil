@@ -7,6 +7,7 @@ import '../mensajes.dart';
 import 'categoria.dart';
 import 'lectura_json.dart';
 import 'negocio.dart';
+import 'servicio.dart';
 
 const tiempoLimiteConsulta = Duration(seconds: 10);
 
@@ -29,6 +30,19 @@ class NegociosService {
     final datos = await _consultar('/categorias');
     if (datos is! List) throw const FormatException('Catálogo inválido.');
     return datos.map((dato) => Categoria.fromJson(leerObjeto(dato))).toList();
+  }
+
+  Future<List<Servicio>> obtenerServicios(String negocioId) async {
+    if (!esIdValido(negocioId)) {
+      throw const ApiException(404, MensajesNegocios.noDisponible);
+    }
+    final datos = await _consultar(
+      '/negocios/${Uri.encodeComponent(negocioId)}/servicios',
+    );
+    if (datos is! List) {
+      throw const FormatException('Lista de servicios inválida.');
+    }
+    return datos.map((dato) => Servicio.fromJson(leerObjeto(dato))).toList();
   }
 
   Future<Object?> _consultar(String ruta) async {
