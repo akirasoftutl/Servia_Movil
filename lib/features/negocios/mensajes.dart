@@ -22,8 +22,12 @@ class MensajesNegocios {
   static const busquedaInvalida =
       'Revisa la búsqueda y la categoría e inténtalo de nuevo.';
   static const tituloLista = 'Negocios';
+  static const cargarMas = 'Cargar más negocios';
   static const listaVacia = 'Todavía no hay negocios disponibles';
   static const verSinSesion = 'Ver negocios sin iniciar sesión';
+  static const servicios = 'Servicios';
+  static const sinServicios =
+      'Este negocio aún no tiene servicios disponibles.';
   static const horario = 'Horario de atención';
 
   static String mensajeDeError(Object error) {

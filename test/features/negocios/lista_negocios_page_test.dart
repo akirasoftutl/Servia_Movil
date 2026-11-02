@@ -100,7 +100,7 @@ void main() {
     expect(find.text('Negocio b'), findsOneWidget);
     expect(find.text('Negocio fin'), findsOneWidget);
   });
-  testWidgets('salta páginas vacías y limita a cinco consecutivas', (
+  testWidgets('limita la carga automática y permite continuar páginas vacías', (
     tester,
   ) async {
     final fake = ListaServiceFalso()
@@ -114,7 +114,11 @@ void main() {
       ..responder = (_) async => pagina([], 'otra');
     await abrir(tester, vacio);
     expect(vacio.llamadas.length, 5);
-    expect(find.text(MensajesNegocios.listaVacia), findsOneWidget);
+    expect(find.text(MensajesNegocios.listaVacia), findsNothing);
+    expect(find.text(MensajesNegocios.cargarMas), findsOneWidget);
+    await tester.tap(find.text(MensajesNegocios.cargarMas));
+    await tester.pumpAndSettle();
+    expect(vacio.llamadas.length, 10);
   });
   testWidgets(
     'error de segunda página conserva la primera y reintenta su cursor',
