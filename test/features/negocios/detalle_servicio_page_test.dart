@@ -5,37 +5,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:servia/core/network/api_client.dart';
-import 'package:servia/features/negocios/data/negocios_service.dart';
 import 'package:servia/core/network/api_exception.dart';
+import 'package:servia/features/negocios/data/negocios_service.dart';
 import 'package:servia/features/negocios/data/servicio.dart';
 import 'package:servia/features/negocios/mensajes.dart';
 import 'package:servia/features/negocios/pages/detalle_servicio_page.dart';
 
-import 'seccion_servicios_test.dart' show ServiciosServiceFalso, abrirPerfil;
-
-const detallePrueba = Servicio(
-  id: 's2',
-  nombre: 'Z Corte',
-  descripcion: 'Lavado y corte de cabello',
-  precio: 150.5,
-  duracionMin: 90,
-);
-
-class DetalleServiceFalso extends ServiciosServiceFalso {
-  Object? errorDetalle;
-  int consultasDetalle = 0;
-  String? negocioConsultado;
-  String? servicioConsultado;
-  Completer<Servicio>? detallePendiente;
-  @override
-  Future<Servicio> obtenerServicio(String negocioId, String servicioId) async {
-    consultasDetalle++;
-    negocioConsultado = negocioId;
-    servicioConsultado = servicioId;
-    if (errorDetalle != null) throw errorDetalle!;
-    return detallePendiente?.future ?? detallePrueba;
-  }
-}
+import 'datos_prueba.dart';
+import 'fakes.dart';
+import 'utilidades_prueba.dart';
 
 Future<void> mostrarDetalle(
   WidgetTester tester,

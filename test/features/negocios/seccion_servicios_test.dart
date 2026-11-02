@@ -9,41 +9,7 @@ import 'package:servia/features/negocios/pages/perfil_negocio_page.dart';
 
 import 'datos_prueba.dart';
 import 'fakes.dart';
-
-const serviciosPrueba = [
-  Servicio(id: 's2', nombre: 'Z Corte', precio: 150, duracionMin: 90),
-  Servicio(id: 's1', nombre: 'A Masaje', precio: 150.5, duracionMin: 30),
-];
-
-class ServiciosServiceFalso extends NegociosServiceFalso {
-  List<Servicio> servicios = serviciosPrueba;
-  Object? errorServicios;
-  int consultasServicios = 0;
-  Completer<List<Servicio>>? serviciosPendientes;
-  @override
-  Future<List<Servicio>> obtenerServicios(String negocioId) async {
-    consultasServicios++;
-    if (errorServicios != null) throw errorServicios!;
-    return serviciosPendientes?.future ?? servicios;
-  }
-}
-
-Future<void> abrirPerfil(
-  WidgetTester tester,
-  ServiciosServiceFalso servicio,
-) async {
-  await tester.pumpWidget(
-    MaterialApp(
-      home: PerfilNegocioPage(negocioId: 'abc123', negociosService: servicio),
-    ),
-  );
-  await tester.pumpAndSettle();
-}
-
-Future<void> verServicios(WidgetTester tester) async {
-  await tester.ensureVisible(find.text(MensajesNegocios.servicios));
-  await tester.pumpAndSettle();
-}
+import 'utilidades_prueba.dart';
 
 void main() {
   group('sección de servicios', () {

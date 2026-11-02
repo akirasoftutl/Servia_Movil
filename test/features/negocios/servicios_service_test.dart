@@ -157,7 +157,7 @@ void main() {
       }
       expect(peticiones, 0);
     });
-    test('rechaza estructuras malformadas sin cast errors', () async {
+    test('rechaza estructuras malformadas sin errores de conversión', () async {
       for (final cuerpo in ['null', '{}', '[2]', '[{"id":false}]']) {
         await expectLater(
           crearServicio((_) async => http.Response(cuerpo, 200))

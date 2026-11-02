@@ -5,7 +5,6 @@ import '../data/negocios_service.dart';
 import '../formatos.dart';
 import '../mensajes.dart';
 import 'estados_consulta.dart';
-
 import 'seccion_servicios.dart';
 
 enum _EstadoPerfil { cargando, error, listo }

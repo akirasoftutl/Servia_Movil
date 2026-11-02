@@ -49,3 +49,32 @@ class NegociosServiceFalso extends NegociosService {
           ];
   }
 }
+
+class ServiciosServiceFalso extends NegociosServiceFalso {
+  List<Servicio> servicios = serviciosPrueba;
+  Object? errorServicios;
+  int consultasServicios = 0;
+  Completer<List<Servicio>>? serviciosPendientes;
+  @override
+  Future<List<Servicio>> obtenerServicios(String negocioId) async {
+    consultasServicios++;
+    if (errorServicios != null) throw errorServicios!;
+    return serviciosPendientes?.future ?? servicios;
+  }
+}
+
+class DetalleServiceFalso extends ServiciosServiceFalso {
+  Object? errorDetalle;
+  int consultasDetalle = 0;
+  String? negocioConsultado;
+  String? servicioConsultado;
+  Completer<Servicio>? detallePendiente;
+  @override
+  Future<Servicio> obtenerServicio(String negocioId, String servicioId) async {
+    consultasDetalle++;
+    negocioConsultado = negocioId;
+    servicioConsultado = servicioId;
+    if (errorDetalle != null) throw errorDetalle!;
+    return detallePendiente?.future ?? detallePrueba;
+  }
+}
