@@ -4,6 +4,7 @@ class MensajesPerfil {
   static const titulo = 'Mi perfil';
   static const guardado = 'Tus datos se guardaron.';
   static const correoEnUso = 'Ese correo ya está en uso.';
+  static const iniciaConNuevoCorreo = 'Inicia sesión con el nuevo correo.';
   static const sesionInvalida =
       'No se pudo verificar tu sesión. Vuelve a iniciar sesión.';
   static const soloClientes = 'Esta pantalla es solo para cuentas de cliente.';

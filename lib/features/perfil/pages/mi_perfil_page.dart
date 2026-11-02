@@ -160,13 +160,34 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
     }
   }
 
+  static const _codigosSesionInvalida = {
+    'user-token-expired',
+    'invalid-user-token',
+    'user-disabled',
+    'user-not-found',
+    'requires-recent-login',
+  };
+
   /// El correo ya cambió en la API: se renueva el token para que la sesión siga.
-  /// Un fallo aquí no deshace el guardado.
+  /// Un fallo de red no deshace el guardado ni cierra nada. Si la sesión ya no
+  /// es válida, se vuelve al inicio y se pide iniciar sesión con el nuevo correo.
   Future<void> _renovarToken(User usuario) async {
+    final navegador = Navigator.of(context);
+    final avisos = ScaffoldMessenger.of(context);
     try {
       await usuario.getIdToken(true);
-    } catch (_) {
-      // Fallo de red: los datos ya están guardados, no se cierra nada.
+    } catch (error) {
+      final sesionInvalida =
+          _auth.usuarioActual == null ||
+          (error is FirebaseAuthException &&
+              _codigosSesionInvalida.contains(error.code));
+      if (!sesionInvalida) return;
+      navegador.popUntil((ruta) => ruta.isFirst);
+      avisos
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(content: Text(MensajesPerfil.iniciaConNuevoCorreo)),
+        );
     }
   }
 

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:servia/core/network/api_exception.dart';
@@ -158,6 +159,73 @@ void main() {
       expect(find.byType(MiPerfilPage), findsOneWidget);
     },
   );
+
+  group('sesión tras cambiar el correo', () {
+    Future<void> abrirDesdeInicio(
+      WidgetTester tester,
+      PerfilClienteFalso api,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => MiPerfilPage(
+                      authService: sesion,
+                      perfilClienteService: api,
+                    ),
+                  ),
+                ),
+                child: const Text('Inicio'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Inicio'));
+      await tester.pumpAndSettle();
+      await editar(tester);
+      await tester.enterText(campo('Correo'), 'nuevo@test.com');
+      await guardar(tester);
+    }
+
+    testWidgets('sesión revocada: vuelve al inicio y pide el nuevo correo', (
+      tester,
+    ) async {
+      sesion.usuarioFalso
+        ..errorAlRenovar = FirebaseAuthException(code: 'user-token-expired')
+        ..alRenovar = () => sesion.usuario = null;
+      await abrirDesdeInicio(tester, PerfilClienteFalso(eventos));
+      expect(find.byType(MiPerfilPage), findsNothing);
+      expect(find.text('Inicio'), findsOneWidget);
+      expect(find.text('Inicia sesión con el nuevo correo.'), findsOneWidget);
+    });
+
+    testWidgets(
+      'código de sesión inválida aunque haya usuario: también vuelve',
+      (tester) async {
+        sesion.usuarioFalso.errorAlRenovar = FirebaseAuthException(
+          code: 'user-disabled',
+        );
+        await abrirDesdeInicio(tester, PerfilClienteFalso(eventos));
+        expect(find.byType(MiPerfilPage), findsNothing);
+        expect(find.text('Inicia sesión con el nuevo correo.'), findsOneWidget);
+      },
+    );
+
+    testWidgets('fallo de red al renovar: NO cierra nada', (tester) async {
+      sesion.usuarioFalso.errorAlRenovar = FirebaseAuthException(
+        code: 'network-request-failed',
+      );
+      await abrirDesdeInicio(tester, PerfilClienteFalso(eventos));
+      expect(find.byType(MiPerfilPage), findsOneWidget);
+      expect(find.text('Inicia sesión con el nuevo correo.'), findsNothing);
+      expect(find.text('Tus datos se guardaron.'), findsOneWidget);
+      expect(find.text('nuevo@test.com'), findsOneWidget);
+    });
+  });
 
   testWidgets(
     'validaciones del registro: errores junto a cada campo, sin llamar a la API',
