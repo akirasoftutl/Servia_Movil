@@ -5,6 +5,7 @@ import '../data/negocios_service.dart';
 import '../formatos.dart';
 import '../mensajes.dart';
 import 'estados_consulta.dart';
+import 'seccion_servicios.dart';
 
 enum _EstadoPerfil { cargando, error, listo }
 
@@ -92,6 +93,7 @@ class _PerfilNegocioPageState extends State<PerfilNegocioPage> {
         contenido = _ContenidoPerfil(
           negocio: _negocio!,
           categoria: _categoria!,
+          service: _service,
         );
     }
     return Scaffold(
@@ -102,7 +104,12 @@ class _PerfilNegocioPageState extends State<PerfilNegocioPage> {
 }
 
 class _ContenidoPerfil extends StatelessWidget {
-  const _ContenidoPerfil({required this.negocio, required this.categoria});
+  const _ContenidoPerfil({
+    required this.negocio,
+    required this.categoria,
+    required this.service,
+  });
+  final NegociosService service;
   final Negocio negocio;
   final String categoria;
 
@@ -117,6 +124,12 @@ class _ContenidoPerfil extends StatelessWidget {
         _ContactoNegocio(negocio: negocio),
         const SizedBox(height: 24),
         _HorarioSemanal(horario: negocio.horario),
+        const SizedBox(height: 24),
+        SeccionServicios(
+          negocioId: negocio.id,
+          aceptaReservas: negocio.aceptaReservas,
+          service: service,
+        ),
       ],
     ),
   );

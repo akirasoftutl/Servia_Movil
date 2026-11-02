@@ -41,6 +41,7 @@ class _ListaNegociosState extends State<ListaNegocios> {
   String? _cursorPendiente;
   Object? _error;
   bool _cargandoPagina = false;
+  bool _requiereContinuar = false;
 
   @override
   void initState() {
@@ -95,6 +96,7 @@ class _ListaNegociosState extends State<ListaNegocios> {
         _cursorPendiente = siguientePagina ? _siguiente : null;
       }
       _cargandoPagina = true;
+      _requiereContinuar = false;
       _error = null;
       if (!siguientePagina) _estado = _EstadoLista.cargando;
     });
@@ -110,7 +112,7 @@ class _ListaNegociosState extends State<ListaNegocios> {
       cursor = pagina.siguiente;
       vacias++;
     }
-    return const PaginaNegocios(items: [], siguiente: null);
+    return PaginaNegocios(items: const [], siguiente: cursor);
   }
 
   void _mostrarPagina(PaginaNegocios pagina, bool siguientePagina) {
@@ -118,11 +120,14 @@ class _ListaNegociosState extends State<ListaNegocios> {
       if (!siguientePagina) _items.clear();
       _items.addAll(pagina.items);
       _siguiente = pagina.siguiente;
+      _requiereContinuar = pagina.items.isEmpty && pagina.siguiente != null;
       _cargandoPagina = false;
       _estado = _EstadoLista.lista;
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && _scroll.hasClients) _alDesplazarse();
+      if (mounted && !_requiereContinuar && _scroll.hasClients) {
+        _alDesplazarse();
+      }
     });
   }
 
@@ -133,6 +138,11 @@ class _ListaNegociosState extends State<ListaNegocios> {
       if (!siguientePagina) _estado = _EstadoLista.error;
     });
   }
+
+  Widget _continuacion() => TextButton(
+    onPressed: () => _cargar(siguientePagina: true),
+    child: const Text(MensajesNegocios.cargarMas),
+  );
 
   String _nombreCategoria(String id) {
     for (final categoria in _categorias) {
@@ -153,6 +163,7 @@ class _ListaNegociosState extends State<ListaNegocios> {
         );
       case _EstadoLista.lista:
         if (_items.isEmpty) {
+          if (_requiereContinuar) return Center(child: _continuacion());
           return const Center(child: Text(MensajesNegocios.listaVacia));
         }
         return ListView.builder(
@@ -160,6 +171,7 @@ class _ListaNegociosState extends State<ListaNegocios> {
           itemCount: _items.length + 1,
           itemBuilder: (context, indice) {
             if (indice == _items.length) {
+              if (_requiereContinuar) return _continuacion();
               return PieLista(
                 cargando: _cargandoPagina,
                 error: _error,
