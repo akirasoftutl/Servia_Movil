@@ -4,15 +4,23 @@ import '../../negocios/data/negocios_service.dart';
 import '../../negocios/mensajes.dart';
 import '../../negocios/pages/lista_negocios_page.dart';
 import '../data/auth_service.dart';
+import '../data/registro_cliente_service.dart';
 import '../mensajes.dart';
 import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key, this.mensajeInicial, this.authService, this.negociosService});
+  const LoginPage({
+    super.key,
+    this.mensajeInicial,
+    this.authService,
+    this.registroClienteService,
+    this.negociosService,
+  });
 
   /// Mensaje que llega desde AuthGate (p. ej. cuenta de negocio o desactivada).
   final String? mensajeInicial;
   final AuthService? authService;
+  final RegistroClienteService? registroClienteService;
   final NegociosService? negociosService;
 
   @override
@@ -287,10 +295,14 @@ class _LoginPageState extends State<LoginPage> {
                           onPressed: _cargando
                               ? null
                               : () {
-                                  Navigator.pushReplacement(
+                                  Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => const RegisterPage(),
+                                      builder: (context) => RegisterPage(
+                                        authService: _authService,
+                                        registroClienteService:
+                                            widget.registroClienteService,
+                                      ),
                                     ),
                                   );
                                 },
