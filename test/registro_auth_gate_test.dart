@@ -157,7 +157,7 @@ void main() {
       );
       expect(perfil.consultas, 1);
       expect(registro.registros, 1);
-      await tester.tap(find.widgetWithText(OutlinedButton, 'Cerrar sesión'));
+      await tester.tap(find.byTooltip('Cerrar sesión'));
       await tester.pumpAndSettle();
       expect(find.byType(LoginPage), findsOneWidget);
       expect(find.byType(HomePage), findsNothing);

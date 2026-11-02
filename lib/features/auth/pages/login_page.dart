@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../negocios/data/negocios_service.dart';
+import '../../negocios/mensajes.dart';
+import '../../negocios/pages/lista_negocios_page.dart';
 import '../data/auth_service.dart';
 import '../data/registro_cliente_service.dart';
 import '../mensajes.dart';
@@ -11,12 +14,14 @@ class LoginPage extends StatefulWidget {
     this.mensajeInicial,
     this.authService,
     this.registroClienteService,
+    this.negociosService,
   });
 
   /// Mensaje que llega desde AuthGate (p. ej. cuenta de negocio o desactivada).
   final String? mensajeInicial;
   final AuthService? authService;
   final RegistroClienteService? registroClienteService;
+  final NegociosService? negociosService;
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -169,6 +174,12 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ],
                       ),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.push(context, MaterialPageRoute<void>(
+                        builder: (_) => ListaNegociosPage(negociosService: widget.negociosService),
+                      )),
+                      child: const Text(MensajesNegocios.verSinSesion),
                     ),
                     const SizedBox(height: 24),
                     if (_mensajeVisible != null) ...[
