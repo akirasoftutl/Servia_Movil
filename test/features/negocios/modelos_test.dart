@@ -37,6 +37,25 @@ void main() {
         ..remove('direccionTexto');
       expect(Negocio.fromJson(json).direccionTexto, isNull);
     });
+    test('API anterior: solo direccion en texto se muestra', () {
+      final json = negocioJson()
+        ..['direccion'] = 'Calle Luna 12, León'
+        ..remove('direccionTexto');
+      expect(Negocio.fromJson(json).direccionTexto, 'Calle Luna 12, León');
+    });
+    test('direccionTexto gana sobre direccion en texto', () {
+      final json = negocioJson()..['direccion'] = 'Texto viejo';
+      expect(
+        Negocio.fromJson(json).direccionTexto,
+        'Calle Luna 12, Col. Centro, 37000, León, Guanajuato',
+      );
+    });
+    test('direccion objeto sin direccionTexto no rompe ni muestra', () {
+      final json = negocioJson()..remove('direccionTexto');
+      final negocio = Negocio.fromJson(json);
+      expect(negocio.nombre, 'Salón Aurora');
+      expect(negocio.direccionTexto, isNull);
+    });
     test('direccion como objeto, texto o ausente no rompe la lectura', () {
       for (final direccion in [
         {'calle': 'Luna', 'numeroExterior': '12'},

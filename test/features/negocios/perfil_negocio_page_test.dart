@@ -78,6 +78,21 @@ void main() {
       await mostrarPerfil(tester, servicio);
       expect(find.text('Av. Las Torres 123, Col. Centro'), findsOneWidget);
     });
+    testWidgets('API anterior: muestra direccion en texto sin direccionTexto', (
+      tester,
+    ) async {
+      final servicio = NegociosServiceFalso()
+        ..pendiente = (Completer<Negocio>()
+          ..complete(
+            Negocio.fromJson(
+              negocioJson()
+                ..['direccion'] = 'Calle Luna 12, León'
+                ..remove('direccionTexto'),
+            ),
+          ));
+      await mostrarPerfil(tester, servicio);
+      expect(find.text('Calle Luna 12, León'), findsOneWidget);
+    });
     testWidgets('sin dirección no hay línea de dirección ni error', (
       tester,
     ) async {
