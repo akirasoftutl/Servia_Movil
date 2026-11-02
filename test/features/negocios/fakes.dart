@@ -4,7 +4,6 @@ import 'package:servia/features/negocios/data/categoria.dart';
 import 'package:servia/features/negocios/data/negocio.dart';
 import 'package:servia/features/negocios/data/negocio_resumen.dart';
 import 'package:servia/features/negocios/data/negocios_service.dart';
-
 import 'package:servia/features/negocios/data/servicio.dart';
 
 import 'datos_prueba.dart';
@@ -76,3 +75,31 @@ NegocioResumen resumen(String id, {bool acepta = true}) => NegocioResumen(
 
 PaginaNegocios pagina(List<NegocioResumen> items, [String? siguiente]) =>
     PaginaNegocios(items: items, siguiente: siguiente);
+class ServiciosServiceFalso extends NegociosServiceFalso {
+  List<Servicio> servicios = serviciosPrueba;
+  Object? errorServicios;
+  int consultasServicios = 0;
+  Completer<List<Servicio>>? serviciosPendientes;
+  @override
+  Future<List<Servicio>> obtenerServicios(String negocioId) async {
+    consultasServicios++;
+    if (errorServicios != null) throw errorServicios!;
+    return serviciosPendientes?.future ?? servicios;
+  }
+}
+
+class DetalleServiceFalso extends ServiciosServiceFalso {
+  Object? errorDetalle;
+  int consultasDetalle = 0;
+  String? negocioConsultado;
+  String? servicioConsultado;
+  Completer<Servicio>? detallePendiente;
+  @override
+  Future<Servicio> obtenerServicio(String negocioId, String servicioId) async {
+    consultasDetalle++;
+    negocioConsultado = negocioId;
+    servicioConsultado = servicioId;
+    if (errorDetalle != null) throw errorDetalle!;
+    return detallePendiente?.future ?? detallePrueba;
+  }
+}
