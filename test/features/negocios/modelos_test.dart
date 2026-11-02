@@ -12,13 +12,68 @@ void main() {
       expect(negocio.nombre, 'Salón Aurora');
       expect(negocio.descripcion, 'Cuidado personal');
       expect(negocio.categoriaId, 'cabello');
-      expect(negocio.direccion, 'Calle Luna 12');
+      expect(
+        negocio.direccionTexto,
+        'Calle Luna 12, Col. Centro, 37000, León, Guanajuato',
+      );
       expect(negocio.telefono, '4771234567');
       expect(negocio.correoContacto, 'aurora@example.test');
       expect(negocio.aceptaReservas, isTrue);
       expect(negocio.horario.length, 7);
       expect(negocio.horario['lunes']!.abre, '09:00');
       expect(negocio.horario['domingo'], isNull);
+    });
+    test('negocio viejo: direccion null con direccionTexto se conserva', () {
+      final json = negocioJson()..['direccion'] = null;
+      json['direccionTexto'] = 'Av. Las Torres 123, Col. Centro';
+      expect(
+        Negocio.fromJson(json).direccionTexto,
+        'Av. Las Torres 123, Col. Centro',
+      );
+    });
+    test('sin direccion ni direccionTexto no hay dirección ni error', () {
+      final json = negocioJson()
+        ..['direccion'] = null
+        ..remove('direccionTexto');
+      expect(Negocio.fromJson(json).direccionTexto, isNull);
+    });
+    test('API anterior: solo direccion en texto se muestra', () {
+      final json = negocioJson()
+        ..['direccion'] = 'Calle Luna 12, León'
+        ..remove('direccionTexto');
+      expect(Negocio.fromJson(json).direccionTexto, 'Calle Luna 12, León');
+    });
+    test('direccionTexto gana sobre direccion en texto', () {
+      final json = negocioJson()..['direccion'] = 'Texto viejo';
+      expect(
+        Negocio.fromJson(json).direccionTexto,
+        'Calle Luna 12, Col. Centro, 37000, León, Guanajuato',
+      );
+    });
+    test('direccion objeto sin direccionTexto no rompe ni muestra', () {
+      final json = negocioJson()..remove('direccionTexto');
+      final negocio = Negocio.fromJson(json);
+      expect(negocio.nombre, 'Salón Aurora');
+      expect(negocio.direccionTexto, isNull);
+    });
+    test('direccion como objeto, texto o ausente no rompe la lectura', () {
+      for (final direccion in [
+        {'calle': 'Luna', 'numeroExterior': '12'},
+        <String, dynamic>{},
+        'texto suelto',
+        42,
+      ]) {
+        final negocio = Negocio.fromJson(
+          negocioJson()..['direccion'] = direccion,
+        );
+        expect(negocio.nombre, 'Salón Aurora');
+        expect(
+          negocio.direccionTexto,
+          'Calle Luna 12, Col. Centro, 37000, León, Guanajuato',
+        );
+      }
+      final sinCampo = negocioJson()..remove('direccion');
+      expect(Negocio.fromJson(sinCampo).nombre, 'Salón Aurora');
     });
     test('carga sin el alias categoria y conserva categoriaId', () {
       final json = negocioJson()..remove('categoria');
@@ -27,7 +82,11 @@ void main() {
     test('omite opcionales ausentes o vacíos y teléfono vacío', () {
       for (final vacios in [false, true]) {
         final json = negocioJson()..['telefono'] = '';
-        for (final campo in ['descripcion', 'direccion', 'correoContacto']) {
+        for (final campo in [
+          'descripcion',
+          'direccionTexto',
+          'correoContacto',
+        ]) {
           if (vacios) {
             json[campo] = '';
           } else {
@@ -36,7 +95,7 @@ void main() {
         }
         final negocio = Negocio.fromJson(json);
         expect(negocio.descripcion, isNull);
-        expect(negocio.direccion, isNull);
+        expect(negocio.direccionTexto, isNull);
         expect(negocio.correoContacto, isNull);
         expect(negocio.telefono, isNull);
       }
@@ -44,7 +103,11 @@ void main() {
     test(
       'rechaza campos ausentes y tipos erróneos con excepción de formato',
       () {
-        for (final campo in negocioJson().keys) {
+        // La dirección no se valida: un tipo erróneo se ignora sin romper.
+        const direccion = ['direccion', 'direccionTexto'];
+        for (final campo in negocioJson().keys.where(
+          (c) => !direccion.contains(c),
+        )) {
           final json = negocioJson()..[campo] = 42;
           expect(
             () => Negocio.fromJson(json),

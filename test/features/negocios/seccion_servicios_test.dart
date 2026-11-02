@@ -52,7 +52,10 @@ void main() {
           ..errorServicios = Exception('privado');
         await abrirPerfil(tester, servicio);
         expect(find.text('Salón Aurora'), findsOneWidget);
-        expect(find.text('Calle Luna 12'), findsOneWidget);
+        expect(
+          find.text('Calle Luna 12, Col. Centro, 37000, León, Guanajuato'),
+          findsOneWidget,
+        );
         expect(find.text('Domingo'), findsOneWidget);
         expect(find.text(MensajesNegocios.errorRed), findsOneWidget);
         expect(find.textContaining('privado'), findsNothing);

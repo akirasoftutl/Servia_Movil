@@ -46,7 +46,7 @@ void main() {
         'Salón Aurora',
         'Cuidado personal',
         'Cabello y barba',
-        'Calle Luna 12',
+        'Calle Luna 12, Col. Centro, 37000, León, Guanajuato',
         '4771234567',
         'aurora@example.test',
         'Horario de atención',
@@ -62,6 +62,56 @@ void main() {
       expect(find.text('09:00 – 18:00'), findsNWidgets(6));
       expect(find.text('Descanso'), findsOneWidget);
       expect(find.text('Servicios'), findsOneWidget);
+    });
+    testWidgets('negocio viejo muestra direccionTexto con direccion null', (
+      tester,
+    ) async {
+      final servicio = NegociosServiceFalso()
+        ..pendiente = (Completer<Negocio>()
+          ..complete(
+            Negocio.fromJson(
+              negocioJson()
+                ..['direccion'] = null
+                ..['direccionTexto'] = 'Av. Las Torres 123, Col. Centro',
+            ),
+          ));
+      await mostrarPerfil(tester, servicio);
+      expect(find.text('Av. Las Torres 123, Col. Centro'), findsOneWidget);
+    });
+    testWidgets('API anterior: muestra direccion en texto sin direccionTexto', (
+      tester,
+    ) async {
+      final servicio = NegociosServiceFalso()
+        ..pendiente = (Completer<Negocio>()
+          ..complete(
+            Negocio.fromJson(
+              negocioJson()
+                ..['direccion'] = 'Calle Luna 12, León'
+                ..remove('direccionTexto'),
+            ),
+          ));
+      await mostrarPerfil(tester, servicio);
+      expect(find.text('Calle Luna 12, León'), findsOneWidget);
+    });
+    testWidgets('sin dirección no hay línea de dirección ni error', (
+      tester,
+    ) async {
+      final servicio = NegociosServiceFalso()
+        ..pendiente = (Completer<Negocio>()
+          ..complete(
+            Negocio.fromJson(
+              negocioJson()
+                ..['direccion'] = null
+                ..remove('direccionTexto'),
+            ),
+          ));
+      await mostrarPerfil(tester, servicio);
+      expect(find.text('Salón Aurora'), findsOneWidget);
+      expect(find.text('4771234567'), findsOneWidget);
+      expect(find.textContaining('Calle Luna'), findsNothing);
+      expect(find.text(''), findsNothing);
+      expect(find.text(MensajesNegocios.errorRed), findsNothing);
+      expect(tester.takeException(), isNull);
     });
     for (final acepta in [true, false]) {
       testWidgets('respeta aceptaReservas $acepta sin recalcular horario', (
