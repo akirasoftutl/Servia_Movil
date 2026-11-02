@@ -6,6 +6,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:servia/features/auth/data/auth_service.dart';
 import 'package:servia/features/auth/data/perfil.dart';
 import 'package:servia/features/auth/data/perfil_service.dart';
+import 'package:servia/features/auth/data/registro_cliente_service.dart';
+import 'package:servia/features/negocios/data/disponibilidad.dart';
+import 'package:servia/features/negocios/data/disponibilidad_service.dart';
 import 'package:servia/features/negocios/data/servicio.dart';
 import 'package:servia/features/reservas/data/reserva_creada.dart';
 import 'package:servia/features/reservas/data/reservas_service.dart';
@@ -163,4 +166,49 @@ Future<ProbadorResumen> abrirResumen(
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 400));
   return probador;
+}
+
+class DisponibilidadFalsa extends DisponibilidadService {
+  int consultasDias = 0;
+
+  @override
+  Future<List<DiaDisponibilidad>> obtenerDias(
+    String negocioId,
+    String servicioId,
+  ) async {
+    consultasDias++;
+    return const [
+      DiaDisponibilidad(fecha: '2030-03-04', disponible: true),
+      DiaDisponibilidad(fecha: '2030-03-05', disponible: true),
+      DiaDisponibilidad(fecha: '2030-03-06', disponible: true),
+    ];
+  }
+
+  @override
+  Future<List<HoraDisponibilidad>> obtenerHoras(
+    String negocioId,
+    String servicioId,
+    String fecha,
+  ) async => const [
+    HoraDisponibilidad(hora: '11:00', disponible: false),
+    HoraDisponibilidad(hora: '11:30', disponible: true),
+  ];
+}
+
+class RegistroFalso extends RegistroClienteService {
+  int registros = 0;
+
+  @override
+  Future<RegistroClienteResponse> registrarCliente(
+    RegistroClienteRequest request,
+  ) async {
+    registros++;
+    return const RegistroClienteResponse(
+      id: 'cliente',
+      nombre: 'Ana Pérez',
+      correo: 'ana@test.com',
+      telefono: '4771234567',
+      tipo: 'cliente',
+    );
+  }
 }
