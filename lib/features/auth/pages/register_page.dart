@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/auth_service.dart';
 import '../data/registro_cliente_service.dart';
 import '../mensajes.dart';
+import '../validaciones.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({
@@ -47,42 +48,6 @@ class _RegisterPageState extends State<RegisterPage> {
     _telefonoController.dispose();
     _contrasenaController.dispose();
     super.dispose();
-  }
-
-  String? _validarNombre(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'El nombre es obligatorio.';
-    }
-    if (value.trim().length < 2) {
-      return 'El nombre debe tener al menos 2 caracteres.';
-    }
-    if (value.trim().length > 100) {
-      return 'El nombre no puede exceder 100 caracteres.';
-    }
-    return null;
-  }
-
-  String? _validarCorreo(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'El correo es obligatorio.';
-    }
-    final correo = value.trim();
-    final regex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
-    if (!regex.hasMatch(correo)) {
-      return 'El correo debe tener un formato válido.';
-    }
-    return null;
-  }
-
-  String? _validarTelefono(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'El teléfono es obligatorio.';
-    }
-    final tel = value.trim();
-    if (!RegExp(r'^\d{10}$').hasMatch(tel)) {
-      return 'El teléfono debe contener exactamente 10 dígitos numéricos.';
-    }
-    return null;
   }
 
   String? _validarContrasena(String? value) {
@@ -264,7 +229,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       TextFormField(
                         controller: _nombreController,
                         textCapitalization: TextCapitalization.words,
-                        validator: _validarNombre,
+                        validator: ValidacionesCliente.nombre,
                         decoration: InputDecoration(
                           hintText: "Tu nombre y apellido",
                           hintStyle: TextStyle(
@@ -320,7 +285,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       TextFormField(
                         controller: _telefonoController,
                         keyboardType: TextInputType.phone,
-                        validator: _validarTelefono,
+                        validator: ValidacionesCliente.telefono,
                         decoration: InputDecoration(
                           hintText: "Teléfono (10 dígitos)",
                           hintStyle: TextStyle(
@@ -376,7 +341,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       TextFormField(
                         controller: _correoController,
                         keyboardType: TextInputType.emailAddress,
-                        validator: _validarCorreo,
+                        validator: ValidacionesCliente.correo,
                         decoration: InputDecoration(
                           hintText: "Dirección de correo electrónico",
                           hintStyle: TextStyle(

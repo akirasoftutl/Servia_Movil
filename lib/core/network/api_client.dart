@@ -42,4 +42,14 @@ class ApiClient {
         .post(url, headers: requestHeaders, body: body)
         .timeout(limite);
   }
+
+  Future<http.Response> patch(String endpoint, {String? token, String? body}) {
+    final url = Uri.parse('$baseUrl$endpoint');
+    final headers = <String, String>{
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+    return _client.patch(url, headers: headers, body: body).timeout(limite);
+  }
 }

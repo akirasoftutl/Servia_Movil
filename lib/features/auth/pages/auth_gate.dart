@@ -7,6 +7,7 @@ import '../../../core/network/api_exception.dart';
 import '../../home/pages/home_page.dart';
 import '../data/auth_service.dart';
 import '../data/perfil_service.dart';
+import '../../perfil/data/perfil_cliente_service.dart';
 import '../data/registro_cliente_service.dart';
 import '../mensajes.dart';
 import 'login_page.dart';
@@ -19,11 +20,13 @@ class AuthGate extends StatefulWidget {
     this.authService,
     this.perfilService,
     this.registroClienteService,
+    this.perfilClienteService,
   });
 
   final AuthService? authService;
   final PerfilService? perfilService;
   final RegistroClienteService? registroClienteService;
+  final PerfilClienteService? perfilClienteService;
 
   @override
   State<AuthGate> createState() => _AuthGateState();
@@ -135,6 +138,8 @@ class _AuthGateState extends State<AuthGate> {
       case _EstadoSesion.conSesion:
         return HomePage(
           onCerrarSesion: _cerrarSesion,
+          authService: _authService,
+          perfilClienteService: widget.perfilClienteService,
         );
       case _EstadoSesion.errorRed:
         return _PantallaErrorRed(onReintentar: _reintentar);
