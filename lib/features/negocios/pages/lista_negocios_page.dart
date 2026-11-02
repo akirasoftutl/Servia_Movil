@@ -36,6 +36,7 @@ class _ListaNegociosState extends State<ListaNegocios> {
   List<Categoria> _categorias = [];
   _EstadoLista _estado = _EstadoLista.cargando;
   String? _siguiente;
+  String? _cursorPendiente;
   Object? _error;
   bool _cargandoPagina = false;
 
@@ -75,44 +76,60 @@ class _ListaNegociosState extends State<ListaNegocios> {
 
   Future<void> _cargar({bool siguientePagina = false}) async {
     if (_cargandoPagina) return;
+    _iniciarCarga(siguientePagina);
+    try {
+      final pagina = await _pedirPaginaConItems(_cursorPendiente);
+      if (!mounted || pagina == null) return;
+      _mostrarPagina(pagina, siguientePagina);
+    } catch (error) {
+      if (!mounted) return;
+      _mostrarError(error, siguientePagina);
+    }
+  }
+
+  void _iniciarCarga(bool siguientePagina) {
     setState(() {
+      if (_error == null) {
+        _cursorPendiente = siguientePagina ? _siguiente : null;
+      }
       _cargandoPagina = true;
       _error = null;
       if (!siguientePagina) _estado = _EstadoLista.cargando;
     });
-    var cursor = siguientePagina ? _siguiente : null;
+  }
+
+  Future<PaginaNegocios?> _pedirPaginaConItems(String? cursor) async {
     var vacias = 0;
-    try {
-      while (true) {
-        if (siguientePagina) _siguiente = cursor;
-        final pagina = await _service.listarNegocios(cursor: cursor);
-        if (!mounted) return;
-        cursor = pagina.siguiente;
-        if (pagina.items.isEmpty && cursor != null) {
-          vacias++;
-          if (vacias < _maximoPaginasVacias) continue;
-          cursor = null;
-        }
-        setState(() {
-          if (!siguientePagina) _items.clear();
-          _items.addAll(pagina.items);
-          _siguiente = cursor;
-          _cargandoPagina = false;
-          _estado = _EstadoLista.lista;
-        });
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && _scroll.hasClients) _alDesplazarse();
-        });
-        return;
-      }
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _error = error;
-        _cargandoPagina = false;
-        if (!siguientePagina) _estado = _EstadoLista.error;
-      });
+    while (vacias < _maximoPaginasVacias) {
+      setState(() => _cursorPendiente = cursor);
+      final pagina = await _service.listarNegocios(cursor: cursor);
+      if (!mounted) return null;
+      if (pagina.items.isNotEmpty || pagina.siguiente == null) return pagina;
+      cursor = pagina.siguiente;
+      vacias++;
     }
+    return const PaginaNegocios(items: [], siguiente: null);
+  }
+
+  void _mostrarPagina(PaginaNegocios pagina, bool siguientePagina) {
+    setState(() {
+      if (!siguientePagina) _items.clear();
+      _items.addAll(pagina.items);
+      _siguiente = pagina.siguiente;
+      _cargandoPagina = false;
+      _estado = _EstadoLista.lista;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _scroll.hasClients) _alDesplazarse();
+    });
+  }
+
+  void _mostrarError(Object error, bool siguientePagina) {
+    setState(() {
+      _error = error;
+      _cargandoPagina = false;
+      if (!siguientePagina) _estado = _EstadoLista.error;
+    });
   }
 
   String _nombreCategoria(String id) {

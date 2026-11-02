@@ -186,6 +186,24 @@ void main() {
     expect(fake.llamadas, [null, 'dos', 'tres', 'tres']);
     expect(find.text('Negocio fin'), findsOneWidget);
   });
+  testWidgets('reintenta el cursor fallido tras una primera página vacía', (
+    tester,
+  ) async {
+    final fake = ListaServiceFalso();
+    var falla = true;
+    fake.responder = (cursor) async {
+      if (cursor == null) return pagina([], 'dos');
+      if (falla) throw const SocketException('crudo');
+      return pagina([resumen('fin')]);
+    };
+    await abrir(tester, fake);
+    expect(fake.llamadas, [null, 'dos']);
+    falla = false;
+    await tester.tap(find.text(MensajesNegocios.reintentar));
+    await tester.pumpAndSettle();
+    expect(fake.llamadas, [null, 'dos', 'dos']);
+    expect(find.text('Negocio fin'), findsOneWidget);
+  });
   testWidgets('lista vacía muestra su mensaje', (tester) async {
     await abrir(tester, ListaServiceFalso());
     expect(find.text(MensajesNegocios.listaVacia), findsOneWidget);
