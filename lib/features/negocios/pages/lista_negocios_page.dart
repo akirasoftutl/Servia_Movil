@@ -5,6 +5,8 @@ import '../data/negocio_resumen.dart';
 import '../data/negocios_service.dart';
 import '../mensajes.dart';
 import 'estados_consulta.dart';
+import 'pie_lista.dart';
+import 'tarjeta_negocio.dart';
 
 enum _EstadoLista { cargando, error, lista }
 
@@ -158,71 +160,19 @@ class _ListaNegociosState extends State<ListaNegocios> {
           itemCount: _items.length + 1,
           itemBuilder: (context, indice) {
             if (indice == _items.length) {
-              return _PieLista(
+              return PieLista(
                 cargando: _cargandoPagina,
                 error: _error,
                 onReintentar: () => _cargar(siguientePagina: true),
               );
             }
             final negocio = _items[indice];
-            return _TarjetaNegocio(
+            return TarjetaNegocio(
               negocio: negocio,
               categoria: _nombreCategoria(negocio.categoriaId),
             );
           },
         );
     }
-  }
-}
-
-class _TarjetaNegocio extends StatelessWidget {
-  const _TarjetaNegocio({required this.negocio, required this.categoria});
-  final NegocioResumen negocio;
-  final String categoria;
-
-  @override
-  Widget build(BuildContext context) => ListTile(
-    title: Text(negocio.nombre, maxLines: 2, overflow: TextOverflow.ellipsis),
-    subtitle: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(categoria),
-        Text(
-          negocio.aceptaReservas
-              ? MensajesNegocios.aceptaReservas
-              : MensajesNegocios.noAceptaReservas,
-        ),
-      ],
-    ),
-    onTap: () {
-      if (esIdValido(negocio.id)) {
-        Navigator.pushNamed(context, '/negocios/${negocio.id}');
-      }
-    },
-  );
-}
-
-class _PieLista extends StatelessWidget {
-  const _PieLista({
-    required this.cargando,
-    required this.error,
-    required this.onReintentar,
-  });
-  final bool cargando;
-  final Object? error;
-  final VoidCallback onReintentar;
-
-  @override
-  Widget build(BuildContext context) {
-    if (cargando) {
-      return const Padding(padding: EdgeInsets.all(24), child: CargaNegocio());
-    }
-    if (error != null) {
-      return ErrorNegocio(
-        mensaje: MensajesNegocios.mensajeDeError(error!),
-        onReintentar: onReintentar,
-      );
-    }
-    return const SizedBox.shrink();
   }
 }
