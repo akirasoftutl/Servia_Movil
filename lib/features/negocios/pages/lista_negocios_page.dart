@@ -7,6 +7,7 @@ import '../data/negocio_resumen.dart';
 import '../data/negocios_service.dart';
 import '../mensajes.dart';
 import 'estados_consulta.dart';
+import 'filtros_negocios.dart';
 import 'pie_lista.dart';
 import 'tarjeta_negocio.dart';
 
@@ -95,6 +96,16 @@ class _ListaNegociosState extends State<ListaNegocios> {
     });
     if (_scroll.hasClients) _scroll.jumpTo(0);
     _cargar();
+  }
+
+  void _limpiarBusqueda() {
+    _texto.clear();
+    _reiniciar();
+  }
+
+  void _elegirCategoria(String? id) {
+    setState(() => _categoriaId = id);
+    _reiniciar();
   }
 
   void _alDesplazarse() {
@@ -196,19 +207,13 @@ class _ListaNegociosState extends State<ListaNegocios> {
   @override
   Widget build(BuildContext context) => Column(
     children: [
-      _FiltrosNegocios(
+      FiltrosNegocios(
         texto: _texto,
         categorias: _categorias,
         categoriaId: _categoriaId,
         onTexto: _alEscribir,
-        onLimpiar: () {
-          _texto.clear();
-          _reiniciar();
-        },
-        onCategoria: (id) {
-          setState(() => _categoriaId = id);
-          _reiniciar();
-        },
+        onLimpiar: _limpiarBusqueda,
+        onCategoria: _elegirCategoria,
       ),
       Expanded(child: _contenido()),
     ],
@@ -255,60 +260,4 @@ class _ListaNegociosState extends State<ListaNegocios> {
         );
     }
   }
-}
-
-class _FiltrosNegocios extends StatelessWidget {
-  const _FiltrosNegocios({
-    required this.texto,
-    required this.categorias,
-    required this.categoriaId,
-    required this.onTexto,
-    required this.onLimpiar,
-    required this.onCategoria,
-  });
-  final TextEditingController texto;
-  final List<Categoria> categorias;
-  final String? categoriaId;
-  final ValueChanged<String> onTexto;
-  final VoidCallback onLimpiar;
-  final ValueChanged<String?> onCategoria;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.all(16),
-    child: Column(
-      children: [
-        TextField(
-          controller: texto,
-          maxLength: 50,
-          onChanged: onTexto,
-          decoration: InputDecoration(
-            labelText: MensajesNegocios.buscar,
-            suffixIcon: IconButton(
-              tooltip: MensajesNegocios.limpiar,
-              icon: const Icon(Icons.clear),
-              onPressed: onLimpiar,
-            ),
-          ),
-        ),
-        if (categorias.isNotEmpty)
-          DropdownButton<String>(
-            value: categoriaId ?? '',
-            isExpanded: true,
-            items: [
-              const DropdownMenuItem(
-                value: '',
-                child: Text(MensajesNegocios.todas),
-              ),
-              for (final categoria in categorias)
-                DropdownMenuItem(
-                  value: categoria.id,
-                  child: Text(categoria.nombre),
-                ),
-            ],
-            onChanged: (id) => onCategoria(id == '' ? null : id),
-          ),
-      ],
-    ),
-  );
 }
