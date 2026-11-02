@@ -128,7 +128,7 @@ class _RegisterPageState extends State<RegisterPage> {
       }
 
       final token = await user.getIdToken();
-      final perfil = await _perfilService.obtenerYo(token!);
+      await _perfilService.obtenerYo(token!);
 
       if (!mounted) return;
       setState(() => _cargando = false);
@@ -141,7 +141,6 @@ class _RegisterPageState extends State<RegisterPage> {
         context,
         MaterialPageRoute(
           builder: (context) => HomePage(
-            perfil: perfil,
             onCerrarSesion: () async {
               await _authService.cerrarSesion();
               if (!context.mounted) return;

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:servia/features/auth/data/perfil.dart';
 import 'package:servia/features/auth/pages/login_page.dart';
 import 'package:servia/features/home/pages/home_page.dart';
 import 'package:servia/features/negocios/mensajes.dart';
@@ -30,12 +29,6 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: HomePage(
-          perfil: const Perfil(
-            uid: 'u',
-            nombre: 'Nombre privado',
-            correo: 'correo@privado',
-            tipo: 'cliente',
-          ),
           onCerrarSesion: () => cierres++,
           negociosService: ListaServiceFalso()
             ..responder = (_) async => pagina([resumen('inicio')]),
