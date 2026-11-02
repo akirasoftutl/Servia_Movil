@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:servia/features/negocios/data/negocio.dart';
 import 'package:servia/features/negocios/data/categoria.dart';
+import 'package:servia/features/negocios/data/negocio.dart';
 
 import 'datos_prueba.dart';
 
@@ -41,33 +41,36 @@ void main() {
         expect(negocio.telefono, isNull);
       }
     });
-    test('rechaza campos ausentes y tipos erróneos con format exception', () {
-      for (final campo in negocioJson().keys) {
-        final json = negocioJson()..[campo] = 42;
+    test(
+      'rechaza campos ausentes y tipos erróneos con excepción de formato',
+      () {
+        for (final campo in negocioJson().keys) {
+          final json = negocioJson()..[campo] = 42;
+          expect(
+            () => Negocio.fromJson(json),
+            throwsFormatException,
+            reason: campo,
+          );
+        }
+        for (final campo in [
+          'id',
+          'nombre',
+          'categoriaId',
+          'telefono',
+          'aceptaReservas',
+          'horario',
+        ]) {
+          expect(
+            () => Negocio.fromJson(negocioJson()..remove(campo)),
+            throwsFormatException,
+          );
+        }
         expect(
-          () => Negocio.fromJson(json),
-          throwsFormatException,
-          reason: campo,
-        );
-      }
-      for (final campo in [
-        'id',
-        'nombre',
-        'categoriaId',
-        'telefono',
-        'aceptaReservas',
-        'horario',
-      ]) {
-        expect(
-          () => Negocio.fromJson(negocioJson()..remove(campo)),
+          () => Negocio.fromJson(negocioJson()..['horario'] = {}),
           throwsFormatException,
         );
-      }
-      expect(
-        () => Negocio.fromJson(negocioJson()..['horario'] = {}),
-        throwsFormatException,
-      );
-    });
+      },
+    );
     test('rechaza horas inválidas y tipos erróneos en cada extremo', () {
       for (final campo in ['abre', 'cierra']) {
         for (final valor in ['24:00', '09:60', '9:00', '', null, 900]) {

@@ -75,7 +75,7 @@ void main() {
       expect(esIdValido('a_B-12'), isTrue);
       expect(esIdValido('a' * 128), isTrue);
     });
-    test('respuestas inesperadas producen format exception', () async {
+    test('respuestas inesperadas producen excepción de formato', () async {
       for (final cuerpo in ['[]', 'null', 'false', 'no json', '{}']) {
         await expectLater(
           servicioCon((_) async => http.Response(cuerpo, 200))

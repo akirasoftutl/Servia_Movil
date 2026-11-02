@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:servia/main.dart';
 import 'package:servia/features/auth/pages/auth_gate.dart';
 import 'package:servia/features/negocios/mensajes.dart';
 import 'package:servia/features/negocios/pages/perfil_negocio_page.dart';
 import 'package:servia/features/negocios/rutas_negocios.dart';
+import 'package:servia/main.dart';
 
 void main() {
   testWidgets('la ruta válida crea el perfil con el id exacto', (tester) async {
