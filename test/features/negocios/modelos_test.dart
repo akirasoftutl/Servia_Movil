@@ -23,6 +23,39 @@ void main() {
       expect(negocio.horario['lunes']!.abre, '09:00');
       expect(negocio.horario['domingo'], isNull);
     });
+    test('negocio viejo: direccion null con direccionTexto se conserva', () {
+      final json = negocioJson()..['direccion'] = null;
+      json['direccionTexto'] = 'Av. Las Torres 123, Col. Centro';
+      expect(
+        Negocio.fromJson(json).direccionTexto,
+        'Av. Las Torres 123, Col. Centro',
+      );
+    });
+    test('sin direccion ni direccionTexto no hay dirección ni error', () {
+      final json = negocioJson()
+        ..['direccion'] = null
+        ..remove('direccionTexto');
+      expect(Negocio.fromJson(json).direccionTexto, isNull);
+    });
+    test('direccion como objeto, texto o ausente no rompe la lectura', () {
+      for (final direccion in [
+        {'calle': 'Luna', 'numeroExterior': '12'},
+        <String, dynamic>{},
+        'texto suelto',
+        42,
+      ]) {
+        final negocio = Negocio.fromJson(
+          negocioJson()..['direccion'] = direccion,
+        );
+        expect(negocio.nombre, 'Salón Aurora');
+        expect(
+          negocio.direccionTexto,
+          'Calle Luna 12, Col. Centro, 37000, León, Guanajuato',
+        );
+      }
+      final sinCampo = negocioJson()..remove('direccion');
+      expect(Negocio.fromJson(sinCampo).nombre, 'Salón Aurora');
+    });
     test('carga sin el alias categoria y conserva categoriaId', () {
       final json = negocioJson()..remove('categoria');
       expect(Negocio.fromJson(json).categoriaId, 'cabello');

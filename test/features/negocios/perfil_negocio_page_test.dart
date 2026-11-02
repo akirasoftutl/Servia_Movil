@@ -63,6 +63,41 @@ void main() {
       expect(find.text('Descanso'), findsOneWidget);
       expect(find.text('Servicios'), findsOneWidget);
     });
+    testWidgets('negocio viejo muestra direccionTexto con direccion null', (
+      tester,
+    ) async {
+      final servicio = NegociosServiceFalso()
+        ..pendiente = (Completer<Negocio>()
+          ..complete(
+            Negocio.fromJson(
+              negocioJson()
+                ..['direccion'] = null
+                ..['direccionTexto'] = 'Av. Las Torres 123, Col. Centro',
+            ),
+          ));
+      await mostrarPerfil(tester, servicio);
+      expect(find.text('Av. Las Torres 123, Col. Centro'), findsOneWidget);
+    });
+    testWidgets('sin dirección no hay línea de dirección ni error', (
+      tester,
+    ) async {
+      final servicio = NegociosServiceFalso()
+        ..pendiente = (Completer<Negocio>()
+          ..complete(
+            Negocio.fromJson(
+              negocioJson()
+                ..['direccion'] = null
+                ..remove('direccionTexto'),
+            ),
+          ));
+      await mostrarPerfil(tester, servicio);
+      expect(find.text('Salón Aurora'), findsOneWidget);
+      expect(find.text('4771234567'), findsOneWidget);
+      expect(find.textContaining('Calle Luna'), findsNothing);
+      expect(find.text(''), findsNothing);
+      expect(find.text(MensajesNegocios.errorRed), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
     for (final acepta in [true, false]) {
       testWidgets('respeta aceptaReservas $acepta sin recalcular horario', (
         tester,
