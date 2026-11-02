@@ -66,18 +66,34 @@ class _SeccionServiciosState extends State<_SeccionServicios> {
       else if (_servicios!.isEmpty)
         const Text(MensajesNegocios.sinServicios)
       else
-        for (final servicio in _servicios!) _FilaServicio(servicio: servicio),
+        for (final servicio in _servicios!)
+          _FilaServicio(
+            servicio: servicio,
+            onAbrir: () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (_) => DetalleServicioPage(
+                  negocioId: widget.negocioId,
+                  servicioId: servicio.id,
+                  aceptaReservas: widget.aceptaReservas,
+                  negociosService: widget.service,
+                ),
+              ),
+            ),
+          ),
     ],
   );
 }
 
 class _FilaServicio extends StatelessWidget {
-  const _FilaServicio({required this.servicio});
+  const _FilaServicio({required this.servicio, required this.onAbrir});
   final Servicio servicio;
+  final VoidCallback onAbrir;
 
   @override
   Widget build(BuildContext context) => ListTile(
     contentPadding: EdgeInsets.zero,
+    onTap: onAbrir,
     title: Text(servicio.nombre),
     subtitle: Text(formatearDuracion(servicio.duracionMin)),
     trailing: Text(formatearPrecio(servicio.precio)),

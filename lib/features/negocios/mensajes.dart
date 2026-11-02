@@ -24,9 +24,11 @@ class MensajesNegocios {
   static const detalleServicio = 'Detalle del servicio';
   static const horario = 'Horario de atención';
 
-  static String mensajeDeError(Object error) {
+  static String mensajeDeError(Object error, {bool esServicio = false}) {
     if (error is ApiException) {
-      if (error.statusCode == 404) return noDisponible;
+      if (error.statusCode == 404) {
+        return esServicio ? servicioNoDisponible : noDisponible;
+      }
       if (error.statusCode >= 500) return errorApi;
     }
     if (error is FormatException) return errorCarga;

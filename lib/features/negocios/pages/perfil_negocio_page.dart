@@ -6,6 +6,7 @@ import '../data/servicio.dart';
 import '../formatos.dart';
 import '../mensajes.dart';
 import 'estados_consulta.dart';
+import 'detalle_servicio_page.dart';
 
 part 'seccion_servicios.dart';
 
