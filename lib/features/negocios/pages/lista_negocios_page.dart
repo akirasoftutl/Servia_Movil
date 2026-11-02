@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../data/categoria.dart';
@@ -30,10 +32,16 @@ class ListaNegocios extends StatefulWidget {
 }
 
 class _ListaNegociosState extends State<ListaNegocios> {
+  static const _esperaBusqueda = Duration(milliseconds: 400);
   static const _distanciaCarga = 200;
   static const _maximoPaginasVacias = 5;
   late final NegociosService _service;
   final _scroll = ScrollController();
+  final _texto = TextEditingController();
+  Timer? _espera;
+  String? _consulta;
+  String? _categoriaId;
+  int _version = 0;
   final _items = <NegocioResumen>[];
   List<Categoria> _categorias = [];
   _EstadoLista _estado = _EstadoLista.cargando;
@@ -53,8 +61,34 @@ class _ListaNegociosState extends State<ListaNegocios> {
 
   @override
   void dispose() {
+    _espera?.cancel();
+    _texto.dispose();
     _scroll.dispose();
     super.dispose();
+  }
+
+  String? get _textoConsulta {
+    final texto = _texto.text.trim();
+    return texto.length < 2 ? null : texto;
+  }
+
+  void _alEscribir(String _) {
+    _espera?.cancel();
+    // Invalida también durante la espera las respuestas de la consulta anterior.
+    _version++;
+    _siguiente = null;
+    _espera = Timer(_esperaBusqueda, _reiniciar);
+  }
+
+  void _reiniciar() {
+    _espera?.cancel();
+    _version++;
+    _consulta = _textoConsulta;
+    _siguiente = null;
+    _cargandoPagina = false;
+    _items.clear();
+    if (_scroll.hasClients) _scroll.jumpTo(0);
+    _cargar();
   }
 
   void _alDesplazarse() {
@@ -69,7 +103,11 @@ class _ListaNegociosState extends State<ListaNegocios> {
     try {
       final categorias = await _service.obtenerCategorias();
       if (!mounted) return;
-      setState(() => _categorias = categorias);
+      setState(
+        () =>
+            _categorias = categorias.where((c) => c.activo).toList()
+              ..sort((a, b) => a.orden.compareTo(b.orden)),
+      );
     } catch (_) {
       if (!mounted) return;
       // El catálogo no impide consultar la lista (D4).
@@ -78,13 +116,14 @@ class _ListaNegociosState extends State<ListaNegocios> {
 
   Future<void> _cargar({bool siguientePagina = false}) async {
     if (_cargandoPagina) return;
+    final version = _version;
     _iniciarCarga(siguientePagina);
     try {
-      final pagina = await _pedirPaginaConItems(_cursorPendiente);
-      if (!mounted || pagina == null) return;
+      final pagina = await _pedirPaginaConItems(_cursorPendiente, version);
+      if (!mounted || version != _version || pagina == null) return;
       _mostrarPagina(pagina, siguientePagina);
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted || version != _version) return;
       _mostrarError(error, siguientePagina);
     }
   }
@@ -100,12 +139,19 @@ class _ListaNegociosState extends State<ListaNegocios> {
     });
   }
 
-  Future<PaginaNegocios?> _pedirPaginaConItems(String? cursor) async {
+  Future<PaginaNegocios?> _pedirPaginaConItems(
+    String? cursor,
+    int version,
+  ) async {
     var vacias = 0;
     while (vacias < _maximoPaginasVacias) {
       setState(() => _cursorPendiente = cursor);
-      final pagina = await _service.listarNegocios(cursor: cursor);
-      if (!mounted) return null;
+      final pagina = await _service.listarNegocios(
+        cursor: cursor,
+        q: _consulta,
+        categoriaId: _categoriaId,
+      );
+      if (!mounted || version != _version) return null;
       if (pagina.items.isNotEmpty || pagina.siguiente == null) return pagina;
       cursor = pagina.siguiente;
       vacias++;
@@ -142,7 +188,27 @@ class _ListaNegociosState extends State<ListaNegocios> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => Column(
+    children: [
+      _FiltrosNegocios(
+        texto: _texto,
+        categorias: _categorias,
+        categoriaId: _categoriaId,
+        onTexto: _alEscribir,
+        onLimpiar: () {
+          _texto.clear();
+          _reiniciar();
+        },
+        onCategoria: (id) {
+          setState(() => _categoriaId = id);
+          _reiniciar();
+        },
+      ),
+      Expanded(child: _contenido()),
+    ],
+  );
+
+  Widget _contenido() {
     switch (_estado) {
       case _EstadoLista.cargando:
         return const CargaNegocio();
@@ -153,7 +219,13 @@ class _ListaNegociosState extends State<ListaNegocios> {
         );
       case _EstadoLista.lista:
         if (_items.isEmpty) {
-          return const Center(child: Text(MensajesNegocios.listaVacia));
+          return Center(
+            child: Text(
+              _consulta != null || _categoriaId != null
+                  ? MensajesNegocios.sinResultados
+                  : MensajesNegocios.listaVacia,
+            ),
+          );
         }
         return ListView.builder(
           controller: _scroll,
@@ -175,4 +247,60 @@ class _ListaNegociosState extends State<ListaNegocios> {
         );
     }
   }
+}
+
+class _FiltrosNegocios extends StatelessWidget {
+  const _FiltrosNegocios({
+    required this.texto,
+    required this.categorias,
+    required this.categoriaId,
+    required this.onTexto,
+    required this.onLimpiar,
+    required this.onCategoria,
+  });
+  final TextEditingController texto;
+  final List<Categoria> categorias;
+  final String? categoriaId;
+  final ValueChanged<String> onTexto;
+  final VoidCallback onLimpiar;
+  final ValueChanged<String?> onCategoria;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      children: [
+        TextField(
+          controller: texto,
+          maxLength: 50,
+          onChanged: onTexto,
+          decoration: InputDecoration(
+            labelText: MensajesNegocios.buscar,
+            suffixIcon: IconButton(
+              tooltip: MensajesNegocios.limpiar,
+              icon: const Icon(Icons.clear),
+              onPressed: onLimpiar,
+            ),
+          ),
+        ),
+        if (categorias.isNotEmpty)
+          DropdownButton<String>(
+            value: categoriaId ?? '',
+            isExpanded: true,
+            items: [
+              const DropdownMenuItem(
+                value: '',
+                child: Text(MensajesNegocios.todas),
+              ),
+              for (final categoria in categorias)
+                DropdownMenuItem(
+                  value: categoria.id,
+                  child: Text(categoria.nombre),
+                ),
+            ],
+            onChanged: (id) => onCategoria(id == '' ? null : id),
+          ),
+      ],
+    ),
+  );
 }

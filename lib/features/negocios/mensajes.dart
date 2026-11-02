@@ -15,6 +15,12 @@ class MensajesNegocios {
   static const aceptaReservas = 'Acepta reservas';
   static const noAceptaReservas = 'No acepta reservas por ahora';
   static const tituloPerfil = 'Perfil del negocio';
+  static const buscar = 'Buscar negocios o servicios';
+  static const limpiar = 'Limpiar búsqueda';
+  static const todas = 'Todas';
+  static const sinResultados = 'No encontramos negocios con esa búsqueda';
+  static const busquedaInvalida =
+      'Revisa la búsqueda y la categoría e inténtalo de nuevo.';
   static const tituloLista = 'Negocios';
   static const listaVacia = 'Todavía no hay negocios disponibles';
   static const verSinSesion = 'Ver negocios sin iniciar sesión';
@@ -22,6 +28,7 @@ class MensajesNegocios {
 
   static String mensajeDeError(Object error) {
     if (error is ApiException) {
+      if (error.statusCode == 400) return busquedaInvalida;
       if (error.statusCode == 404) return noDisponible;
       if (error.statusCode >= 500) return errorApi;
     }
