@@ -2,6 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:servia/core/network/api_client.dart';
+import 'package:servia/features/negocios/data/negocios_service.dart';
 import 'package:servia/core/network/api_exception.dart';
 import 'package:servia/features/negocios/data/servicio.dart';
 import 'package:servia/features/negocios/mensajes.dart';
@@ -35,7 +39,7 @@ class DetalleServiceFalso extends ServiciosServiceFalso {
 
 Future<void> mostrarDetalle(
   WidgetTester tester,
-  DetalleServiceFalso servicio, {
+  NegociosService servicio, {
   bool acepta = true,
   String negocioId = 'abc123',
   String servicioId = 's2',
@@ -135,16 +139,26 @@ void main() {
         expect(find.textContaining('privado'), findsNothing);
       });
     }
-    testWidgets('ids inválidos del detalle no consultan', (tester) async {
+    testWidgets('ids inválidos muestran el servicio no disponible', (
+      tester,
+    ) async {
       for (final par in [('a/b', 's2'), ('abc123', '')]) {
-        final servicio = DetalleServiceFalso();
+        var peticiones = 0;
+        final servicio = NegociosService(
+          api: ApiClient(
+            client: MockClient((_) async {
+              peticiones++;
+              return http.Response('{}', 500);
+            }),
+          ),
+        );
         await mostrarDetalle(
           tester,
           servicio,
           negocioId: par.$1,
           servicioId: par.$2,
         );
-        expect(servicio.consultasDetalle, 0);
+        expect(peticiones, 0);
         expect(
           find.text(MensajesNegocios.servicioNoDisponible),
           findsOneWidget,

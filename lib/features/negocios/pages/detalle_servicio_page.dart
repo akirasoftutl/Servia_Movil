@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/network/api_exception.dart';
 import '../data/negocios_service.dart';
 import '../data/servicio.dart';
 import '../formatos.dart';
@@ -44,13 +43,6 @@ class _DetalleServicioPageState extends State<DetalleServicioPage> {
       _estado = _EstadoDetalle.cargando;
       _error = null;
     });
-    if (!esIdValido(widget.negocioId) || !esIdValido(widget.servicioId)) {
-      setState(() {
-        _error = const ApiException(404, MensajesNegocios.servicioNoDisponible);
-        _estado = _EstadoDetalle.error;
-      });
-      return;
-    }
     try {
       final servicio = await _service.obtenerServicio(
         widget.negocioId,
