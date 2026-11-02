@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:servia/features/negocios/data/categoria.dart';
 import 'package:servia/features/negocios/data/negocio.dart';
+import 'package:servia/features/negocios/data/negocio_resumen.dart';
 import 'package:servia/features/negocios/data/negocios_service.dart';
 
 import 'datos_prueba.dart';
@@ -45,3 +46,28 @@ class NegociosServiceFalso extends NegociosService {
           ];
   }
 }
+
+class ListaServiceFalso extends NegociosServiceFalso {
+  final llamadas = <String?>[];
+  late Future<PaginaNegocios> Function(String? cursor) responder;
+
+  ListaServiceFalso() {
+    responder = (_) async => const PaginaNegocios(items: [], siguiente: null);
+  }
+
+  @override
+  Future<PaginaNegocios> listarNegocios({String? cursor}) {
+    llamadas.add(cursor);
+    return responder(cursor);
+  }
+}
+
+NegocioResumen resumen(String id, {bool acepta = true}) => NegocioResumen(
+  id: id,
+  nombre: 'Negocio $id',
+  categoriaId: 'cabello',
+  aceptaReservas: acepta,
+);
+
+PaginaNegocios pagina(List<NegocioResumen> items, [String? siguiente]) =>
+    PaginaNegocios(items: items, siguiente: siguiente);
