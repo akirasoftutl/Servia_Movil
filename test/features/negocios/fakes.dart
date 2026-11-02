@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:servia/features/negocios/data/categoria.dart';
 import 'package:servia/features/negocios/data/negocio.dart';
 import 'package:servia/features/negocios/data/negocios_service.dart';
+import 'package:servia/features/negocios/data/servicio.dart';
 
 import 'datos_prueba.dart';
 
@@ -20,6 +21,9 @@ class NegociosServiceFalso extends NegociosService {
     this.aceptaReservas = true,
     this.catalogoVacio = false,
   });
+
+  @override
+  Future<List<Servicio>> obtenerServicios(String negocioId) async => [];
 
   @override
   Future<Negocio> obtenerNegocio(String id) async {

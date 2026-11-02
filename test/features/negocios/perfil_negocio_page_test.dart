@@ -61,7 +61,7 @@ void main() {
       expect(posiciones, orderedEquals([...posiciones]..sort()));
       expect(find.text('09:00 – 18:00'), findsNWidgets(6));
       expect(find.text('Descanso'), findsOneWidget);
-      expect(find.text('Servicios'), findsNothing);
+      expect(find.text('Servicios'), findsOneWidget);
     });
     for (final acepta in [true, false]) {
       testWidgets('respeta aceptaReservas $acepta sin recalcular horario', (
