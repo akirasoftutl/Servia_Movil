@@ -316,6 +316,7 @@ void main() {
               negocioId: 'abc123',
               servicioId: 's2',
               aceptaReservas: true,
+              negocioNombre: 'Negocio de prueba',
               negociosService: DetalleServiceFalso(),
               disponibilidadService: servicio,
               onSeleccionDisponibilidad: (s) => elegida = s,

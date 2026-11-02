@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import '../../negocios/data/negocios_service.dart';
 import '../../negocios/mensajes.dart';
 import '../../negocios/pages/lista_negocios_page.dart';
+import '../../../core/network/api_exception.dart';
+import '../../reservas/mensajes.dart';
 import '../data/auth_service.dart';
+import '../data/perfil_service.dart';
 import '../data/registro_cliente_service.dart';
 import '../mensajes.dart';
 import 'register_page.dart';
@@ -15,6 +18,8 @@ class LoginPage extends StatefulWidget {
     this.authService,
     this.registroClienteService,
     this.negociosService,
+    this.regresarAlIniciar = false,
+    this.perfilService,
   });
 
   /// Mensaje que llega desde AuthGate (p. ej. cuenta de negocio o desactivada).
@@ -23,12 +28,18 @@ class LoginPage extends StatefulWidget {
   final RegistroClienteService? registroClienteService;
   final NegociosService? negociosService;
 
+  /// Se abrió desde una reserva sin sesión: al iniciar sesión (o registrarse)
+  /// como cliente se cierra con `true` para regresar al punto de la reserva.
+  final bool regresarAlIniciar;
+  final PerfilService? perfilService;
+
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
   late final AuthService _authService;
+  late final PerfilService _perfilService;
   final _correoController = TextEditingController();
   final _contrasenaController = TextEditingController();
 
@@ -40,6 +51,7 @@ class _LoginPageState extends State<LoginPage> {
   void initState() {
     super.initState();
     _authService = widget.authService ?? AuthService();
+    _perfilService = widget.perfilService ?? PerfilService();
   }
 
   @override
@@ -68,6 +80,10 @@ class _LoginPageState extends State<LoginPage> {
     try {
       await _authService.iniciarSesion(correo: correo, contrasena: contrasena);
       if (!mounted) return;
+      if (widget.regresarAlIniciar) {
+        await _regresarALaReserva();
+        return;
+      }
       setState(() => _cargando = false);
     } catch (error) {
       if (!mounted) return;
@@ -76,6 +92,57 @@ class _LoginPageState extends State<LoginPage> {
         _error = MensajesAuth.mensajeDeInicioSesion(error);
       });
     }
+  }
+
+  /// Solo cuentas de cliente activas regresan a la reserva (RN-09); las demás
+  /// se salen igual que en AuthGate.
+  Future<void> _regresarALaReserva() async {
+    setState(() => _cargando = true);
+    String? rechazo;
+    try {
+      final token = await _authService.usuarioActual?.getIdToken();
+      if (token == null) throw const ApiException(401, 'Sin sesión.');
+      final perfil = await _perfilService.obtenerYo(token);
+      if (!mounted) return;
+      if (perfil.esCliente) {
+        setState(() => _cargando = false);
+        Navigator.pop(context, true);
+        return;
+      }
+      rechazo = MensajesAuth.soloClientes;
+    } on ApiException catch (error) {
+      rechazo = error.statusCode == 403
+          ? MensajesAuth.cuentaDesactivada
+          : MensajesAuth.errorSesion;
+    } catch (_) {
+      // Error de red: la sesión sigue abierta; basta volver a intentarlo.
+      if (!mounted) return;
+      setState(() {
+        _cargando = false;
+        _error = MensajesAuth.errorRed;
+      });
+      return;
+    }
+    await _authService.cerrarSesion();
+    if (!mounted) return;
+    setState(() {
+      _cargando = false;
+      _error = rechazo;
+    });
+  }
+
+  Future<void> _abrirRegistro() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RegisterPage(
+          authService: _authService,
+          registroClienteService: widget.registroClienteService,
+        ),
+      ),
+    );
+    if (!mounted || !widget.regresarAlIniciar) return;
+    if (_authService.usuarioActual != null) await _regresarALaReserva();
   }
 
   String? get _mensajeVisible {
@@ -175,6 +242,18 @@ class _LoginPageState extends State<LoginPage> {
                         ],
                       ),
                     ),
+                    if (widget.regresarAlIniciar) ...[
+                      Text(
+                        MensajesReservas.iniciarSesionParaReservar,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      TextButton(
+                        onPressed:
+                            _cargando ? null : () => Navigator.pop(context, false),
+                        child: const Text('Cancelar'),
+                      ),
+                    ] else
                     TextButton(
                       onPressed: () => Navigator.push(context, MaterialPageRoute<void>(
                         builder: (_) => ListaNegociosPage(negociosService: widget.negociosService),
@@ -292,20 +371,7 @@ class _LoginPageState extends State<LoginPage> {
                           style: TextStyle(color: Colors.grey, fontSize: 13),
                         ),
                         TextButton(
-                          onPressed: _cargando
-                              ? null
-                              : () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => RegisterPage(
-                                        authService: _authService,
-                                        registroClienteService:
-                                            widget.registroClienteService,
-                                      ),
-                                    ),
-                                  );
-                                },
+                          onPressed: _cargando ? null : _abrirRegistro,
                           child: const Text(
                             "Regístrate",
                             style: TextStyle(

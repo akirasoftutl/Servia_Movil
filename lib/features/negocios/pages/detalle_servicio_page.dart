@@ -7,6 +7,9 @@ import 'disponibilidad_page.dart';
 import '../data/servicio.dart';
 import '../formatos.dart';
 import '../mensajes.dart';
+import '../../reservas/flujo_reserva.dart';
+import '../../reservas/mensajes.dart';
+import '../../reservas/resultado_reserva.dart';
 import 'estados_consulta.dart';
 
 enum _EstadoDetalle { cargando, error, listo }
@@ -17,17 +20,21 @@ class DetalleServicioPage extends StatefulWidget {
     required this.negocioId,
     required this.servicioId,
     required this.aceptaReservas,
+    required this.negocioNombre,
     this.negociosService,
     this.disponibilidadService,
     this.onSeleccionDisponibilidad,
+    this.flujoReserva = const FlujoReserva(),
   });
   final String negocioId;
   final String servicioId;
   final bool aceptaReservas;
+  final String negocioNombre;
   final NegociosService? negociosService;
   final DisponibilidadService? disponibilidadService;
-  // Punto de enganche para MVP-18 / Movil#26; no crea reservas.
+  // Sustituye el flujo de reserva (MVP-18); sin él se abre el resumen.
   final ValueChanged<SeleccionDisponibilidad>? onSeleccionDisponibilidad;
+  final FlujoReserva flujoReserva;
 
   @override
   State<DetalleServicioPage> createState() => _DetalleServicioPageState();
@@ -70,24 +77,37 @@ class _DetalleServicioPageState extends State<DetalleServicioPage> {
     }
   }
 
-  Future<void> _abrirDisponibilidad() async {
-    final seleccion = await Navigator.push<SeleccionDisponibilidad>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => DisponibilidadPage(
-          negocioId: widget.negocioId,
-          servicioId: widget.servicioId,
-          service: widget.disponibilidadService,
+  Future<SeleccionDisponibilidad?> _elegirHorario({String? aviso}) =>
+      Navigator.push<SeleccionDisponibilidad>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DisponibilidadPage(
+            negocioId: widget.negocioId,
+            servicioId: widget.servicioId,
+            service: widget.disponibilidadService,
+            aviso: aviso,
+          ),
         ),
-      ),
-    );
-    if (!mounted || seleccion == null) return;
-    if (widget.onSeleccionDisponibilidad != null) {
-      widget.onSeleccionDisponibilidad!(seleccion);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(MensajesNegocios.reservaProxima)),
       );
+
+  // Elegir horario y reservar; si el horario se ocupó (409) vuelve a elegir.
+  Future<void> _abrirDisponibilidad() async {
+    String? aviso;
+    while (true) {
+      final seleccion = await _elegirHorario(aviso: aviso);
+      if (!mounted || seleccion == null) return;
+      if (widget.onSeleccionDisponibilidad != null) {
+        widget.onSeleccionDisponibilidad!(seleccion);
+        return;
+      }
+      final resultado = await widget.flujoReserva.iniciar(
+        context,
+        negocioNombre: widget.negocioNombre,
+        servicio: _servicio!,
+        seleccion: seleccion,
+      );
+      if (!mounted || resultado != ResultadoReserva.horarioOcupado) return;
+      aviso = MensajesReservas.horarioOcupado;
     }
   }
 

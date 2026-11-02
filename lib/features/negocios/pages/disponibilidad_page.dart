@@ -14,11 +14,15 @@ class DisponibilidadPage extends StatefulWidget {
     required this.servicioId,
     this.service,
     this.ahora = DateTime.now,
+    this.aviso,
   });
   final String negocioId;
   final String servicioId;
   final DisponibilidadService? service;
   final DateTime Function() ahora;
+
+  /// Mensaje al volver a elegir horario (por ejemplo, el horario se ocupó).
+  final String? aviso;
 
   @override
   State<DisponibilidadPage> createState() => _DisponibilidadPageState();
@@ -156,6 +160,7 @@ class _DisponibilidadPageState extends State<DisponibilidadPage>
     final horas = _horasVigentes;
     return Column(
       children: [
+        if (widget.aviso != null) Text(widget.aviso!),
         Text('Elige una fecha', style: Theme.of(context).textTheme.titleLarge),
         const Text('Horarios de America/Mexico_City'),
         CalendarDatePicker(

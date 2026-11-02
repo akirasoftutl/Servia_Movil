@@ -127,6 +127,7 @@ class _ContenidoPerfil extends StatelessWidget {
         const SizedBox(height: 24),
         SeccionServicios(
           negocioId: negocio.id,
+          negocioNombre: negocio.nombre,
           aceptaReservas: negocio.aceptaReservas,
           service: service,
         ),

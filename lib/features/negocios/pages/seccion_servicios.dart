@@ -13,10 +13,12 @@ class SeccionServicios extends StatefulWidget {
   const SeccionServicios({
     super.key,
     required this.negocioId,
+    required this.negocioNombre,
     required this.aceptaReservas,
     required this.service,
   });
   final String negocioId;
+  final String negocioNombre;
   final bool aceptaReservas;
   final NegociosService service;
 
@@ -86,6 +88,7 @@ class _SeccionServiciosState extends State<SeccionServicios> {
                       negocioId: widget.negocioId,
                       servicioId: servicio.id,
                       aceptaReservas: widget.aceptaReservas,
+                      negocioNombre: widget.negocioNombre,
                       negociosService: widget.service,
                     ),
                   ),
