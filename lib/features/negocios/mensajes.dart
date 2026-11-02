@@ -15,6 +15,13 @@ class MensajesNegocios {
   static const aceptaReservas = 'Acepta reservas';
   static const noAceptaReservas = 'No acepta reservas por ahora';
   static const tituloPerfil = 'Perfil del negocio';
+  static const servicios = 'Servicios';
+  static const sinServicios =
+      'Este negocio aún no tiene servicios disponibles.';
+  static const servicioNoDisponible = 'Este servicio ya no está disponible.';
+  static const reservar = 'Reservar';
+  static const reservaProxima = 'La reserva estará disponible muy pronto.';
+  static const detalleServicio = 'Detalle del servicio';
   static const horario = 'Horario de atención';
 
   static String mensajeDeError(Object error) {
