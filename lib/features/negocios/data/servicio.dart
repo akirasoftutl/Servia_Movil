@@ -15,13 +15,9 @@ class Servicio {
     required this.duracionMin,
   });
 
-  factory Servicio.fromJson(
-    Map<String, dynamic> json, {
-    bool requiereDescripcion = false,
-  }) {
+  factory Servicio.fromJson(Map<String, dynamic> json) {
     final precio = json['precio'];
     if (precio is! num) throw const FormatException('Precio inválido.');
-    if (requiereDescripcion) leerTexto(json, 'descripcion');
     return Servicio(
       id: leerTexto(json, 'id'),
       nombre: leerTexto(json, 'nombre'),

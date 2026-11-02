@@ -35,7 +35,7 @@ void main() {
         Servicio.fromJson({
           ...servicioJson(),
           'descripcion': 'Corte con lavado',
-        }, requiereDescripcion: true).descripcion,
+        }).descripcion,
         'Corte con lavado',
       );
       expect(
@@ -55,10 +55,6 @@ void main() {
           throwsFormatException,
         );
       }
-      expect(
-        () => Servicio.fromJson(servicioJson(), requiereDescripcion: true),
-        throwsFormatException,
-      );
       expect(
         () => Servicio.fromJson({...servicioJson(), 'descripcion': 23}),
         throwsFormatException,
@@ -108,6 +104,23 @@ void main() {
         'Corte con lavado',
       );
     });
+    test(
+      'rechaza el detalle sin descripción o con descripción vacía',
+      () async {
+        for (final descripcion in [null, '']) {
+          final servicio = crearServicio(
+            (_) async => http.Response(
+              jsonEncode({...servicioJson(), 'descripcion': descripcion}),
+              200,
+            ),
+          );
+          await expectLater(
+            servicio.obtenerServicio('abc123', 's2'),
+            throwsFormatException,
+          );
+        }
+      },
+    );
     test('lista y detalle conservan 404 y 500 sin mostrar el cuerpo', () async {
       for (final estado in [404, 500]) {
         final servicio = crearServicio(

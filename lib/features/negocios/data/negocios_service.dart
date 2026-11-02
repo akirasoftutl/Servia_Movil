@@ -52,7 +52,11 @@ class NegociosService {
     final datos = await _consultar(
       '/negocios/${Uri.encodeComponent(negocioId)}/servicios/${Uri.encodeComponent(servicioId)}',
     );
-    return Servicio.fromJson(leerObjeto(datos), requiereDescripcion: true);
+    final servicio = Servicio.fromJson(leerObjeto(datos));
+    if (servicio.descripcion == null) {
+      throw const FormatException('Falta la descripción del servicio.');
+    }
+    return servicio;
   }
 
   Future<Object?> _consultar(String ruta) async {
