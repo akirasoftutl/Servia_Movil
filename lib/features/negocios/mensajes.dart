@@ -6,6 +6,7 @@ class MensajesNegocios {
   static const errorRed =
       'No se pudo conectar. Revisa tu conexión e inténtalo de nuevo.';
   static const noDisponible = 'Este negocio no está disponible.';
+  static const paginaNoExiste = 'Esta página no existe.';
   static const errorApi = 'La API no está disponible. Intenta más tarde.';
   static const errorCarga =
       'Ocurrió un error al cargar el negocio. Inténtalo de nuevo.';

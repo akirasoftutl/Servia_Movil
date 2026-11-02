@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'data/negocios_service.dart';
+import 'mensajes.dart';
 import 'pages/perfil_negocio_page.dart';
 
 Route<dynamic>? generarRutaNegocios(RouteSettings ajustes) {
@@ -20,6 +21,6 @@ Route<dynamic> generarRutaNoDisponible(RouteSettings ajustes) =>
       settings: ajustes,
       builder: (_) => Scaffold(
         appBar: AppBar(),
-        body: const Center(child: Text('Esta página no existe.')),
+        body: const Center(child: Text(MensajesNegocios.paginaNoExiste)),
       ),
     );

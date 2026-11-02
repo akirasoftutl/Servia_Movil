@@ -60,7 +60,7 @@ void main() {
     );
     await tester.tap(find.text('Abrir'));
     await tester.pumpAndSettle();
-    expect(find.text('Esta página no existe.'), findsOneWidget);
+    expect(find.text(MensajesNegocios.paginaNoExiste), findsOneWidget);
     expect(find.text(MensajesNegocios.noDisponible), findsNothing);
     expect(find.text(MensajesNegocios.tituloPerfil), findsNothing);
     expect(find.text('Reintentar'), findsNothing);
