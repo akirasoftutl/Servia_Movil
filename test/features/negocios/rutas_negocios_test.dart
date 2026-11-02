@@ -43,14 +43,14 @@ void main() {
     expect(app.onGenerateRoute, generarRutaNegocios);
     expect(app.onUnknownRoute, generarRutaNoDisponible);
   });
-  testWidgets('ruta desconocida muestra no disponible y permite volver', (
+  testWidgets('ruta desconocida muestra un mensaje genérico y permite volver', (
     tester,
   ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Builder(
           builder: (contexto) => TextButton(
-            onPressed: () => Navigator.pushNamed(contexto, '/negocios/a/b'),
+            onPressed: () => Navigator.pushNamed(contexto, '/otra'),
             child: const Text('Abrir'),
           ),
         ),
@@ -60,7 +60,9 @@ void main() {
     );
     await tester.tap(find.text('Abrir'));
     await tester.pumpAndSettle();
-    expect(find.text(MensajesNegocios.noDisponible), findsOneWidget);
+    expect(find.text('Esta página no existe.'), findsOneWidget);
+    expect(find.text(MensajesNegocios.noDisponible), findsNothing);
+    expect(find.text(MensajesNegocios.tituloPerfil), findsNothing);
     expect(find.text('Reintentar'), findsNothing);
     await tester.pageBack();
     await tester.pumpAndSettle();
