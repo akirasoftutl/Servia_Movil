@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
+
 import '../../core/network/api_exception.dart';
 
 class MensajesAuth {
@@ -37,6 +40,7 @@ class MensajesAuth {
   }
 
   static String mensajeDeRegistro(Object error) {
+    if (error is TimeoutException) return errorRed;
     if (error is ApiException) {
       if (error.statusCode == 409) {
         return 'Ese correo ya tiene una cuenta';
