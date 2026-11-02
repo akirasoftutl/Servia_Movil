@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'core/firebase/firebase_options.dart';
 import 'features/auth/pages/auth_gate.dart';
+import 'features/negocios/rutas_negocios.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,6 +26,8 @@ class ServiaApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const AuthGate(),
+      onGenerateRoute: generarRutaNegocios,
+      onUnknownRoute: generarRutaNoDisponible,
     );
   }
 }
