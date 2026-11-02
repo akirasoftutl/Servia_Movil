@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
 
-import '../../auth/data/perfil.dart';
 import '../../negocios/data/negocios_service.dart';
 import '../../negocios/pages/lista_negocios_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({
     super.key,
-    required this.perfil,
     required this.onCerrarSesion,
     this.negociosService,
   });
 
-  final Perfil perfil;
   final NegociosService? negociosService;
   final VoidCallback onCerrarSesion;
 

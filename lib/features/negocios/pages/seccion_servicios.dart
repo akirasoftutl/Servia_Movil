@@ -4,6 +4,7 @@ import '../data/negocios_service.dart';
 import '../data/servicio.dart';
 import '../formatos.dart';
 import '../mensajes.dart';
+import 'detalle_servicio_page.dart';
 import 'estados_consulta.dart';
 
 enum _EstadoServicios { cargando, error, vacio, listo }
@@ -76,7 +77,20 @@ class _SeccionServiciosState extends State<SeccionServicios> {
         contenido = Column(
           children: [
             for (final servicio in _servicios!)
-              _FilaServicio(servicio: servicio),
+              _FilaServicio(
+                servicio: servicio,
+                onAbrir: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => DetalleServicioPage(
+                      negocioId: widget.negocioId,
+                      servicioId: servicio.id,
+                      aceptaReservas: widget.aceptaReservas,
+                      negociosService: widget.service,
+                    ),
+                  ),
+                ),
+              ),
           ],
         );
     }
@@ -94,12 +108,14 @@ class _SeccionServiciosState extends State<SeccionServicios> {
 }
 
 class _FilaServicio extends StatelessWidget {
-  const _FilaServicio({required this.servicio});
+  const _FilaServicio({required this.servicio, required this.onAbrir});
   final Servicio servicio;
+  final VoidCallback onAbrir;
 
   @override
   Widget build(BuildContext context) => ListTile(
     contentPadding: EdgeInsets.zero,
+    onTap: onAbrir,
     title: Text(servicio.nombre),
     subtitle: Text(formatearDuracion(servicio.duracionMin)),
     trailing: Text(formatearPrecio(servicio.precio)),

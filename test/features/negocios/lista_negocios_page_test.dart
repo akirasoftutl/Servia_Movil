@@ -111,7 +111,8 @@ void main() {
     expect(find.text('Negocio a'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
     final vacio = ListaServiceFalso()
-      ..responder = (_) async => pagina([], 'otra');
+      ..responder = (cursor) async =>
+          pagina([], '${cursor == null ? 1 : int.parse(cursor) + 1}');
     await abrir(tester, vacio);
     expect(vacio.llamadas.length, 5);
     expect(find.text(MensajesNegocios.listaVacia), findsNothing);

@@ -154,7 +154,9 @@ class _ListaNegociosState extends State<ListaNegocios> {
       _cargandoPagina = true;
       _requiereContinuar = false;
       _error = null;
-      if (!siguientePagina) _estado = _EstadoLista.cargando;
+      if (!siguientePagina || _items.isEmpty) {
+        _estado = _EstadoLista.cargando;
+      }
     });
   }
 
@@ -171,6 +173,9 @@ class _ListaNegociosState extends State<ListaNegocios> {
         categoriaId: _categoriaId,
       );
       if (!mounted || version != _version) return null;
+      if (pagina.siguiente != null && pagina.siguiente == cursor) {
+        throw const FormatException('La paginación no avanzó.');
+      }
       if (pagina.items.isNotEmpty || pagina.siguiente == null) return pagina;
       cursor = pagina.siguiente;
       vacias++;
@@ -198,7 +203,9 @@ class _ListaNegociosState extends State<ListaNegocios> {
     setState(() {
       _error = error;
       _cargandoPagina = false;
-      if (!siguientePagina) _estado = _EstadoLista.error;
+      if (!siguientePagina || _items.isEmpty) {
+        _estado = _EstadoLista.error;
+      }
     });
   }
 
