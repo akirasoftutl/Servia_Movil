@@ -12,7 +12,6 @@ void main() {
       expect(negocio.nombre, 'Salón Aurora');
       expect(negocio.descripcion, 'Cuidado personal');
       expect(negocio.categoriaId, 'cabello');
-      expect(negocio.categoria, 'Categoría de API');
       expect(negocio.direccion, 'Calle Luna 12');
       expect(negocio.telefono, '4771234567');
       expect(negocio.correoContacto, 'aurora@example.test');
@@ -20,6 +19,10 @@ void main() {
       expect(negocio.horario.length, 7);
       expect(negocio.horario['lunes']!.abre, '09:00');
       expect(negocio.horario['domingo'], isNull);
+    });
+    test('carga sin el alias categoria y conserva categoriaId', () {
+      final json = negocioJson()..remove('categoria');
+      expect(Negocio.fromJson(json).categoriaId, 'cabello');
     });
     test('omite opcionales ausentes o vacíos y teléfono vacío', () {
       for (final vacios in [false, true]) {
@@ -51,7 +54,6 @@ void main() {
         'id',
         'nombre',
         'categoriaId',
-        'categoria',
         'telefono',
         'aceptaReservas',
         'horario',

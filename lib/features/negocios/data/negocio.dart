@@ -32,7 +32,6 @@ class Negocio {
   final String nombre;
   final String? descripcion;
   final String categoriaId;
-  final String categoria;
   final String? direccion;
   final String? telefono;
   final String? correoContacto;
@@ -44,7 +43,6 @@ class Negocio {
     required this.nombre,
     this.descripcion,
     required this.categoriaId,
-    required this.categoria,
     this.direccion,
     this.telefono,
     this.correoContacto,
@@ -71,7 +69,6 @@ class Negocio {
       nombre: leerTexto(json, 'nombre'),
       descripcion: leerTextoOpcional(json, 'descripcion'),
       categoriaId: leerTexto(json, 'categoriaId'),
-      categoria: leerTexto(json, 'categoria'),
       direccion: leerTextoOpcional(json, 'direccion'),
       telefono: telefono.isEmpty ? null : telefono,
       correoContacto: leerTextoOpcional(json, 'correoContacto'),

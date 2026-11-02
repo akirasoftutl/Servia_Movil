@@ -5,7 +5,6 @@ Map<String, dynamic> negocioJson({bool aceptaReservas = true}) => {
   'nombre': 'Salón Aurora',
   'descripcion': 'Cuidado personal',
   'categoriaId': 'cabello',
-  'categoria': 'Categoría de API',
   'direccion': 'Calle Luna 12',
   'telefono': '4771234567',
   'correoContacto': 'aurora@example.test',
