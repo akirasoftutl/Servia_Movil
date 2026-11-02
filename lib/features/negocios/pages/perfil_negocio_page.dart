@@ -5,7 +5,9 @@ import '../data/negocio.dart';
 import '../data/negocios_service.dart';
 import '../formatos.dart';
 import '../mensajes.dart';
-part 'estados_consulta.dart';
+import 'estados_consulta.dart';
+
+enum _EstadoPerfil { cargando, error, listo }
 
 class PerfilNegocioPage extends StatefulWidget {
   const PerfilNegocioPage({
@@ -26,7 +28,7 @@ class _PerfilNegocioPageState extends State<PerfilNegocioPage> {
   Negocio? _negocio;
   String? _categoria;
   Object? _error;
-  bool _cargando = true;
+  _EstadoPerfil _estado = _EstadoPerfil.cargando;
 
   @override
   void initState() {
@@ -37,12 +39,12 @@ class _PerfilNegocioPageState extends State<PerfilNegocioPage> {
 
   Future<void> _cargar() async {
     setState(() {
-      _cargando = true;
+      _estado = _EstadoPerfil.cargando;
       _error = null;
     });
     if (!esIdValido(widget.negocioId)) {
       setState(() {
-        _cargando = false;
+        _estado = _EstadoPerfil.error;
         _error = const ApiException(404, MensajesNegocios.noDisponible);
       });
       return;
@@ -53,14 +55,14 @@ class _PerfilNegocioPageState extends State<PerfilNegocioPage> {
       setState(() {
         _negocio = negocio;
         _categoria = negocio.categoriaId;
-        _cargando = false;
+        _estado = _EstadoPerfil.listo;
       });
       _cargarCategoria(negocio.categoriaId);
     } catch (error) {
       if (!mounted) return;
       setState(() {
         _error = error;
-        _cargando = false;
+        _estado = _EstadoPerfil.error;
       });
     }
   }
@@ -82,14 +84,29 @@ class _PerfilNegocioPageState extends State<PerfilNegocioPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text(MensajesNegocios.tituloPerfil)),
-    body: _cargando
-        ? const _PantallaCarga()
-        : _error != null
-        ? _PantallaErrorRed(error: _error!, onReintentar: _cargar)
-        : _ContenidoPerfil(negocio: _negocio!, categoria: _categoria!),
-  );
+  Widget build(BuildContext context) {
+    final Widget contenido;
+    switch (_estado) {
+      case _EstadoPerfil.cargando:
+        contenido = const CargaNegocio();
+      case _EstadoPerfil.error:
+        contenido = ErrorNegocio(
+          mensaje: MensajesNegocios.mensajeDeError(_error!),
+          onReintentar: MensajesNegocios.puedeReintentar(_error!)
+              ? _cargar
+              : null,
+        );
+      case _EstadoPerfil.listo:
+        contenido = _ContenidoPerfil(
+          negocio: _negocio!,
+          categoria: _categoria!,
+        );
+    }
+    return Scaffold(
+      appBar: AppBar(title: const Text(MensajesNegocios.tituloPerfil)),
+      body: contenido,
+    );
+  }
 }
 
 class _ContenidoPerfil extends StatelessWidget {

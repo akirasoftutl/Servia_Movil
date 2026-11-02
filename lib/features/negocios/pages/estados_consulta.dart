@@ -1,18 +1,20 @@
-part of 'perfil_negocio_page.dart';
+import 'package:flutter/material.dart';
+
+import '../mensajes.dart';
 
 // Se comparte solo dentro de negocios; reproduce los estados de AuthGate.
-class _PantallaCarga extends StatelessWidget {
-  const _PantallaCarga();
+class CargaNegocio extends StatelessWidget {
+  const CargaNegocio({super.key});
 
   @override
   Widget build(BuildContext context) =>
       const Center(child: CircularProgressIndicator());
 }
 
-class _PantallaErrorRed extends StatelessWidget {
-  const _PantallaErrorRed({required this.error, this.onReintentar});
+class ErrorNegocio extends StatelessWidget {
+  const ErrorNegocio({super.key, required this.mensaje, this.onReintentar});
 
-  final Object error;
+  final String mensaje;
   final VoidCallback? onReintentar;
 
   @override
@@ -28,12 +30,8 @@ class _PantallaErrorRed extends StatelessWidget {
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           const SizedBox(height: 16),
-          Text(
-            MensajesNegocios.mensajeDeError(error),
-            textAlign: TextAlign.center,
-          ),
-          if (onReintentar != null &&
-              MensajesNegocios.puedeReintentar(error)) ...[
+          Text(mensaje, textAlign: TextAlign.center),
+          if (onReintentar != null) ...[
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: onReintentar,
