@@ -110,6 +110,9 @@ class _ListaNegociosState extends State<ListaNegocios> {
       setState(() => _cursorPendiente = cursor);
       final pagina = await _service.listarNegocios(cursor: cursor);
       if (!mounted) return null;
+      if (pagina.siguiente != null && pagina.siguiente == cursor) {
+        throw const FormatException('La paginación no avanzó.');
+      }
       if (pagina.items.isNotEmpty || pagina.siguiente == null) return pagina;
       cursor = pagina.siguiente;
       vacias++;
