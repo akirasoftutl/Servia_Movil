@@ -74,6 +74,32 @@ void main() {
     expect(find.text('Negocio ultimo'), findsOneWidget);
     expect(fake.llamadas, [null, 'dos']);
   });
+  testWidgets('completa páginas cortas sin desplazar ni duplicar peticiones', (
+    tester,
+  ) async {
+    final pendiente = Completer<PaginaNegocios>();
+    final fake = ListaServiceFalso()
+      ..responder = (cursor) async {
+        if (cursor == null) return pagina([resumen('a')], 'dos');
+        if (cursor == 'dos') return pendiente.future;
+        return pagina([resumen('fin')]);
+      };
+    await tester.pumpWidget(
+      MaterialApp(home: ListaNegociosPage(negociosService: fake)),
+    );
+    await tester.pump();
+    await tester.pump();
+    expect(fake.llamadas, [null, 'dos']);
+    expect(find.text('Negocio a'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    await tester.pump();
+    expect(fake.llamadas, [null, 'dos']);
+    pendiente.complete(pagina([resumen('b')], 'tres'));
+    await tester.pumpAndSettle();
+    expect(fake.llamadas, [null, 'dos', 'tres']);
+    expect(find.text('Negocio b'), findsOneWidget);
+    expect(find.text('Negocio fin'), findsOneWidget);
+  });
   testWidgets('salta páginas vacías y limita a cinco consecutivas', (
     tester,
   ) async {

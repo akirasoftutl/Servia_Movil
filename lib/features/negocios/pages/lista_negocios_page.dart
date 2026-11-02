@@ -100,6 +100,9 @@ class _ListaNegociosState extends State<ListaNegocios> {
           _cargandoPagina = false;
           _estado = _EstadoLista.lista;
         });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _scroll.hasClients) _alDesplazarse();
+        });
         return;
       }
     } catch (error) {
