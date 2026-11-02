@@ -19,10 +19,22 @@ class NegociosService {
 
   NegociosService({ApiClient? api}) : _api = api ?? ApiClient();
 
-  Future<PaginaNegocios> listarNegocios({String? cursor}) async {
+  Future<PaginaNegocios> listarNegocios({
+    String? cursor,
+    String? q,
+    String? categoriaId,
+  }) async {
+    final texto = q?.trim();
+    final categoria = categoriaId?.trim();
     final ruta = Uri(
       path: '/negocios',
-      queryParameters: {'limite': '20', 'cursor': ?cursor},
+      queryParameters: {
+        'limite': '20',
+        'cursor': ?cursor,
+        if (texto != null && texto.length >= 2)
+          'q': texto.length > 50 ? texto.substring(0, 50) : texto,
+        if (categoria != null && categoria.isNotEmpty) 'categoriaId': categoria,
+      },
     );
     final datos = await _consultar(ruta.toString());
     return PaginaNegocios.fromJson(leerObjeto(datos));

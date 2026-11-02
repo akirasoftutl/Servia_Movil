@@ -15,6 +15,12 @@ class MensajesNegocios {
   static const aceptaReservas = 'Acepta reservas';
   static const noAceptaReservas = 'No acepta reservas por ahora';
   static const tituloPerfil = 'Perfil del negocio';
+  static const buscar = 'Buscar negocios o servicios';
+  static const limpiar = 'Limpiar búsqueda';
+  static const todas = 'Todas';
+  static const sinResultados = 'No encontramos negocios con esa búsqueda';
+  static const busquedaInvalida =
+      'Revisa la búsqueda y la categoría e inténtalo de nuevo.';
   static const tituloLista = 'Negocios';
   static const cargarMas = 'Cargar más negocios';
   static const listaVacia = 'Todavía no hay negocios disponibles';
@@ -38,6 +44,12 @@ class MensajesNegocios {
     if (error is FormatException) return errorCarga;
     return errorRed;
   }
+
+  static bool puedeReintentarBusqueda(Object error) =>
+      error is! ApiException || error.statusCode != 400;
+
+  static String mensajeDeErrorBusqueda(Object error) =>
+      puedeReintentarBusqueda(error) ? mensajeDeError(error) : busquedaInvalida;
 
   static bool puedeReintentar(Object error) =>
       error is! ApiException || error.statusCode != 404;

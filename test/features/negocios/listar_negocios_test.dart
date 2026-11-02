@@ -66,6 +66,46 @@ void main() {
       );
     });
   }
+  test('codifica texto, categoría y cursor juntos sin token', () async {
+    final service = NegociosService(
+      api: ApiClient(
+        client: MockClient((r) async {
+          expect(r.url.queryParameters, {
+            'limite': '20',
+            'cursor': 'dos +',
+            'q': 'Café y uñas',
+            'categoriaId': 'uñas + barba',
+          });
+          expect(r.headers.containsKey('Authorization'), false);
+          return http.Response('{"items":[],"siguiente":null}', 200);
+        }),
+      ),
+    );
+    await service.listarNegocios(
+      cursor: 'dos +',
+      q: '  Café y uñas  ',
+      categoriaId: 'uñas + barba',
+    );
+  });
+  test('omite filtros vacíos o texto corto y limita a cincuenta', () async {
+    var consultas = 0;
+    final service = NegociosService(
+      api: ApiClient(
+        client: MockClient((r) async {
+          expect(r.url.queryParameters.containsKey('categoriaId'), false);
+          if (consultas++ < 2) {
+            expect(r.url.queryParameters.containsKey('q'), false);
+          } else {
+            expect(r.url.queryParameters['q'], 'a' * 50);
+          }
+          return http.Response('{"items":[],"siguiente":null}', 200);
+        }),
+      ),
+    );
+    await service.listarNegocios(q: ' ', categoriaId: '');
+    await service.listarNegocios(q: ' a ', categoriaId: ' ');
+    await service.listarNegocios(q: 'a' * 60);
+  });
   test('rechaza páginas e items mal formados', () {
     for (final datos in <Map<String, dynamic>>[
       {},

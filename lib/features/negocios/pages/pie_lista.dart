@@ -21,8 +21,10 @@ class PieLista extends StatelessWidget {
     }
     if (error != null) {
       return ErrorNegocio(
-        mensaje: MensajesNegocios.mensajeDeError(error!),
-        onReintentar: onReintentar,
+        mensaje: MensajesNegocios.mensajeDeErrorBusqueda(error!),
+        onReintentar: MensajesNegocios.puedeReintentarBusqueda(error!)
+            ? onReintentar
+            : null,
       );
     }
     return const SizedBox.shrink();

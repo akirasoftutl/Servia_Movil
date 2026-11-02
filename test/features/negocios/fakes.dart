@@ -53,6 +53,12 @@ class NegociosServiceFalso extends NegociosService {
 
 class ListaServiceFalso extends NegociosServiceFalso {
   final llamadas = <String?>[];
+  final filtros = <({String? q, String? categoriaId})>[];
+  List<Categoria>? categorias;
+
+  @override
+  Future<List<Categoria>> obtenerCategorias() async =>
+      categorias ?? await super.obtenerCategorias();
   late Future<PaginaNegocios> Function(String? cursor) responder;
 
   ListaServiceFalso() {
@@ -60,8 +66,13 @@ class ListaServiceFalso extends NegociosServiceFalso {
   }
 
   @override
-  Future<PaginaNegocios> listarNegocios({String? cursor}) {
+  Future<PaginaNegocios> listarNegocios({
+    String? cursor,
+    String? q,
+    String? categoriaId,
+  }) {
     llamadas.add(cursor);
+    filtros.add((q: q, categoriaId: categoriaId));
     return responder(cursor);
   }
 }
