@@ -32,7 +32,10 @@ class Negocio {
   final String nombre;
   final String? descripcion;
   final String categoriaId;
-  final String? direccion;
+
+  /// Texto armado por la API (`direccionTexto`). El objeto `direccion` no se
+  /// lee: la app solo muestra el texto.
+  final String? direccionTexto;
   final String? telefono;
   final String? correoContacto;
   final bool aceptaReservas;
@@ -43,7 +46,7 @@ class Negocio {
     required this.nombre,
     this.descripcion,
     required this.categoriaId,
-    this.direccion,
+    this.direccionTexto,
     this.telefono,
     this.correoContacto,
     required this.aceptaReservas,
@@ -69,7 +72,7 @@ class Negocio {
       nombre: leerTexto(json, 'nombre'),
       descripcion: leerTextoOpcional(json, 'descripcion'),
       categoriaId: leerTexto(json, 'categoriaId'),
-      direccion: leerTextoOpcional(json, 'direccion'),
+      direccionTexto: leerTextoOpcional(json, 'direccionTexto'),
       telefono: telefono.isEmpty ? null : telefono,
       correoContacto: leerTextoOpcional(json, 'correoContacto'),
       aceptaReservas: leerBooleano(json, 'aceptaReservas'),

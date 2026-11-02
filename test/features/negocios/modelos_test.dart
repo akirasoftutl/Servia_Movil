@@ -12,7 +12,10 @@ void main() {
       expect(negocio.nombre, 'Salón Aurora');
       expect(negocio.descripcion, 'Cuidado personal');
       expect(negocio.categoriaId, 'cabello');
-      expect(negocio.direccion, 'Calle Luna 12');
+      expect(
+        negocio.direccionTexto,
+        'Calle Luna 12, Col. Centro, 37000, León, Guanajuato',
+      );
       expect(negocio.telefono, '4771234567');
       expect(negocio.correoContacto, 'aurora@example.test');
       expect(negocio.aceptaReservas, isTrue);
@@ -27,7 +30,11 @@ void main() {
     test('omite opcionales ausentes o vacíos y teléfono vacío', () {
       for (final vacios in [false, true]) {
         final json = negocioJson()..['telefono'] = '';
-        for (final campo in ['descripcion', 'direccion', 'correoContacto']) {
+        for (final campo in [
+          'descripcion',
+          'direccionTexto',
+          'correoContacto',
+        ]) {
           if (vacios) {
             json[campo] = '';
           } else {
@@ -36,7 +43,7 @@ void main() {
         }
         final negocio = Negocio.fromJson(json);
         expect(negocio.descripcion, isNull);
-        expect(negocio.direccion, isNull);
+        expect(negocio.direccionTexto, isNull);
         expect(negocio.correoContacto, isNull);
         expect(negocio.telefono, isNull);
       }
@@ -44,7 +51,8 @@ void main() {
     test(
       'rechaza campos ausentes y tipos erróneos con excepción de formato',
       () {
-        for (final campo in negocioJson().keys) {
+        // `direccion` (objeto) no se lee: su tipo no afecta al negocio.
+        for (final campo in negocioJson().keys.where((c) => c != 'direccion')) {
           final json = negocioJson()..[campo] = 42;
           expect(
             () => Negocio.fromJson(json),

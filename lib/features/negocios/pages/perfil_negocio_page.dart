@@ -164,7 +164,7 @@ class _ContactoNegocio extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      if (negocio.direccion != null) Text(negocio.direccion!),
+      if (negocio.direccionTexto != null) Text(negocio.direccionTexto!),
       if (negocio.telefono != null) Text(negocio.telefono!),
       if (negocio.correoContacto != null) Text(negocio.correoContacto!),
     ],

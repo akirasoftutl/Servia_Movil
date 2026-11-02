@@ -46,7 +46,7 @@ void main() {
         'Salón Aurora',
         'Cuidado personal',
         'Cabello y barba',
-        'Calle Luna 12',
+        'Calle Luna 12, Col. Centro, 37000, León, Guanajuato',
         '4771234567',
         'aurora@example.test',
         'Horario de atención',
