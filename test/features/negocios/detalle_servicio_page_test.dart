@@ -60,8 +60,10 @@ void main() {
           expect(find.text('Reservar'), acepta ? findsOneWidget : findsNothing);
           if (acepta) {
             await tester.tap(find.text('Reservar'));
-            await tester.pump();
-            expect(find.text(MensajesNegocios.reservaProxima), findsOneWidget);
+            await tester.pumpAndSettle();
+            expect(find.text('Disponibilidad del servicio'), findsOneWidget);
+            await tester.tap(find.byType(BackButton));
+            await tester.pumpAndSettle();
             expect(servicio.consultasDetalle, 1);
           }
           await tester.pageBack();
