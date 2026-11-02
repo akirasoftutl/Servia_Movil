@@ -6,9 +6,13 @@ class ApiClient {
     defaultValue: 'http://192.168.1.7:3000',
   );
 
-  final http.Client _client;
+  static const Duration tiempoLimite = Duration(seconds: 15);
 
-  ApiClient({http.Client? client}) : _client = client ?? http.Client();
+  final http.Client _client;
+  final Duration limite;
+
+  ApiClient({http.Client? client, this.limite = tiempoLimite})
+    : _client = client ?? http.Client();
 
   Future<http.Response> get(String endpoint, {String? token}) {
     final url = Uri.parse('$baseUrl$endpoint');
@@ -16,7 +20,7 @@ class ApiClient {
       'Accept': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
     };
-    return _client.get(url, headers: headers);
+    return _client.get(url, headers: headers).timeout(limite);
   }
 
   Future<http.Response> post(
@@ -34,10 +38,8 @@ class ApiClient {
     if (headers != null) {
       requestHeaders.addAll(headers);
     }
-    return _client.post(
-      url,
-      headers: requestHeaders,
-      body: body,
-    );
+    return _client
+        .post(url, headers: requestHeaders, body: body)
+        .timeout(limite);
   }
 }
