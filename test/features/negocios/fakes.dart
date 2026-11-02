@@ -56,7 +56,11 @@ class ListaServiceFalso extends NegociosServiceFalso {
   }
 
   @override
-  Future<PaginaNegocios> listarNegocios({String? cursor}) {
+  Future<PaginaNegocios> listarNegocios({
+    String? cursor,
+    String? q,
+    String? categoriaId,
+  }) {
     llamadas.add(cursor);
     return responder(cursor);
   }
