@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../data/negocios_service.dart';
+import '../data/disponibilidad.dart';
+import '../data/disponibilidad_service.dart';
+import 'disponibilidad_page.dart';
 import '../data/servicio.dart';
 import '../formatos.dart';
 import '../mensajes.dart';
@@ -15,11 +18,16 @@ class DetalleServicioPage extends StatefulWidget {
     required this.servicioId,
     required this.aceptaReservas,
     this.negociosService,
+    this.disponibilidadService,
+    this.onSeleccionDisponibilidad,
   });
   final String negocioId;
   final String servicioId;
   final bool aceptaReservas;
   final NegociosService? negociosService;
+  final DisponibilidadService? disponibilidadService;
+  // Punto de enganche para MVP-18 / Movil#26; no crea reservas.
+  final ValueChanged<SeleccionDisponibilidad>? onSeleccionDisponibilidad;
 
   @override
   State<DetalleServicioPage> createState() => _DetalleServicioPageState();
@@ -62,6 +70,27 @@ class _DetalleServicioPageState extends State<DetalleServicioPage> {
     }
   }
 
+  Future<void> _abrirDisponibilidad() async {
+    final seleccion = await Navigator.push<SeleccionDisponibilidad>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DisponibilidadPage(
+          negocioId: widget.negocioId,
+          servicioId: widget.servicioId,
+          service: widget.disponibilidadService,
+        ),
+      ),
+    );
+    if (!mounted || seleccion == null) return;
+    if (widget.onSeleccionDisponibilidad != null) {
+      widget.onSeleccionDisponibilidad!(seleccion);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(MensajesNegocios.reservaProxima)),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final Widget contenido;
@@ -79,6 +108,7 @@ class _DetalleServicioPageState extends State<DetalleServicioPage> {
         contenido = _ContenidoServicio(
           servicio: _servicio!,
           aceptaReservas: widget.aceptaReservas,
+          onConsultar: _abrirDisponibilidad,
         );
     }
     return Scaffold(
@@ -92,7 +122,9 @@ class _ContenidoServicio extends StatelessWidget {
   const _ContenidoServicio({
     required this.servicio,
     required this.aceptaReservas,
+    required this.onConsultar,
   });
+  final VoidCallback onConsultar;
   final Servicio servicio;
   final bool aceptaReservas;
 
@@ -110,9 +142,7 @@ class _ContenidoServicio extends StatelessWidget {
         if (aceptaReservas) ...[
           const SizedBox(height: 24),
           ElevatedButton(
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text(MensajesNegocios.reservaProxima)),
-            ),
+            onPressed: onConsultar,
             child: const Text(MensajesNegocios.reservar),
           ),
         ],
