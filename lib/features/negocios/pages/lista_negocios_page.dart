@@ -98,7 +98,9 @@ class _ListaNegociosState extends State<ListaNegocios> {
       _cargandoPagina = true;
       _requiereContinuar = false;
       _error = null;
-      if (!siguientePagina) _estado = _EstadoLista.cargando;
+      if (!siguientePagina || _items.isEmpty) {
+        _estado = _EstadoLista.cargando;
+      }
     });
   }
 
@@ -135,7 +137,9 @@ class _ListaNegociosState extends State<ListaNegocios> {
     setState(() {
       _error = error;
       _cargandoPagina = false;
-      if (!siguientePagina) _estado = _EstadoLista.error;
+      if (!siguientePagina || _items.isEmpty) {
+        _estado = _EstadoLista.error;
+      }
     });
   }
 
