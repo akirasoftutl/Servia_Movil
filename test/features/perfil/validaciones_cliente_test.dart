@@ -13,10 +13,7 @@ void main() {
         ValidacionesCliente.telefono('47712345a7'),
         'El teléfono debe contener exactamente 10 dígitos numéricos.',
       );
-      expect(
-        ValidacionesCliente.telefono(' '),
-        'El teléfono es obligatorio.',
-      );
+      expect(ValidacionesCliente.telefono(' '), 'El teléfono es obligatorio.');
     });
 
     test('correo: obligatorio y con formato válido', () {
