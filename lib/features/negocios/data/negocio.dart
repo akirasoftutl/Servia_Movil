@@ -27,14 +27,22 @@ class HorarioDia {
   }
 }
 
+String? _leerDireccionTexto(Map<String, dynamic> json) {
+  for (final campo in ['direccionTexto', 'direccion']) {
+    final valor = json[campo];
+    if (valor is String && valor.isNotEmpty) return valor;
+  }
+  return null;
+}
+
 class Negocio {
   final String id;
   final String nombre;
   final String? descripcion;
   final String categoriaId;
 
-  /// Texto armado por la API (`direccionTexto`). El objeto `direccion` no se
-  /// lee: la app solo muestra el texto.
+  /// Texto armado por la API (`direccionTexto`). Si falta, cae a `direccion`
+  /// solo cuando es texto (API anterior); un objeto o null se ignora.
   final String? direccionTexto;
   final String? telefono;
   final String? correoContacto;
@@ -72,7 +80,7 @@ class Negocio {
       nombre: leerTexto(json, 'nombre'),
       descripcion: leerTextoOpcional(json, 'descripcion'),
       categoriaId: leerTexto(json, 'categoriaId'),
-      direccionTexto: leerTextoOpcional(json, 'direccionTexto'),
+      direccionTexto: _leerDireccionTexto(json),
       telefono: telefono.isEmpty ? null : telefono,
       correoContacto: leerTextoOpcional(json, 'correoContacto'),
       aceptaReservas: leerBooleano(json, 'aceptaReservas'),

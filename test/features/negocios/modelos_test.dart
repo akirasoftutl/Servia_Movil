@@ -84,8 +84,11 @@ void main() {
     test(
       'rechaza campos ausentes y tipos erróneos con excepción de formato',
       () {
-        // `direccion` (objeto) no se lee: su tipo no afecta al negocio.
-        for (final campo in negocioJson().keys.where((c) => c != 'direccion')) {
+        // La dirección no se valida: un tipo erróneo se ignora sin romper.
+        const direccion = ['direccion', 'direccionTexto'];
+        for (final campo in negocioJson().keys.where(
+          (c) => !direccion.contains(c),
+        )) {
           final json = negocioJson()..[campo] = 42;
           expect(
             () => Negocio.fromJson(json),
