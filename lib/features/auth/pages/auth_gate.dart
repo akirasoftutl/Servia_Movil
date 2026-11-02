@@ -8,16 +8,23 @@ import '../../home/pages/home_page.dart';
 import '../data/auth_service.dart';
 import '../data/perfil.dart';
 import '../data/perfil_service.dart';
+import '../data/registro_cliente_service.dart';
 import '../mensajes.dart';
 import 'login_page.dart';
 
 enum _EstadoSesion { verificando, sinSesion, conSesion, errorRed }
 
 class AuthGate extends StatefulWidget {
-  const AuthGate({super.key, this.authService, this.perfilService});
+  const AuthGate({
+    super.key,
+    this.authService,
+    this.perfilService,
+    this.registroClienteService,
+  });
 
   final AuthService? authService;
   final PerfilService? perfilService;
+  final RegistroClienteService? registroClienteService;
 
   @override
   State<AuthGate> createState() => _AuthGateState();
@@ -128,7 +135,11 @@ class _AuthGateState extends State<AuthGate> {
       case _EstadoSesion.verificando:
         return const _PantallaCarga();
       case _EstadoSesion.sinSesion:
-        return LoginPage(mensajeInicial: _mensaje, authService: _authService);
+        return LoginPage(
+          mensajeInicial: _mensaje,
+          authService: _authService,
+          registroClienteService: widget.registroClienteService,
+        );
       case _EstadoSesion.conSesion:
         return HomePage(
           perfil: _perfil!,

@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
 
 import '../data/auth_service.dart';
+import '../data/registro_cliente_service.dart';
 import '../mensajes.dart';
 import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key, this.mensajeInicial, this.authService});
+  const LoginPage({
+    super.key,
+    this.mensajeInicial,
+    this.authService,
+    this.registroClienteService,
+  });
 
   /// Mensaje que llega desde AuthGate (p. ej. cuenta de negocio o desactivada).
   final String? mensajeInicial;
   final AuthService? authService;
+  final RegistroClienteService? registroClienteService;
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -277,10 +284,14 @@ class _LoginPageState extends State<LoginPage> {
                           onPressed: _cargando
                               ? null
                               : () {
-                                  Navigator.pushReplacement(
+                                  Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => const RegisterPage(),
+                                      builder: (context) => RegisterPage(
+                                        authService: _authService,
+                                        registroClienteService:
+                                            widget.registroClienteService,
+                                      ),
                                     ),
                                   );
                                 },

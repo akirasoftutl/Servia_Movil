@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 
-import '../../home/pages/home_page.dart';
 import '../data/auth_service.dart';
-import '../data/perfil_service.dart';
 import '../data/registro_cliente_service.dart';
 import '../mensajes.dart';
-import 'login_page.dart';
 
 class RegisterPage extends StatefulWidget {
-  const RegisterPage({super.key, this.registroClienteService});
+  const RegisterPage({
+    super.key,
+    this.registroClienteService,
+    this.authService,
+  });
 
   final RegistroClienteService? registroClienteService;
+  final AuthService? authService;
 
   @override
   State<RegisterPage> createState() => _RegisterPageState();
@@ -21,7 +23,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
   late final RegistroClienteService _registroService;
   late final AuthService _authService;
-  late final PerfilService _perfilService;
 
   final _nombreController = TextEditingController();
   final _correoController = TextEditingController();
@@ -36,8 +37,7 @@ class _RegisterPageState extends State<RegisterPage> {
   void initState() {
     super.initState();
     _registroService = widget.registroClienteService ?? RegistroClienteService();
-    _authService = AuthService();
-    _perfilService = PerfilService();
+    _authService = widget.authService ?? AuthService();
   }
 
   @override
@@ -122,14 +122,6 @@ class _RegisterPageState extends State<RegisterPage> {
         contrasena: _contrasenaController.text,
       );
 
-      final user = _authService.usuarioActual;
-      if (user == null) {
-        throw Exception('No se pudo obtener la sesión tras el registro.');
-      }
-
-      final token = await user.getIdToken();
-      final perfil = await _perfilService.obtenerYo(token!);
-
       if (!mounted) return;
       setState(() => _cargando = false);
 
@@ -137,24 +129,7 @@ class _RegisterPageState extends State<RegisterPage> {
         const SnackBar(content: Text('Tu cuenta se creó correctamente')),
       );
 
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (context) => HomePage(
-            perfil: perfil,
-            onCerrarSesion: () async {
-              await _authService.cerrarSesion();
-              if (!context.mounted) return;
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => const LoginPage()),
-                (route) => false,
-              );
-            },
-          ),
-        ),
-        (route) => false,
-      );
+      Navigator.pop(context);
     } catch (error) {
       if (!mounted) return;
       setState(() => _cargando = false);
@@ -554,13 +529,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             onPressed: _cargando
                                 ? null
                                 : () {
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            const LoginPage(),
-                                      ),
-                                    );
+                                    Navigator.pop(context);
                                   },
                             child: const Text(
                               "Inicia sesión",
