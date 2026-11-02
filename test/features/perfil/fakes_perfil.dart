@@ -11,10 +11,16 @@ import 'package:servia/features/perfil/data/perfil_cliente_service.dart';
 class UsuarioPerfilFalso extends Fake implements User {
   UsuarioPerfilFalso(this.eventos);
   final List<String> eventos;
+  Object? errorAlRenovar;
+  void Function()? alRenovar;
 
   @override
   Future<String?> getIdToken([bool forceRefresh = false]) async {
     eventos.add(forceRefresh ? 'token-nuevo' : 'token');
+    if (forceRefresh) {
+      alRenovar?.call();
+      if (errorAlRenovar != null) throw errorAlRenovar!;
+    }
     return 'tok';
   }
 }
@@ -25,6 +31,7 @@ class SesionPerfilFalsa extends AuthService {
   }
   final List<String> eventos;
   User? usuario;
+  UsuarioPerfilFalso get usuarioFalso => usuario! as UsuarioPerfilFalso;
 
   final cambios = StreamController<User?>.broadcast();
 

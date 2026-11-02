@@ -141,6 +141,25 @@ void main() {
   });
 
   testWidgets(
+    'el refresco del token falla por red tras un PATCH 200: se ve el éxito y los datos nuevos',
+    (tester) async {
+      final api = PerfilClienteFalso(eventos);
+      sesion.usuarioFalso.errorAlRenovar = TimeoutException('red');
+      await abrir(tester, sesion, api);
+      await editar(tester);
+      await tester.enterText(campo('Correo'), 'nuevo@test.com');
+      await guardar(tester);
+
+      expect(eventos.last, 'token-nuevo');
+      expect(find.text('Tus datos se guardaron.'), findsOneWidget);
+      expect(find.text('nuevo@test.com'), findsOneWidget);
+      expect(find.text(MensajesAuth.errorRed), findsNothing);
+      expect(find.text('Editar'), findsOneWidget);
+      expect(find.byType(MiPerfilPage), findsOneWidget);
+    },
+  );
+
+  testWidgets(
     'validaciones del registro: errores junto a cada campo, sin llamar a la API',
     (tester) async {
       final api = PerfilClienteFalso(eventos);

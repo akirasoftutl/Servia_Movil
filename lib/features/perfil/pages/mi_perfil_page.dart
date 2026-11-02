@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/network/api_exception.dart';
@@ -137,10 +138,6 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
         telefono: cambiaTelefono ? telefono : null,
         correo: cambiaCorreo ? correo : null,
       );
-      if (cambiaCorreo) {
-        // El correo ya cambió en la API: se renueva el token para que la sesión siga.
-        await usuario.getIdToken(true);
-      }
       if (!mounted) return;
       setState(() {
         _perfil = nuevo;
@@ -149,6 +146,7 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
       });
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text(MensajesPerfil.guardado)));
+      if (cambiaCorreo) await _renovarToken(usuario);
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -159,6 +157,16 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
           _errorGeneral = _mensajeDe(error);
         }
       });
+    }
+  }
+
+  /// El correo ya cambió en la API: se renueva el token para que la sesión siga.
+  /// Un fallo aquí no deshace el guardado.
+  Future<void> _renovarToken(User usuario) async {
+    try {
+      await usuario.getIdToken(true);
+    } catch (_) {
+      // Fallo de red: los datos ya están guardados, no se cierra nada.
     }
   }
 
