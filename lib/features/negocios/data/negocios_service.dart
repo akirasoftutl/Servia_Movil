@@ -7,6 +7,7 @@ import '../mensajes.dart';
 import 'categoria.dart';
 import 'lectura_json.dart';
 import 'negocio.dart';
+import 'negocio_resumen.dart';
 import 'servicio.dart';
 
 const tiempoLimiteConsulta = Duration(seconds: 10);
@@ -17,6 +18,15 @@ class NegociosService {
   final ApiClient _api;
 
   NegociosService({ApiClient? api}) : _api = api ?? ApiClient();
+
+  Future<PaginaNegocios> listarNegocios({String? cursor}) async {
+    final ruta = Uri(
+      path: '/negocios',
+      queryParameters: {'limite': '20', 'cursor': ?cursor},
+    );
+    final datos = await _consultar(ruta.toString());
+    return PaginaNegocios.fromJson(leerObjeto(datos));
+  }
 
   Future<Negocio> obtenerNegocio(String id) async {
     if (!esIdValido(id)) {

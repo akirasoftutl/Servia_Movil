@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import '../../../core/network/api_exception.dart';
 import '../../home/pages/home_page.dart';
 import '../data/auth_service.dart';
-import '../data/perfil.dart';
 import '../data/perfil_service.dart';
 import '../mensajes.dart';
 import 'login_page.dart';
@@ -29,7 +28,6 @@ class _AuthGateState extends State<AuthGate> {
 
   StreamSubscription<User?>? _suscripcion;
   _EstadoSesion _estado = _EstadoSesion.verificando;
-  Perfil? _perfil;
   String? _mensaje;
 
   @override
@@ -51,7 +49,6 @@ class _AuthGateState extends State<AuthGate> {
       if (!mounted) return;
       setState(() {
         _estado = _EstadoSesion.sinSesion;
-        _perfil = null;
       });
       return;
     }
@@ -73,14 +70,12 @@ class _AuthGateState extends State<AuthGate> {
         if (!mounted) return;
         setState(() {
           _estado = _EstadoSesion.sinSesion;
-          _perfil = null;
         });
         return;
       }
 
       setState(() {
         _mensaje = null;
-        _perfil = perfil;
         _estado = _EstadoSesion.conSesion;
       });
     } on ApiException catch (error) {
@@ -91,7 +86,6 @@ class _AuthGateState extends State<AuthGate> {
         if (!mounted) return;
         setState(() {
           _estado = _EstadoSesion.sinSesion;
-          _perfil = null;
         });
         return;
       }
@@ -101,14 +95,12 @@ class _AuthGateState extends State<AuthGate> {
       if (!mounted) return;
       setState(() {
         _estado = _EstadoSesion.sinSesion;
-        _perfil = null;
       });
     } catch (_) {
       // Error de red: no se cierra la sesión, solo se ofrece reintentar.
       if (!mounted) return;
       setState(() {
         _estado = _EstadoSesion.errorRed;
-        _perfil = null;
       });
     }
   }
@@ -131,7 +123,6 @@ class _AuthGateState extends State<AuthGate> {
         return LoginPage(mensajeInicial: _mensaje, authService: _authService);
       case _EstadoSesion.conSesion:
         return HomePage(
-          perfil: _perfil!,
           onCerrarSesion: _cerrarSesion,
         );
       case _EstadoSesion.errorRed:

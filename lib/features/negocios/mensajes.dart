@@ -15,6 +15,10 @@ class MensajesNegocios {
   static const aceptaReservas = 'Acepta reservas';
   static const noAceptaReservas = 'No acepta reservas por ahora';
   static const tituloPerfil = 'Perfil del negocio';
+  static const tituloLista = 'Negocios';
+  static const cargarMas = 'Cargar más negocios';
+  static const listaVacia = 'Todavía no hay negocios disponibles';
+  static const verSinSesion = 'Ver negocios sin iniciar sesión';
   static const servicios = 'Servicios';
   static const sinServicios =
       'Este negocio aún no tiene servicios disponibles.';
