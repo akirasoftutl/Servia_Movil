@@ -45,6 +45,20 @@ class NegociosService {
     return datos.map((dato) => Servicio.fromJson(leerObjeto(dato))).toList();
   }
 
+  Future<Servicio> obtenerServicio(String negocioId, String servicioId) async {
+    if (!esIdValido(negocioId) || !esIdValido(servicioId)) {
+      throw const ApiException(404, MensajesNegocios.servicioNoDisponible);
+    }
+    final datos = await _consultar(
+      '/negocios/${Uri.encodeComponent(negocioId)}/servicios/${Uri.encodeComponent(servicioId)}',
+    );
+    final servicio = Servicio.fromJson(leerObjeto(datos));
+    if (servicio.descripcion == null) {
+      throw const FormatException('Falta la descripción del servicio.');
+    }
+    return servicio;
+  }
+
   Future<Object?> _consultar(String ruta) async {
     final respuesta = await _api.get(ruta).timeout(tiempoLimiteConsulta);
     if (respuesta.statusCode == 200) return jsonDecode(respuesta.body);

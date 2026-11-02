@@ -18,11 +18,17 @@ class MensajesNegocios {
   static const servicios = 'Servicios';
   static const sinServicios =
       'Este negocio aún no tiene servicios disponibles.';
+  static const servicioNoDisponible = 'Este servicio ya no está disponible.';
+  static const reservar = 'Reservar';
+  static const reservaProxima = 'La reserva estará disponible muy pronto.';
+  static const detalleServicio = 'Detalle del servicio';
   static const horario = 'Horario de atención';
 
-  static String mensajeDeError(Object error) {
+  static String mensajeDeError(Object error, {bool esServicio = false}) {
     if (error is ApiException) {
-      if (error.statusCode == 404) return noDisponible;
+      if (error.statusCode == 404) {
+        return esServicio ? servicioNoDisponible : noDisponible;
+      }
       if (error.statusCode >= 500) return errorApi;
     }
     if (error is FormatException) return errorCarga;
