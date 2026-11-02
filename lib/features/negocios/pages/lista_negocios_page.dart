@@ -75,18 +75,24 @@ class _ListaNegociosState extends State<ListaNegocios> {
   void _alEscribir(String _) {
     _espera?.cancel();
     // Invalida también durante la espera las respuestas de la consulta anterior.
-    _version++;
-    _siguiente = null;
+    setState(() {
+      _version++;
+      _siguiente = null;
+    });
     _espera = Timer(_esperaBusqueda, _reiniciar);
   }
 
   void _reiniciar() {
     _espera?.cancel();
-    _version++;
-    _consulta = _textoConsulta;
-    _siguiente = null;
-    _cargandoPagina = false;
-    _items.clear();
+    setState(() {
+      _version++;
+      _consulta = _textoConsulta;
+      _siguiente = null;
+      _cursorPendiente = null;
+      _error = null;
+      _cargandoPagina = false;
+      _items.clear();
+    });
     if (_scroll.hasClients) _scroll.jumpTo(0);
     _cargar();
   }
@@ -214,8 +220,10 @@ class _ListaNegociosState extends State<ListaNegocios> {
         return const CargaNegocio();
       case _EstadoLista.error:
         return ErrorNegocio(
-          mensaje: MensajesNegocios.mensajeDeError(_error!),
-          onReintentar: _cargar,
+          mensaje: MensajesNegocios.mensajeDeErrorBusqueda(_error!),
+          onReintentar: MensajesNegocios.puedeReintentarBusqueda(_error!)
+              ? _cargar
+              : null,
         );
       case _EstadoLista.lista:
         if (_items.isEmpty) {

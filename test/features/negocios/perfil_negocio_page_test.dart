@@ -155,6 +155,17 @@ void main() {
         expect(find.textContaining('privado'), findsNothing);
       });
     }
+    testWidgets('400 conserva el mensaje del perfil y permite reintentar', (
+      tester,
+    ) async {
+      await mostrarPerfil(
+        tester,
+        NegociosServiceFalso(error: const ApiException(400, 'privado')),
+      );
+      expect(find.text(MensajesNegocios.errorRed), findsOneWidget);
+      expect(find.text(MensajesNegocios.busquedaInvalida), findsNothing);
+      expect(find.text(MensajesNegocios.reintentar), findsOneWidget);
+    });
     testWidgets('404 no permite reintentar', (tester) async {
       await mostrarPerfil(
         tester,

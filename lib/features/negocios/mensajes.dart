@@ -28,13 +28,18 @@ class MensajesNegocios {
 
   static String mensajeDeError(Object error) {
     if (error is ApiException) {
-      if (error.statusCode == 400) return busquedaInvalida;
       if (error.statusCode == 404) return noDisponible;
       if (error.statusCode >= 500) return errorApi;
     }
     if (error is FormatException) return errorCarga;
     return errorRed;
   }
+
+  static bool puedeReintentarBusqueda(Object error) =>
+      error is! ApiException || error.statusCode != 400;
+
+  static String mensajeDeErrorBusqueda(Object error) =>
+      puedeReintentarBusqueda(error) ? mensajeDeError(error) : busquedaInvalida;
 
   static bool puedeReintentar(Object error) =>
       error is! ApiException || error.statusCode != 404;

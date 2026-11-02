@@ -155,16 +155,40 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(MensajesNegocios.listaVacia), findsOneWidget);
   });
-  testWidgets('un cuatrocientos muestra aviso claro sin exponer respuesta', (
+  testWidgets(
+    'un cuatrocientos muestra aviso sin reintentar y permite corregir',
+    (tester) async {
+      final fake = ListaServiceFalso();
+      await abrir(tester, fake);
+      fake.responder = (_) async =>
+          throw const ApiException(400, 'cuerpo crudo');
+      await escribir(tester, '++');
+      expect(find.text(MensajesNegocios.busquedaInvalida), findsOneWidget);
+      expect(find.textContaining('crudo'), findsNothing);
+      expect(find.text(MensajesNegocios.reintentar), findsNothing);
+      fake.responder = (_) async => pagina([resumen('corregida')]);
+      await escribir(tester, 'correcta');
+      expect(find.text('Negocio corregida'), findsOneWidget);
+      expect(find.text(MensajesNegocios.busquedaInvalida), findsNothing);
+    },
+  );
+  testWidgets('un cuatrocientos al paginar conserva lista sin reintentar', (
     tester,
   ) async {
-    final fake = ListaServiceFalso();
+    final fake = ListaServiceFalso()
+      ..responder = (cursor) async {
+        if (cursor == null) return pagina([resumen('a')], 'dos');
+        throw const ApiException(400, 'cuerpo crudo');
+      };
     await abrir(tester, fake);
-    fake.responder = (_) async => throw const ApiException(400, 'cuerpo crudo');
-    await escribir(tester, '++');
+    expect(fake.llamadas, [null, 'dos']);
+    expect(find.text('Negocio a'), findsOneWidget);
     expect(find.text(MensajesNegocios.busquedaInvalida), findsOneWidget);
-    expect(find.textContaining('crudo'), findsNothing);
-    expect(find.text(MensajesNegocios.reintentar), findsOneWidget);
+    expect(find.text(MensajesNegocios.reintentar), findsNothing);
+    fake.responder = (_) async => pagina([resumen('corregida')]);
+    await categoria(tester, 'Cabello y barba');
+    expect(fake.llamadas.last, null);
+    expect(find.text('Negocio corregida'), findsOneWidget);
   });
   testWidgets('libera espera y descarta petición al desmontar', (tester) async {
     final fake = ListaServiceFalso();
