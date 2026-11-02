@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:servia/core/network/api_exception.dart';
@@ -24,8 +26,22 @@ class SesionPerfilFalsa extends AuthService {
   final List<String> eventos;
   User? usuario;
 
+  final cambios = StreamController<User?>.broadcast();
+
   @override
   User? get usuarioActual => usuario;
+
+  @override
+  Stream<User?> get cambiosDeSesion async* {
+    yield usuario;
+    yield* cambios.stream;
+  }
+
+  @override
+  Future<void> cerrarSesion() async {
+    usuario = null;
+    cambios.add(null);
+  }
 }
 
 /// Hace de API: guarda el perfil en memoria y responde como el contrato de Servia_BE#64.
