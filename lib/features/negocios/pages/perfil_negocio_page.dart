@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../data/negocio.dart';
 import '../data/negocios_service.dart';
-import '../data/servicio.dart';
 import '../formatos.dart';
 import '../mensajes.dart';
 import 'estados_consulta.dart';
-import 'detalle_servicio_page.dart';
 
-part 'seccion_servicios.dart';
+import 'seccion_servicios.dart';
 
 enum _EstadoPerfil { cargando, error, listo }
 
@@ -128,7 +126,7 @@ class _ContenidoPerfil extends StatelessWidget {
         const SizedBox(height: 24),
         _HorarioSemanal(horario: negocio.horario),
         const SizedBox(height: 24),
-        _SeccionServicios(
+        SeccionServicios(
           negocioId: negocio.id,
           aceptaReservas: negocio.aceptaReservas,
           service: service,

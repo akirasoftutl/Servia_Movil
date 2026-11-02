@@ -7,6 +7,8 @@ import '../formatos.dart';
 import '../mensajes.dart';
 import 'estados_consulta.dart';
 
+enum _EstadoDetalle { cargando, error, listo }
+
 class DetalleServicioPage extends StatefulWidget {
   const DetalleServicioPage({
     super.key,
@@ -28,7 +30,7 @@ class _DetalleServicioPageState extends State<DetalleServicioPage> {
   late final NegociosService _service;
   Servicio? _servicio;
   Object? _error;
-  bool _cargando = true;
+  _EstadoDetalle _estado = _EstadoDetalle.cargando;
 
   @override
   void initState() {
@@ -39,13 +41,13 @@ class _DetalleServicioPageState extends State<DetalleServicioPage> {
 
   Future<void> _cargar() async {
     setState(() {
-      _cargando = true;
+      _estado = _EstadoDetalle.cargando;
       _error = null;
     });
     if (!esIdValido(widget.negocioId) || !esIdValido(widget.servicioId)) {
       setState(() {
         _error = const ApiException(404, MensajesNegocios.servicioNoDisponible);
-        _cargando = false;
+        _estado = _EstadoDetalle.error;
       });
       return;
     }
@@ -57,34 +59,41 @@ class _DetalleServicioPageState extends State<DetalleServicioPage> {
       if (!mounted) return;
       setState(() {
         _servicio = servicio;
-        _cargando = false;
+        _estado = _EstadoDetalle.listo;
       });
     } catch (error) {
       if (!mounted) return;
       setState(() {
         _error = error;
-        _cargando = false;
+        _estado = _EstadoDetalle.error;
       });
     }
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text(MensajesNegocios.detalleServicio)),
-    body: _cargando
-        ? const CargaNegocio()
-        : _error != null
-        ? ErrorNegocio(
-            mensaje: MensajesNegocios.mensajeDeError(_error!, esServicio: true),
-            onReintentar: MensajesNegocios.puedeReintentar(_error!)
-                ? _cargar
-                : null,
-          )
-        : _ContenidoServicio(
-            servicio: _servicio!,
-            aceptaReservas: widget.aceptaReservas,
-          ),
-  );
+  Widget build(BuildContext context) {
+    final Widget contenido;
+    switch (_estado) {
+      case _EstadoDetalle.cargando:
+        contenido = const CargaNegocio();
+      case _EstadoDetalle.error:
+        contenido = ErrorNegocio(
+          mensaje: MensajesNegocios.mensajeDeError(_error!, esServicio: true),
+          onReintentar: MensajesNegocios.puedeReintentar(_error!)
+              ? _cargar
+              : null,
+        );
+      case _EstadoDetalle.listo:
+        contenido = _ContenidoServicio(
+          servicio: _servicio!,
+          aceptaReservas: widget.aceptaReservas,
+        );
+    }
+    return Scaffold(
+      appBar: AppBar(title: const Text(MensajesNegocios.detalleServicio)),
+      body: contenido,
+    );
+  }
 }
 
 class _ContenidoServicio extends StatelessWidget {
