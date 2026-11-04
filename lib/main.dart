@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 import 'core/firebase/firebase_options.dart';
+import 'core/theme/tema_servia.dart';
 import 'features/auth/pages/auth_gate.dart';
 import 'features/negocios/rutas_negocios.dart';
 
@@ -21,10 +22,7 @@ class ServiaApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Servia',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
+      theme: temaServia(),
       home: const AuthGate(),
       onGenerateRoute: generarRutaNegocios,
       onUnknownRoute: generarRutaNoDisponible,
