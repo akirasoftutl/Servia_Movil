@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/tokens.dart';
 import '../../../core/widgets/estados.dart';
 import '../data/negocios_service.dart';
 import '../data/disponibilidad.dart';
@@ -149,24 +150,89 @@ class _ContenidoServicio extends StatelessWidget {
   final bool aceptaReservas;
 
   @override
-  Widget build(BuildContext context) => SingleChildScrollView(
-    padding: const EdgeInsets.all(24),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(servicio.nombre, style: Theme.of(context).textTheme.headlineSmall),
-        if (servicio.descripcion != null) Text(servicio.descripcion!),
-        const SizedBox(height: 16),
-        Text(formatearPrecio(servicio.precio)),
-        Text(formatearDuracion(servicio.duracionMin)),
-        if (aceptaReservas) ...[
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: onConsultar,
-            child: const Text(MensajesNegocios.reservar),
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    final textos = tema.textTheme;
+    final c = tema.colorScheme;
+    final detalle = SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(
+        Espacios.l,
+        Espacios.s,
+        Espacios.l,
+        Espacios.xl,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(servicio.nombre, style: textos.headlineSmall),
+          if (servicio.descripcion != null) ...[
+            const SizedBox(height: Espacios.s),
+            Text(
+              servicio.descripcion!,
+              style: textos.bodyLarge?.copyWith(color: c.onSurfaceVariant),
+            ),
+          ],
+          const SizedBox(height: Espacios.xl),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(Espacios.l),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    formatearPrecio(servicio.precio),
+                    style: textos.headlineMedium?.copyWith(color: c.primary),
+                  ),
+                  const SizedBox(height: Espacios.s),
+                  Row(
+                    children: [
+                      Icon(Icons.schedule, size: 20, color: c.onSurfaceVariant),
+                      const SizedBox(width: Espacios.s),
+                      Flexible(
+                        child: Text(
+                          formatearDuracion(servicio.duracionMin),
+                          style: textos.bodyLarge,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
+      ),
+    );
+    if (!aceptaReservas) return detalle;
+    // La acción principal queda fija abajo, siempre a la mano.
+    return Column(
+      children: [
+        Expanded(child: detalle),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: c.surface,
+            border: Border(top: BorderSide(color: c.outlineVariant)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                Espacios.l,
+                Espacios.m,
+                Espacios.l,
+                Espacios.m,
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: onConsultar,
+                  child: const Text(MensajesNegocios.reservar),
+                ),
+              ),
+            ),
+          ),
+        ),
       ],
-    ),
-  );
+    );
+  }
 }
