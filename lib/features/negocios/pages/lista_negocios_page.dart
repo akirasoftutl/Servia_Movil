@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/tokens.dart';
 import '../../../core/widgets/estados.dart';
 import '../data/categoria.dart';
 import '../data/negocio_resumen.dart';
@@ -260,6 +261,7 @@ class _ListaNegociosState extends State<ListaNegocios> {
         }
         return ListView.builder(
           controller: _scroll,
+          padding: const EdgeInsets.only(top: Espacios.xs, bottom: Espacios.xl),
           itemCount: _items.length + 1,
           itemBuilder: (context, indice) {
             if (indice == _items.length) {

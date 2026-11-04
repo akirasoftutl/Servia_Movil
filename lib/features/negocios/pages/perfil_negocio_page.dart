@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/tokens.dart';
 import '../../../core/widgets/estados.dart';
+import '../../../core/widgets/etiqueta_estado.dart';
 import '../data/negocio.dart';
 import '../data/negocios_service.dart';
 import '../formatos.dart';
 import '../mensajes.dart';
+import 'miniatura_negocio.dart';
 import 'seccion_servicios.dart';
 
 enum _EstadoPerfil { cargando, error, listo }
@@ -115,16 +118,21 @@ class _ContenidoPerfil extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
-    padding: const EdgeInsets.all(24),
+    padding: const EdgeInsets.fromLTRB(
+      Espacios.l,
+      Espacios.s,
+      Espacios.l,
+      Espacios.xxl,
+    ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _EncabezadoNegocio(negocio: negocio, categoria: categoria),
-        const SizedBox(height: 16),
+        const SizedBox(height: Espacios.xl),
         _ContactoNegocio(negocio: negocio),
-        const SizedBox(height: 24),
+        const SizedBox(height: Espacios.xl),
         _HorarioSemanal(horario: negocio.horario),
-        const SizedBox(height: 24),
+        const SizedBox(height: Espacios.xl),
         SeccionServicios(
           negocioId: negocio.id,
           negocioNombre: negocio.nombre,
@@ -142,19 +150,41 @@ class _EncabezadoNegocio extends StatelessWidget {
   final String categoria;
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(negocio.nombre, style: Theme.of(context).textTheme.headlineSmall),
-      if (negocio.descripcion != null) Text(negocio.descripcion!),
-      Text(categoria),
-      Text(
-        negocio.aceptaReservas
-            ? MensajesNegocios.aceptaReservas
-            : MensajesNegocios.noAceptaReservas,
-      ),
-    ],
-  );
+  Widget build(BuildContext context) {
+    final textos = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            MiniaturaNegocio(nombre: negocio.nombre, tamano: 64),
+            const SizedBox(width: Espacios.l),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(negocio.nombre, style: textos.headlineSmall),
+                  const SizedBox(height: Espacios.xs),
+                  Text(categoria, style: textos.bodySmall),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: Espacios.l),
+        EtiquetaEstado(
+          texto: negocio.aceptaReservas
+              ? MensajesNegocios.aceptaReservas
+              : MensajesNegocios.noAceptaReservas,
+          tono: negocio.aceptaReservas ? TonoEstado.exito : TonoEstado.neutro,
+        ),
+        if (negocio.descripcion != null) ...[
+          const SizedBox(height: Espacios.l),
+          Text(negocio.descripcion!, style: textos.bodyLarge),
+        ],
+      ],
+    );
+  }
 }
 
 class _ContactoNegocio extends StatelessWidget {
@@ -162,14 +192,48 @@ class _ContactoNegocio extends StatelessWidget {
   final Negocio negocio;
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      if (negocio.direccionTexto != null) Text(negocio.direccionTexto!),
-      if (negocio.telefono != null) Text(negocio.telefono!),
-      if (negocio.correoContacto != null) Text(negocio.correoContacto!),
-    ],
-  );
+  Widget build(BuildContext context) {
+    final filas = [
+      if (negocio.direccionTexto != null)
+        _FilaContacto(Icons.place_outlined, negocio.direccionTexto!),
+      if (negocio.telefono != null)
+        _FilaContacto(Icons.phone_outlined, negocio.telefono!),
+      if (negocio.correoContacto != null)
+        _FilaContacto(Icons.mail_outline, negocio.correoContacto!),
+    ];
+    if (filas.isEmpty) return const SizedBox.shrink();
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: Espacios.s),
+        child: Column(children: filas),
+      ),
+    );
+  }
+}
+
+class _FilaContacto extends StatelessWidget {
+  const _FilaContacto(this.icono, this.texto);
+  final IconData icono;
+  final String texto;
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: Espacios.l,
+        vertical: Espacios.s,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icono, size: 20, color: tema.colorScheme.onSurfaceVariant),
+          const SizedBox(width: Espacios.m),
+          Expanded(child: Text(texto, style: tema.textTheme.bodyMedium)),
+        ],
+      ),
+    );
+  }
 }
 
 class _HorarioSemanal extends StatelessWidget {
@@ -177,18 +241,56 @@ class _HorarioSemanal extends StatelessWidget {
   final Map<String, HorarioDia?> horario;
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        MensajesNegocios.horario,
-        style: Theme.of(context).textTheme.titleLarge,
-      ),
-      for (final dia in diasSemana.entries)
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [Text(dia.value), Text(formatearHorario(horario[dia.key]))],
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    final suave = tema.textTheme.bodyMedium?.copyWith(
+      color: tema.colorScheme.onSurfaceVariant,
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(MensajesNegocios.horario, style: tema.textTheme.titleLarge),
+        const SizedBox(height: Espacios.m),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: Espacios.l,
+              vertical: Espacios.s,
+            ),
+            child: Column(
+              children: [
+                for (final dia in diasSemana.entries)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: Espacios.xs + 2,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            dia.value,
+                            style: tema.textTheme.bodyMedium,
+                          ),
+                        ),
+                        Text(
+                          formatearHorario(horario[dia.key]),
+                          style: horario[dia.key] == null
+                              ? suave
+                              : tema.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  fontFeatures: const [
+                                    FontFeature.tabularFigures(),
+                                  ],
+                                ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
-    ],
-  );
+      ],
+    );
+  }
 }
