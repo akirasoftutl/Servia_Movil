@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:servia/core/theme/colores_servia.dart';
+import 'package:servia/core/theme/tema_servia.dart';
 import 'package:servia/core/theme/tokens.dart';
 
 import 'tema_de_la_app.dart';
@@ -112,6 +113,11 @@ void main() {
       ),
       'aviso flotante': (c.onInverseSurface, c.inverseSurface, 4.5),
       'borde de campo (no texto)': (c.outline, c.surface, 3),
+      'indicador de carga sobre fondo (no texto)': (
+        temaServia().progressIndicatorTheme.color!,
+        ColoresServia.fondo,
+        3,
+      ),
       'borde de campo sobre fondo (no texto)': (
         c.outline,
         ColoresServia.fondo,
