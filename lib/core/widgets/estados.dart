@@ -9,6 +9,26 @@ import '../theme/tokens.dart';
 
 const _anchoTexto = 340.0;
 
+/// Centra el estado en el espacio disponible; si el texto crece (tamaño de
+/// letra del sistema) y no cabe, se desplaza en lugar de desbordarse.
+class _Centrado extends StatelessWidget {
+  const _Centrado({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, limites) {
+      if (!limites.hasBoundedHeight) return Center(child: child);
+      return SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: limites.maxHeight),
+          child: Center(child: child),
+        ),
+      );
+    },
+  );
+}
+
 class EstadoCargando extends StatelessWidget {
   const EstadoCargando({super.key, this.mensaje, this.compacto = false});
 
@@ -19,7 +39,7 @@ class EstadoCargando extends StatelessWidget {
   Widget build(BuildContext context) {
     final tema = Theme.of(context);
     final lado = compacto ? 28.0 : 36.0;
-    return Center(
+    return _Centrado(
       child: Padding(
         padding: EdgeInsets.all(compacto ? Espacios.l : Espacios.xl),
         child: Column(
@@ -150,7 +170,7 @@ class _Estado extends StatelessWidget {
   Widget build(BuildContext context) {
     final tema = Theme.of(context);
     final lado = compacto ? 44.0 : 72.0;
-    return Center(
+    return _Centrado(
       child: Padding(
         padding: EdgeInsets.symmetric(
           horizontal: Espacios.xl,
