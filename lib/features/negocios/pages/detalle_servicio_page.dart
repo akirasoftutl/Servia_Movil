@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/widgets/estados.dart';
 import '../data/negocios_service.dart';
 import '../data/disponibilidad.dart';
 import '../data/disponibilidad_service.dart';
@@ -10,7 +11,6 @@ import '../mensajes.dart';
 import '../../reservas/flujo_reserva.dart';
 import '../../reservas/mensajes.dart';
 import '../../reservas/resultado_reserva.dart';
-import 'estados_consulta.dart';
 
 enum _EstadoDetalle { cargando, error, listo }
 
@@ -116,9 +116,9 @@ class _DetalleServicioPageState extends State<DetalleServicioPage> {
     final Widget contenido;
     switch (_estado) {
       case _EstadoDetalle.cargando:
-        contenido = const CargaNegocio();
+        contenido = const EstadoCargando();
       case _EstadoDetalle.error:
-        contenido = ErrorNegocio(
+        contenido = EstadoError(
           mensaje: MensajesNegocios.mensajeDeError(_error!, esServicio: true),
           onReintentar: MensajesNegocios.puedeReintentar(_error!)
               ? _cargar

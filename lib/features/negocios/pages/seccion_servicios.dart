@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/widgets/estados.dart';
 import '../data/negocios_service.dart';
 import '../data/servicio.dart';
 import '../formatos.dart';
 import '../mensajes.dart';
 import 'detalle_servicio_page.dart';
-import 'estados_consulta.dart';
 
 enum _EstadoServicios { cargando, error, vacio, listo }
 
@@ -65,16 +65,21 @@ class _SeccionServiciosState extends State<SeccionServicios> {
     final Widget contenido;
     switch (_estado) {
       case _EstadoServicios.cargando:
-        contenido = const CargaNegocio();
+        contenido = const EstadoCargando(compacto: true);
       case _EstadoServicios.error:
-        contenido = ErrorNegocio(
+        contenido = EstadoError(
+          compacto: true,
           mensaje: MensajesNegocios.mensajeDeError(_error!),
           onReintentar: MensajesNegocios.puedeReintentar(_error!)
               ? _cargar
               : null,
         );
       case _EstadoServicios.vacio:
-        contenido = const Text(MensajesNegocios.sinServicios);
+        contenido = const EstadoVacio(
+          compacto: true,
+          icono: Icons.content_cut,
+          mensaje: MensajesNegocios.sinServicios,
+        );
       case _EstadoServicios.listo:
         contenido = Column(
           children: [

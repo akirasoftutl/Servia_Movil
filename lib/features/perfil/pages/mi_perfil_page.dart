@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../core/widgets/estados.dart';
 import '../../auth/data/auth_service.dart';
 import '../../auth/mensajes.dart';
 import '../../auth/validaciones.dart';
@@ -201,22 +202,12 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
 
   Widget _cuerpo(BuildContext context) {
     if (_cargando) {
-      return const Center(child: CircularProgressIndicator());
+      return const EstadoCargando();
     }
     if (_perfil == null) {
-      return Center(
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            ListTile(title: Text(_errorCarga ?? MensajesAuth.errorRed)),
-            ListTile(
-              title: FilledButton(
-                onPressed: _cargar,
-                child: const Text('Reintentar'),
-              ),
-            ),
-          ],
-        ),
+      return EstadoError(
+        mensaje: _errorCarga ?? MensajesAuth.errorRed,
+        onReintentar: _cargar,
       );
     }
     return _editando ? _formulario(context) : _vista(_perfil!);

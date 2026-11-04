@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import '../../../core/widgets/estados.dart';
 import '../data/disponibilidad.dart';
 import '../data/disponibilidad_service.dart';
 import '../mensajes.dart';
@@ -140,23 +141,27 @@ class _DisponibilidadPageState extends State<DisponibilidadPage>
     );
   }
 
-  Widget _error(Object error, VoidCallback reintentar) => Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      const Icon(Icons.cloud_off),
-      Text(MensajesNegocios.mensajeDeError(error, esServicio: true)),
-      if (MensajesNegocios.puedeReintentar(error))
-        FilledButton(onPressed: reintentar, child: const Text('Reintentar')),
-    ],
+  Widget _error(
+    Object error,
+    VoidCallback reintentar, {
+    bool compacto = false,
+  }) => EstadoError(
+    compacto: compacto,
+    mensaje: MensajesNegocios.mensajeDeError(error, esServicio: true),
+    onReintentar: MensajesNegocios.puedeReintentar(error) ? reintentar : null,
+  );
+
+  Widget _sinDisponibilidad({bool compacto = false}) => EstadoVacio(
+    compacto: compacto,
+    icono: Icons.event_busy_outlined,
+    mensaje: 'No hay disponibilidad en este momento',
   );
 
   Widget _contenido(BuildContext context) {
     if (_errorDias != null) return _error(_errorDias!, _cargarDias);
     final dias = _dias;
-    if (dias == null) return const CircularProgressIndicator();
-    if (dias.isEmpty) {
-      return const Text('No hay disponibilidad en este momento');
-    }
+    if (dias == null) return const EstadoCargando();
+    if (dias.isEmpty) return _sinDisponibilidad();
     final horas = _horasVigentes;
     return Column(
       children: [
@@ -174,19 +179,19 @@ class _DisponibilidadPageState extends State<DisponibilidadPage>
           onDateChanged: (fecha) => _cargarHoras(fechaIso(fecha)),
         ),
         if (!dias.any((dia) => dia.disponible))
-          const Text('No hay disponibilidad en este momento'),
+          _sinDisponibilidad(compacto: true),
         if (_fecha != null) ...[
           Text(
             'Horarios del $_fecha',
             style: Theme.of(context).textTheme.titleMedium,
           ),
           if (_errorHoras != null)
-            _error(_errorHoras!, () => _cargarHoras(_fecha!))
+            _error(_errorHoras!, () => _cargarHoras(_fecha!), compacto: true)
           else if (_horas == null)
-            const CircularProgressIndicator()
+            const EstadoCargando(compacto: true)
           else ...[
             if (!horas.any((hora) => hora.disponible))
-              const Text('No hay disponibilidad en este momento'),
+              _sinDisponibilidad(compacto: true),
             for (final hora in horas)
               ListTile(
                 key: ValueKey('hora-${hora.hora}'),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/widgets/estados.dart';
 import '../mensajes.dart';
-import 'estados_consulta.dart';
 
 class PieLista extends StatelessWidget {
   const PieLista({
@@ -17,10 +17,11 @@ class PieLista extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (cargando) {
-      return const Padding(padding: EdgeInsets.all(24), child: CargaNegocio());
+      return const EstadoCargando(compacto: true);
     }
     if (error != null) {
-      return ErrorNegocio(
+      return EstadoError(
+        compacto: true,
         mensaje: MensajesNegocios.mensajeDeErrorBusqueda(error!),
         onReintentar: MensajesNegocios.puedeReintentarBusqueda(error!)
             ? onReintentar

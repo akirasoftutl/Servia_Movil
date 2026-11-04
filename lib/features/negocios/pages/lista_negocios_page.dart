@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/widgets/estados.dart';
 import '../data/categoria.dart';
 import '../data/negocio_resumen.dart';
 import '../data/negocios_service.dart';
 import '../mensajes.dart';
-import 'estados_consulta.dart';
 import 'filtros_negocios.dart';
 import 'pie_lista.dart';
 import 'tarjeta_negocio.dart';
@@ -239,9 +239,9 @@ class _ListaNegociosState extends State<ListaNegocios> {
   Widget _contenido() {
     switch (_estado) {
       case _EstadoLista.cargando:
-        return const CargaNegocio();
+        return const EstadoCargando();
       case _EstadoLista.error:
-        return ErrorNegocio(
+        return EstadoError(
           mensaje: MensajesNegocios.mensajeDeErrorBusqueda(_error!),
           onReintentar: MensajesNegocios.puedeReintentarBusqueda(_error!)
               ? _cargar
@@ -250,12 +250,12 @@ class _ListaNegociosState extends State<ListaNegocios> {
       case _EstadoLista.lista:
         if (_items.isEmpty) {
           if (_requiereContinuar) return Center(child: _continuacion());
-          return Center(
-            child: Text(
-              _consulta != null || _categoriaId != null
-                  ? MensajesNegocios.sinResultados
-                  : MensajesNegocios.listaVacia,
-            ),
+          final filtrada = _consulta != null || _categoriaId != null;
+          return EstadoVacio(
+            icono: filtrada ? Icons.search_off : Icons.storefront_outlined,
+            mensaje: filtrada
+                ? MensajesNegocios.sinResultados
+                : MensajesNegocios.listaVacia,
           );
         }
         return ListView.builder(

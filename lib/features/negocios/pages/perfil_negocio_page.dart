@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/widgets/estados.dart';
 import '../data/negocio.dart';
 import '../data/negocios_service.dart';
 import '../formatos.dart';
 import '../mensajes.dart';
-import 'estados_consulta.dart';
 import 'seccion_servicios.dart';
 
 enum _EstadoPerfil { cargando, error, listo }
@@ -81,9 +81,9 @@ class _PerfilNegocioPageState extends State<PerfilNegocioPage> {
     final Widget contenido;
     switch (_estado) {
       case _EstadoPerfil.cargando:
-        contenido = const CargaNegocio();
+        contenido = const EstadoCargando();
       case _EstadoPerfil.error:
-        contenido = ErrorNegocio(
+        contenido = EstadoError(
           mensaje: MensajesNegocios.mensajeDeError(_error!),
           onReintentar: MensajesNegocios.puedeReintentar(_error!)
               ? _cargar

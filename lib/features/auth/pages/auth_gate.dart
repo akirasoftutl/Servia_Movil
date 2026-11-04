@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../core/widgets/estados.dart';
 import '../../home/pages/home_page.dart';
 import '../data/auth_service.dart';
 import '../data/perfil_service.dart';
@@ -73,9 +74,7 @@ class _AuthGateState extends State<AuthGate> {
       if (!mounted) return;
 
       if (!perfil.esCliente) {
-        setState(
-          () => _mensaje = MensajesAuth.soloClientes,
-        );
+        setState(() => _mensaje = MensajesAuth.soloClientes);
         await _authService.cerrarSesion();
         if (!mounted) return;
         setState(() {
@@ -155,20 +154,7 @@ class _PantallaCarga extends StatelessWidget {
   const _PantallaCarga();
 
   @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.badge_outlined, size: 64, color: Color(0xFF7B1FA2)),
-            SizedBox(height: 20),
-            CircularProgressIndicator(),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => const Scaffold(body: EstadoCargando());
 }
 
 class _PantallaErrorRed extends StatelessWidget {
@@ -177,38 +163,12 @@ class _PantallaErrorRed extends StatelessWidget {
   final VoidCallback onReintentar;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.cloud_off,
-                size: 64,
-                color: Colors.black38,
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                MensajesAuth.errorRed,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 15, color: Colors.black87),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF7B1FA2),
-                  shape: const StadiumBorder(),
-                ),
-                onPressed: onReintentar,
-                child: const Text('Reintentar'),
-              ),
-            ],
-          ),
-        ),
+  Widget build(BuildContext context) => Scaffold(
+    body: SafeArea(
+      child: EstadoError(
+        mensaje: MensajesAuth.errorRed,
+        onReintentar: onReintentar,
       ),
-    );
-  }
+    ),
+  );
 }
