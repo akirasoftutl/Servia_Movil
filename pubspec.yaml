@@ -60,6 +60,7 @@ dev_dependencies:
 flutter:
   assets:
     - assets/images/logo_google.webp
+    - assets/images/logo_servia.png
 
   # Plus Jakarta Sans (SIL OFL 1.1, assets/fonts/OFL-PlusJakartaSans.txt).
   fonts:
