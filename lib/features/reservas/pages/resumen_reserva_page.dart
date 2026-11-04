@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../core/theme/tokens.dart';
+import '../../../core/widgets/aviso.dart';
 import '../../auth/data/auth_service.dart';
 import '../../auth/data/perfil.dart';
 import '../../auth/data/perfil_service.dart';
@@ -90,8 +92,7 @@ class _ResumenReservaPageState extends State<ResumenReservaPage> {
     }
   }
 
-  bool get _puedeEnviar =>
-      !_enviando && _perfil != null && _perfil!.esCliente;
+  bool get _puedeEnviar => !_enviando && _perfil != null && _perfil!.esCliente;
 
   Future<void> _enviar() async {
     if (!_puedeEnviar) return;
@@ -145,82 +146,82 @@ class _ResumenReservaPageState extends State<ResumenReservaPage> {
   Widget build(BuildContext context) {
     final inicio = inicioDeCita(widget.fecha, widget.hora);
     final sinCancelacion = citaEnMenosDe24Horas(inicio, widget.ahora());
-    final esquema = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(title: const Text(MensajesReservas.titulo)),
       body: ListView(
+        padding: const EdgeInsets.fromLTRB(
+          Espacios.l,
+          Espacios.s,
+          Espacios.l,
+          Espacios.xxl,
+        ),
         children: [
-          _Dato(MensajesReservas.negocio, widget.negocioNombre),
-          _Dato(MensajesReservas.servicio, widget.servicio.nombre),
-          _Dato(MensajesReservas.fecha, formatearFechaLarga(widget.fecha)),
-          _Dato(MensajesReservas.hora, widget.hora),
-          _Dato(
-            MensajesReservas.duracion,
-            formatearDuracion(widget.servicio.duracionMin),
-          ),
-          _Dato(
-            MensajesReservas.precioTotal,
-            formatearPrecio(widget.servicio.precio),
-          ),
-          const Divider(),
-          _contacto(context),
-          const Divider(),
-          ListTile(
-            title: TextField(
-              controller: _observaciones,
-              enabled: !_enviando,
-              maxLength: MensajesReservas.maxObservaciones,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: MensajesReservas.observaciones,
-                hintText: MensajesReservas.observacionesAyuda,
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ),
-          const ListTile(
-            leading: Icon(Icons.schedule),
-            title: Text(MensajesReservas.avisoDosHoras),
-          ),
-          if (sinCancelacion)
-            Card(
-              color: esquema.errorContainer,
-              child: ListTile(
-                leading: Icon(
-                  Icons.warning_amber_outlined,
-                  color: esquema.onErrorContainer,
-                ),
-                title: Text(
-                  MensajesReservas.sinCancelacion,
-                  style: TextStyle(color: esquema.onErrorContainer),
-                ),
-              ),
-            ),
-          if (_errorEnvio != null)
-            Card(
-              color: esquema.errorContainer,
-              child: ListTile(
-                leading: Icon(
-                  Icons.error_outline,
-                  color: esquema.onErrorContainer,
-                ),
-                title: Semantics(
-                  liveRegion: true,
-                  child: Text(
-                    _errorEnvio!,
-                    style: TextStyle(color: esquema.onErrorContainer),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(Espacios.l),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _Dato(MensajesReservas.negocio, widget.negocioNombre),
+                  _Dato(MensajesReservas.servicio, widget.servicio.nombre),
+                  _Dato(
+                    MensajesReservas.fecha,
+                    formatearFechaLarga(widget.fecha),
                   ),
-                ),
+                  _Dato(MensajesReservas.hora, widget.hora),
+                  _Dato(
+                    MensajesReservas.duracion,
+                    formatearDuracion(widget.servicio.duracionMin),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: Espacios.m),
+                    child: Divider(),
+                  ),
+                  _Dato(
+                    MensajesReservas.precioTotal,
+                    formatearPrecio(widget.servicio.precio),
+                    destacado: true,
+                  ),
+                ],
               ),
             ),
-          ListTile(
-            title: FilledButton(
-              onPressed: _puedeEnviar ? _enviar : null,
-              child: Text(
-                _enviando
-                    ? MensajesReservas.enviando
-                    : MensajesReservas.enviar,
-              ),
+          ),
+          const SizedBox(height: Espacios.l),
+          Card(child: _contacto(context)),
+          const SizedBox(height: Espacios.xl),
+          TextField(
+            controller: _observaciones,
+            enabled: !_enviando,
+            maxLength: MensajesReservas.maxObservaciones,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              labelText: MensajesReservas.observaciones,
+              hintText: MensajesReservas.observacionesAyuda,
+              alignLabelWithHint: true,
+            ),
+          ),
+          const SizedBox(height: Espacios.m),
+          const Aviso(
+            tipo: TipoAviso.informacion,
+            icono: Icons.schedule,
+            texto: MensajesReservas.avisoDosHoras,
+          ),
+          if (sinCancelacion) ...[
+            const SizedBox(height: Espacios.m),
+            const Aviso(
+              tipo: TipoAviso.advertencia,
+              texto: MensajesReservas.sinCancelacion,
+            ),
+          ],
+          if (_errorEnvio != null) ...[
+            const SizedBox(height: Espacios.m),
+            Aviso(texto: _errorEnvio!),
+          ],
+          const SizedBox(height: Espacios.xl),
+          FilledButton(
+            onPressed: _puedeEnviar ? _enviar : null,
+            child: Text(
+              _enviando ? MensajesReservas.enviando : MensajesReservas.enviar,
             ),
           ),
         ],
@@ -279,11 +280,31 @@ class _ResumenReservaPageState extends State<ResumenReservaPage> {
 }
 
 class _Dato extends StatelessWidget {
-  const _Dato(this.etiqueta, this.valor);
+  const _Dato(this.etiqueta, this.valor, {this.destacado = false});
   final String etiqueta;
   final String valor;
+  final bool destacado;
 
   @override
-  Widget build(BuildContext context) =>
-      ListTile(title: Text(etiqueta), subtitle: Text(valor));
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Espacios.m),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(etiqueta, style: tema.textTheme.bodySmall),
+          const SizedBox(height: Espacios.xs),
+          Text(
+            valor,
+            style: destacado
+                ? tema.textTheme.titleLarge?.copyWith(
+                    color: tema.colorScheme.primary,
+                  )
+                : tema.textTheme.titleMedium,
+          ),
+        ],
+      ),
+    );
+  }
 }

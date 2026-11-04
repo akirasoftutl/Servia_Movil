@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/tokens.dart';
+import '../../../core/widgets/estados.dart';
 import '../data/negocios_service.dart';
 import '../data/servicio.dart';
 import '../formatos.dart';
 import '../mensajes.dart';
 import 'detalle_servicio_page.dart';
-import 'estados_consulta.dart';
 
 enum _EstadoServicios { cargando, error, vacio, listo }
 
@@ -65,28 +66,36 @@ class _SeccionServiciosState extends State<SeccionServicios> {
     final Widget contenido;
     switch (_estado) {
       case _EstadoServicios.cargando:
-        contenido = const CargaNegocio();
+        contenido = const EstadoCargando(compacto: true);
       case _EstadoServicios.error:
-        contenido = ErrorNegocio(
+        contenido = EstadoError(
+          compacto: true,
           mensaje: MensajesNegocios.mensajeDeError(_error!),
           onReintentar: MensajesNegocios.puedeReintentar(_error!)
               ? _cargar
               : null,
         );
       case _EstadoServicios.vacio:
-        contenido = const Text(MensajesNegocios.sinServicios);
+        contenido = const EstadoVacio(
+          compacto: true,
+          icono: Icons.content_cut,
+          mensaje: MensajesNegocios.sinServicios,
+        );
       case _EstadoServicios.listo:
+        final servicios = _servicios!;
         contenido = Column(
           children: [
-            for (final servicio in _servicios!)
+            for (var i = 0; i < servicios.length; i++) ...[
+              if (i > 0)
+                const Divider(indent: Espacios.l, endIndent: Espacios.l),
               _FilaServicio(
-                servicio: servicio,
+                servicio: servicios[i],
                 onAbrir: () => Navigator.push(
                   context,
                   MaterialPageRoute<void>(
                     builder: (_) => DetalleServicioPage(
                       negocioId: widget.negocioId,
-                      servicioId: servicio.id,
+                      servicioId: servicios[i].id,
                       aceptaReservas: widget.aceptaReservas,
                       negocioNombre: widget.negocioNombre,
                       negociosService: widget.service,
@@ -94,6 +103,7 @@ class _SeccionServiciosState extends State<SeccionServicios> {
                   ),
                 ),
               ),
+            ],
           ],
         );
     }
@@ -104,7 +114,11 @@ class _SeccionServiciosState extends State<SeccionServicios> {
           MensajesNegocios.servicios,
           style: Theme.of(context).textTheme.titleLarge,
         ),
-        contenido,
+        const SizedBox(height: Espacios.m),
+        SizedBox(
+          width: double.infinity,
+          child: Card(child: contenido),
+        ),
       ],
     );
   }
@@ -116,11 +130,32 @@ class _FilaServicio extends StatelessWidget {
   final VoidCallback onAbrir;
 
   @override
-  Widget build(BuildContext context) => ListTile(
-    contentPadding: EdgeInsets.zero,
-    onTap: onAbrir,
-    title: Text(servicio.nombre),
-    subtitle: Text(formatearDuracion(servicio.duracionMin)),
-    trailing: Text(formatearPrecio(servicio.precio)),
-  );
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    return ListTile(
+      onTap: onAbrir,
+      title: Text(servicio.nombre),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: Espacios.xs),
+        child: Row(
+          children: [
+            Icon(
+              Icons.schedule,
+              size: 16,
+              color: tema.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: Espacios.xs),
+            Flexible(child: Text(formatearDuracion(servicio.duracionMin))),
+          ],
+        ),
+      ),
+      trailing: Text(
+        formatearPrecio(servicio.precio),
+        style: tema.textTheme.titleMedium?.copyWith(
+          color: tema.colorScheme.primary,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
 }

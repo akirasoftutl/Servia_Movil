@@ -3,6 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import '../../../core/theme/colores_servia.dart';
+import '../../../core/theme/tokens.dart';
+import '../../../core/widgets/aviso.dart';
+import '../../../core/widgets/estados.dart';
 import '../data/disponibilidad.dart';
 import '../data/disponibilidad_service.dart';
 import '../mensajes.dart';
@@ -140,63 +144,119 @@ class _DisponibilidadPageState extends State<DisponibilidadPage>
     );
   }
 
-  Widget _error(Object error, VoidCallback reintentar) => Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      const Icon(Icons.cloud_off),
-      Text(MensajesNegocios.mensajeDeError(error, esServicio: true)),
-      if (MensajesNegocios.puedeReintentar(error))
-        FilledButton(onPressed: reintentar, child: const Text('Reintentar')),
-    ],
+  Widget _error(
+    Object error,
+    VoidCallback reintentar, {
+    bool compacto = false,
+  }) => EstadoError(
+    compacto: compacto,
+    mensaje: MensajesNegocios.mensajeDeError(error, esServicio: true),
+    onReintentar: MensajesNegocios.puedeReintentar(error) ? reintentar : null,
   );
 
-  Widget _contenido(BuildContext context) {
+  Widget _sinDisponibilidad({bool compacto = false}) => EstadoVacio(
+    compacto: compacto,
+    icono: Icons.event_busy_outlined,
+    mensaje: 'No hay disponibilidad en este momento',
+  );
+
+  /// Estado de toda la pantalla (cargando, error o sin días), si aplica.
+  Widget? _estadoGeneral() {
     if (_errorDias != null) return _error(_errorDias!, _cargarDias);
     final dias = _dias;
-    if (dias == null) return const CircularProgressIndicator();
-    if (dias.isEmpty) {
-      return const Text('No hay disponibilidad en este momento');
-    }
+    if (dias == null) return const EstadoCargando();
+    if (dias.isEmpty) return _sinDisponibilidad();
+    return null;
+  }
+
+  Widget _contenido(BuildContext context) {
+    final dias = _dias!;
     final horas = _horasVigentes;
+    final tema = Theme.of(context);
+    final c = tema.colorScheme;
+    Widget margen(List<Widget> hijos) => Padding(
+      padding: const EdgeInsets.symmetric(horizontal: Espacios.l),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: hijos,
+      ),
+    );
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (widget.aviso != null) Text(widget.aviso!),
-        Text('Elige una fecha', style: Theme.of(context).textTheme.titleLarge),
-        const Text('Horarios de America/Mexico_City'),
-        CalendarDatePicker(
-          key: ValueKey(dias),
-          initialDate: null,
-          currentDate: dias.first.calendario,
-          firstDate: dias.first.calendario,
-          lastDate: dias.last.calendario,
-          selectableDayPredicate: (fecha) =>
-              dias.any((dia) => dia.fecha == fechaIso(fecha) && dia.disponible),
-          onDateChanged: (fecha) => _cargarHoras(fechaIso(fecha)),
-        ),
-        if (!dias.any((dia) => dia.disponible))
-          const Text('No hay disponibilidad en este momento'),
-        if (_fecha != null) ...[
-          Text(
-            'Horarios del $_fecha',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          if (_errorHoras != null)
-            _error(_errorHoras!, () => _cargarHoras(_fecha!))
-          else if (_horas == null)
-            const CircularProgressIndicator()
-          else ...[
-            if (!horas.any((hora) => hora.disponible))
-              const Text('No hay disponibilidad en este momento'),
-            for (final hora in horas)
-              ListTile(
-                key: ValueKey('hora-${hora.hora}'),
-                enabled: hora.disponible,
-                title: Text(hora.hora),
-                subtitle: Text(hora.disponible ? 'Disponible' : 'Ocupado'),
-                onTap: hora.disponible ? () => _seleccionar(hora) : null,
-              ),
+        margen([
+          if (widget.aviso != null) ...[
+            Aviso(texto: widget.aviso!, tipo: TipoAviso.advertencia),
+            const SizedBox(height: Espacios.l),
           ],
-        ],
+          Text('Elige una fecha', style: tema.textTheme.titleLarge),
+          const SizedBox(height: Espacios.xs),
+          Row(
+            children: [
+              Icon(Icons.public, size: 16, color: c.onSurfaceVariant),
+              const SizedBox(width: Espacios.xs),
+              Flexible(
+                child: Text(
+                  'Horarios de America/Mexico_City',
+                  style: tema.textTheme.bodySmall,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: Espacios.m),
+        ]),
+        // El calendario va de borde a borde para que cada día mida ≥ 48 dp
+        // de ancho aun en teléfonos de 360 dp.
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: c.surface,
+            border: Border.symmetric(
+              horizontal: BorderSide(color: c.outlineVariant),
+            ),
+          ),
+          child: CalendarDatePicker(
+            key: ValueKey(dias),
+            initialDate: null,
+            currentDate: dias.first.calendario,
+            firstDate: dias.first.calendario,
+            lastDate: dias.last.calendario,
+            selectableDayPredicate: (fecha) => dias.any(
+              (dia) => dia.fecha == fechaIso(fecha) && dia.disponible,
+            ),
+            onDateChanged: (fecha) => _cargarHoras(fechaIso(fecha)),
+          ),
+        ),
+        margen([
+          if (!dias.any((dia) => dia.disponible))
+            _sinDisponibilidad(compacto: true),
+          if (_fecha != null) ...[
+            const SizedBox(height: Espacios.xl),
+            Text('Horarios del $_fecha', style: tema.textTheme.titleMedium),
+            const SizedBox(height: Espacios.m),
+            if (_errorHoras != null)
+              _error(_errorHoras!, () => _cargarHoras(_fecha!), compacto: true)
+            else if (_horas == null)
+              const EstadoCargando(compacto: true)
+            else ...[
+              if (!horas.any((hora) => hora.disponible))
+                _sinDisponibilidad(compacto: true),
+              if (horas.isNotEmpty)
+                Card(
+                  child: Column(
+                    children: [
+                      for (var i = 0; i < horas.length; i++) ...[
+                        if (i > 0) const Divider(),
+                        _FilaHora(
+                          hora: horas[i],
+                          onElegir: () => _seleccionar(horas[i]),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+            ],
+          ],
+        ]),
       ],
     );
   }
@@ -209,8 +269,49 @@ class _DisponibilidadPageState extends State<DisponibilidadPage>
     child: Builder(
       builder: (context) => Scaffold(
         appBar: AppBar(title: const Text('Disponibilidad del servicio')),
-        body: SingleChildScrollView(child: _contenido(context)),
+        body:
+            _estadoGeneral() ??
+            SingleChildScrollView(
+              padding: const EdgeInsets.only(
+                top: Espacios.s,
+                bottom: Espacios.xxl,
+              ),
+              child: _contenido(context),
+            ),
       ),
     ),
   );
+}
+
+class _FilaHora extends StatelessWidget {
+  const _FilaHora({required this.hora, required this.onElegir});
+  final HoraDisponibilidad hora;
+  final VoidCallback onElegir;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = ColoresSemanticos.de(context);
+    final textos = Theme.of(context).textTheme;
+    return ListTile(
+      key: ValueKey('hora-${hora.hora}'),
+      enabled: hora.disponible,
+      title: Text(
+        hora.hora,
+        style: textos.titleMedium?.copyWith(
+          fontFeatures: const [FontFeature.tabularFigures()],
+        ),
+      ),
+      subtitle: Text(
+        hora.disponible ? 'Disponible' : 'Ocupado',
+        style: textos.bodySmall?.copyWith(
+          color: hora.disponible ? s.exito : null,
+        ),
+      ),
+      leading: Icon(
+        hora.disponible ? Icons.schedule : Icons.block,
+        color: hora.disponible ? ColoresServia.marca : null,
+      ),
+      onTap: hora.disponible ? onElegir : null,
+    );
+  }
 }

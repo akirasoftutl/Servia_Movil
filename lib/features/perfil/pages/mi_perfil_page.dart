@@ -2,6 +2,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../core/theme/tokens.dart';
+import '../../../core/widgets/aviso.dart';
+import '../../../core/widgets/estados.dart';
 import '../../auth/data/auth_service.dart';
 import '../../auth/mensajes.dart';
 import '../../auth/validaciones.dart';
@@ -201,119 +204,110 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
 
   Widget _cuerpo(BuildContext context) {
     if (_cargando) {
-      return const Center(child: CircularProgressIndicator());
+      return const EstadoCargando();
     }
     if (_perfil == null) {
-      return Center(
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            ListTile(title: Text(_errorCarga ?? MensajesAuth.errorRed)),
-            ListTile(
-              title: FilledButton(
-                onPressed: _cargar,
-                child: const Text('Reintentar'),
-              ),
-            ),
-          ],
-        ),
+      return EstadoError(
+        mensaje: _errorCarga ?? MensajesAuth.errorRed,
+        onReintentar: _cargar,
       );
     }
     return _editando ? _formulario(context) : _vista(_perfil!);
   }
 
   Widget _vista(PerfilCliente perfil) {
+    final tema = Theme.of(context);
+    Widget dato(IconData icono, String etiqueta, String valor) => ListTile(
+      leading: Icon(icono),
+      title: Text(etiqueta),
+      subtitle: Text(valor),
+      // Etiqueta pequeña arriba y el dato con más peso.
+      titleTextStyle: tema.textTheme.bodySmall,
+      subtitleTextStyle: tema.textTheme.titleMedium,
+    );
     return ListView(
+      padding: const EdgeInsets.fromLTRB(
+        Espacios.l,
+        Espacios.s,
+        Espacios.l,
+        Espacios.xxl,
+      ),
       children: [
         Card(
-          child: Column(
-            children: [
-              ListTile(
-                leading: const Icon(Icons.person_outline),
-                title: const Text('Nombre'),
-                subtitle: Text(perfil.nombre),
-              ),
-              ListTile(
-                leading: const Icon(Icons.mail_outline),
-                title: const Text('Correo'),
-                subtitle: Text(perfil.correo),
-              ),
-              ListTile(
-                leading: const Icon(Icons.phone_outlined),
-                title: const Text('Teléfono'),
-                subtitle: Text(perfil.telefono),
-              ),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: Espacios.xs),
+            child: Column(
+              children: [
+                dato(Icons.person_outline, 'Nombre', perfil.nombre),
+                const Divider(indent: Espacios.l, endIndent: Espacios.l),
+                dato(Icons.mail_outline, 'Correo', perfil.correo),
+                const Divider(indent: Espacios.l, endIndent: Espacios.l),
+                dato(Icons.phone_outlined, 'Teléfono', perfil.telefono),
+              ],
+            ),
           ),
         ),
-        ListTile(
-          title: FilledButton(onPressed: _editar, child: const Text('Editar')),
-        ),
+        const SizedBox(height: Espacios.xl),
+        FilledButton(onPressed: _editar, child: const Text('Editar')),
       ],
     );
   }
 
   Widget _formulario(BuildContext context) {
-    final tema = Theme.of(context);
     return Form(
       key: _formKey,
       child: ListView(
+        padding: const EdgeInsets.fromLTRB(
+          Espacios.l,
+          Espacios.m,
+          Espacios.l,
+          Espacios.xxl,
+        ),
         children: [
-          if (_errorGeneral != null)
-            ListTile(
-              title: Text(
-                _errorGeneral!,
-                style: tema.textTheme.bodyMedium?.copyWith(
-                  color: tema.colorScheme.error,
-                ),
-              ),
-            ),
-          ListTile(
-            title: TextFormField(
-              controller: _nombre,
-              enabled: !_guardando,
-              textCapitalization: TextCapitalization.words,
-              validator: ValidacionesCliente.nombre,
-              decoration: const InputDecoration(labelText: 'Nombre completo'),
+          if (_errorGeneral != null) ...[
+            Aviso(texto: _errorGeneral!),
+            const SizedBox(height: Espacios.l),
+          ],
+          TextFormField(
+            controller: _nombre,
+            enabled: !_guardando,
+            textCapitalization: TextCapitalization.words,
+            validator: ValidacionesCliente.nombre,
+            decoration: const InputDecoration(labelText: 'Nombre completo'),
+          ),
+          const SizedBox(height: Espacios.l),
+          TextFormField(
+            controller: _correo,
+            enabled: !_guardando,
+            keyboardType: TextInputType.emailAddress,
+            validator: ValidacionesCliente.correo,
+            onChanged: (_) {
+              if (_errorCorreo != null) setState(() => _errorCorreo = null);
+            },
+            decoration: InputDecoration(
+              labelText: 'Correo',
+              errorText: _errorCorreo,
             ),
           ),
-          ListTile(
-            title: TextFormField(
-              controller: _correo,
-              enabled: !_guardando,
-              keyboardType: TextInputType.emailAddress,
-              validator: ValidacionesCliente.correo,
-              onChanged: (_) {
-                if (_errorCorreo != null) setState(() => _errorCorreo = null);
-              },
-              decoration: InputDecoration(
-                labelText: 'Correo',
-                errorText: _errorCorreo,
-              ),
+          const SizedBox(height: Espacios.l),
+          TextFormField(
+            controller: _telefono,
+            enabled: !_guardando,
+            keyboardType: TextInputType.phone,
+            validator: ValidacionesCliente.telefono,
+            decoration: const InputDecoration(
+              labelText: 'Teléfono (10 dígitos)',
             ),
           ),
-          ListTile(
-            title: TextFormField(
-              controller: _telefono,
-              enabled: !_guardando,
-              keyboardType: TextInputType.phone,
-              validator: ValidacionesCliente.telefono,
-              decoration: const InputDecoration(
-                labelText: 'Teléfono (10 dígitos)',
-              ),
-            ),
+          const SizedBox(height: Espacios.xl),
+          FilledButton(
+            onPressed: _guardando ? null : _guardar,
+            child: Text(_guardando ? 'Guardando...' : 'Guardar'),
           ),
-          ListTile(
-            title: FilledButton(
-              onPressed: _guardando ? null : _guardar,
-              child: Text(_guardando ? 'Guardando...' : 'Guardar'),
-            ),
-          ),
-          ListTile(
-            title: TextButton(
-              onPressed: _guardando ? null : _cancelar,
-              child: const Text('Cancelar'),
-            ),
+          const SizedBox(height: Espacios.s),
+          TextButton(
+            onPressed: _guardando ? null : _cancelar,
+            child: const Text('Cancelar'),
           ),
         ],
       ),
