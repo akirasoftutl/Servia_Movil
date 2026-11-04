@@ -174,29 +174,46 @@ class _DisponibilidadPageState extends State<DisponibilidadPage>
     final horas = _horasVigentes;
     final tema = Theme.of(context);
     final c = tema.colorScheme;
+    Widget margen(List<Widget> hijos) => Padding(
+      padding: const EdgeInsets.symmetric(horizontal: Espacios.l),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: hijos,
+      ),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (widget.aviso != null) ...[
-          Aviso(texto: widget.aviso!, tipo: TipoAviso.advertencia),
-          const SizedBox(height: Espacios.l),
-        ],
-        Text('Elige una fecha', style: tema.textTheme.titleLarge),
-        const SizedBox(height: Espacios.xs),
-        Row(
-          children: [
-            Icon(Icons.public, size: 16, color: c.onSurfaceVariant),
-            const SizedBox(width: Espacios.xs),
-            Flexible(
-              child: Text(
-                'Horarios de America/Mexico_City',
-                style: tema.textTheme.bodySmall,
-              ),
-            ),
+        margen([
+          if (widget.aviso != null) ...[
+            Aviso(texto: widget.aviso!, tipo: TipoAviso.advertencia),
+            const SizedBox(height: Espacios.l),
           ],
-        ),
-        const SizedBox(height: Espacios.m),
-        Card(
+          Text('Elige una fecha', style: tema.textTheme.titleLarge),
+          const SizedBox(height: Espacios.xs),
+          Row(
+            children: [
+              Icon(Icons.public, size: 16, color: c.onSurfaceVariant),
+              const SizedBox(width: Espacios.xs),
+              Flexible(
+                child: Text(
+                  'Horarios de America/Mexico_City',
+                  style: tema.textTheme.bodySmall,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: Espacios.m),
+        ]),
+        // El calendario va de borde a borde para que cada día mida ≥ 48 dp
+        // de ancho aun en teléfonos de 360 dp.
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: c.surface,
+            border: Border.symmetric(
+              horizontal: BorderSide(color: c.outlineVariant),
+            ),
+          ),
           child: CalendarDatePicker(
             key: ValueKey(dias),
             initialDate: null,
@@ -209,35 +226,37 @@ class _DisponibilidadPageState extends State<DisponibilidadPage>
             onDateChanged: (fecha) => _cargarHoras(fechaIso(fecha)),
           ),
         ),
-        if (!dias.any((dia) => dia.disponible))
-          _sinDisponibilidad(compacto: true),
-        if (_fecha != null) ...[
-          const SizedBox(height: Espacios.xl),
-          Text('Horarios del $_fecha', style: tema.textTheme.titleMedium),
-          const SizedBox(height: Espacios.m),
-          if (_errorHoras != null)
-            _error(_errorHoras!, () => _cargarHoras(_fecha!), compacto: true)
-          else if (_horas == null)
-            const EstadoCargando(compacto: true)
-          else ...[
-            if (!horas.any((hora) => hora.disponible))
-              _sinDisponibilidad(compacto: true),
-            if (horas.isNotEmpty)
-              Card(
-                child: Column(
-                  children: [
-                    for (var i = 0; i < horas.length; i++) ...[
-                      if (i > 0) const Divider(),
-                      _FilaHora(
-                        hora: horas[i],
-                        onElegir: () => _seleccionar(horas[i]),
-                      ),
+        margen([
+          if (!dias.any((dia) => dia.disponible))
+            _sinDisponibilidad(compacto: true),
+          if (_fecha != null) ...[
+            const SizedBox(height: Espacios.xl),
+            Text('Horarios del $_fecha', style: tema.textTheme.titleMedium),
+            const SizedBox(height: Espacios.m),
+            if (_errorHoras != null)
+              _error(_errorHoras!, () => _cargarHoras(_fecha!), compacto: true)
+            else if (_horas == null)
+              const EstadoCargando(compacto: true)
+            else ...[
+              if (!horas.any((hora) => hora.disponible))
+                _sinDisponibilidad(compacto: true),
+              if (horas.isNotEmpty)
+                Card(
+                  child: Column(
+                    children: [
+                      for (var i = 0; i < horas.length; i++) ...[
+                        if (i > 0) const Divider(),
+                        _FilaHora(
+                          hora: horas[i],
+                          onElegir: () => _seleccionar(horas[i]),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
+            ],
           ],
-        ],
+        ]),
       ],
     );
   }
@@ -253,11 +272,9 @@ class _DisponibilidadPageState extends State<DisponibilidadPage>
         body:
             _estadoGeneral() ??
             SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(
-                Espacios.l,
-                Espacios.s,
-                Espacios.l,
-                Espacios.xxl,
+              padding: const EdgeInsets.only(
+                top: Espacios.s,
+                bottom: Espacios.xxl,
               ),
               child: _contenido(context),
             ),
