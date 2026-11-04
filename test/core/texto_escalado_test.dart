@@ -190,6 +190,10 @@ void main() {
         await tester.pumpAndSettle();
         if (accion != null) await accion(tester);
         expect(tester.takeException(), isNull);
+        if (escala == 1.0) {
+          // Áreas táctiles de al menos 48 × 48 dp (guía de Android).
+          await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+        }
       });
     }
   }
