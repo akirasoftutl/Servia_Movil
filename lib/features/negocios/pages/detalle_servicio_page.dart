@@ -26,6 +26,7 @@ class DetalleServicioPage extends StatefulWidget {
     this.disponibilidadService,
     this.onSeleccionDisponibilidad,
     this.flujoReserva = const FlujoReserva(),
+    this.ahora = DateTime.now,
   });
   final String negocioId;
   final String servicioId;
@@ -36,6 +37,8 @@ class DetalleServicioPage extends StatefulWidget {
   // Sustituye el flujo de reserva (MVP-18); sin él se abre el resumen.
   final ValueChanged<SeleccionDisponibilidad>? onSeleccionDisponibilidad;
   final FlujoReserva flujoReserva;
+  // Reloj que se pasa a la disponibilidad; por defecto, la hora real.
+  final DateTime Function() ahora;
 
   @override
   State<DetalleServicioPage> createState() => _DetalleServicioPageState();
@@ -87,6 +90,7 @@ class _DetalleServicioPageState extends State<DetalleServicioPage> {
             servicioId: widget.servicioId,
             service: widget.disponibilidadService,
             aviso: aviso,
+            ahora: widget.ahora,
           ),
         ),
       );

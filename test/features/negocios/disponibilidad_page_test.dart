@@ -319,6 +319,7 @@ void main() {
               negocioNombre: 'Negocio de prueba',
               negociosService: DetalleServiceFalso(),
               disponibilidadService: servicio,
+              ahora: () => ahoraMexico,
               onSeleccionDisponibilidad: (s) => elegida = s,
             ),
           ),
