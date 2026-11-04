@@ -186,7 +186,7 @@ class _DisponibilidadPageState extends State<DisponibilidadPage>
         Row(
           children: [
             Icon(Icons.public, size: 16, color: c.onSurfaceVariant),
-            const SizedBox(width: Espacios.xs + 2),
+            const SizedBox(width: Espacios.xs),
             Flexible(
               child: Text(
                 'Horarios de America/Mexico_City',

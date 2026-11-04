@@ -32,13 +32,10 @@ class MiniaturaNegocio extends StatelessWidget {
         ),
         child: Text(
           inicial,
+          // La inicial es decorativa y su pieza tiene tamaño fijo.
           textScaler: TextScaler.noScaling,
-          style: TextStyle(
-            fontSize: tamano * 0.42,
-            fontWeight: FontWeight.w700,
-            height: 1,
-            color: ColoresServia.primario,
-          ),
+          style: Theme.of(context).textTheme.headlineSmall
+              ?.copyWith(height: 1, color: ColoresServia.primario),
         ),
       ),
     );

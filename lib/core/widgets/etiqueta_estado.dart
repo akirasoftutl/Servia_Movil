@@ -28,7 +28,7 @@ class EtiquetaEstado extends StatelessWidget {
     };
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: Espacios.s + 2,
+        horizontal: Espacios.s,
         vertical: Espacios.xs,
       ),
       decoration: BoxDecoration(
@@ -39,7 +39,7 @@ class EtiquetaEstado extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icono ?? _iconoDe(tono), size: 14, color: frente),
-          const SizedBox(width: Espacios.xs + 2),
+          const SizedBox(width: Espacios.xs),
           Flexible(
             child: Text(
               texto,

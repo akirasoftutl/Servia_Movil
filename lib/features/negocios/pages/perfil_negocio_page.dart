@@ -261,9 +261,7 @@ class _HorarioSemanal extends StatelessWidget {
               children: [
                 for (final dia in diasSemana.entries)
                   Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: Espacios.xs + 2,
-                    ),
+                    padding: const EdgeInsets.symmetric(vertical: Espacios.xs),
                     child: Row(
                       children: [
                         Expanded(

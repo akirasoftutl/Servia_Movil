@@ -294,7 +294,7 @@ class _Dato extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(etiqueta, style: tema.textTheme.bodySmall),
-          const SizedBox(height: 2),
+          const SizedBox(height: Espacios.xs),
           Text(
             valor,
             style: destacado

@@ -22,7 +22,7 @@ class TarjetaNegocio extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: Espacios.l,
-        vertical: Espacios.s - 2,
+        vertical: Espacios.xs,
       ),
       child: Card(
         child: ListTile(

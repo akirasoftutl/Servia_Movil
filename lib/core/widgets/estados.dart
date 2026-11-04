@@ -188,7 +188,7 @@ class _Estado extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: fondoIcono,
                     borderRadius: BorderRadius.circular(
-                      compacto ? Radios.m : Radios.l + 4,
+                      compacto ? Radios.m : Radios.l,
                     ),
                   ),
                   child: Icon(

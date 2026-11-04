@@ -45,7 +45,7 @@ class Aviso extends StatelessWidget {
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(
-          horizontal: Espacios.m + 2,
+          horizontal: Espacios.m,
           vertical: Espacios.m,
         ),
         decoration: BoxDecoration(color: fondo, borderRadius: Radios.campo),
