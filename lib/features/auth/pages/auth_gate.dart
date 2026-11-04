@@ -4,7 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../core/theme/tokens.dart';
 import '../../../core/widgets/estados.dart';
+import '../../../core/widgets/marca_servia.dart';
 import '../../home/pages/home_page.dart';
 import '../data/auth_service.dart';
 import '../data/perfil_service.dart';
@@ -153,8 +155,21 @@ class _AuthGateState extends State<AuthGate> {
 class _PantallaCarga extends StatelessWidget {
   const _PantallaCarga();
 
+  // Continúa la pantalla de arranque nativa: mismo logo, mismo fondo blanco.
   @override
-  Widget build(BuildContext context) => const Scaffold(body: EstadoCargando());
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: Theme.of(context).colorScheme.surface,
+    body: const Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          LogoServia(tamano: 96),
+          SizedBox(height: Espacios.xl),
+          EstadoCargando(compacto: true),
+        ],
+      ),
+    ),
+  );
 }
 
 class _PantallaErrorRed extends StatelessWidget {
