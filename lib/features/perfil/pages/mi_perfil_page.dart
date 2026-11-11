@@ -7,6 +7,7 @@ import '../../../core/widgets/aviso.dart';
 import '../../../core/widgets/estados.dart';
 import '../../auth/data/auth_service.dart';
 import '../../auth/mensajes.dart';
+import '../../auth/pages/cambiar_contrasena_page.dart';
 import '../../auth/validaciones.dart';
 import '../data/perfil_cliente.dart';
 import '../data/perfil_cliente_service.dart';
@@ -105,6 +106,14 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
       _errorGeneral = null;
       _errorCorreo = null;
     });
+  }
+
+  void _abrirCambioContrasena() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => CambiarContrasenaPage(authService: _auth),
+      ),
+    );
   }
 
   Future<void> _guardar() async {
@@ -249,6 +258,12 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
         ),
         const SizedBox(height: Espacios.xl),
         FilledButton(onPressed: _editar, child: const Text('Editar')),
+        const SizedBox(height: Espacios.s),
+        OutlinedButton.icon(
+          onPressed: _abrirCambioContrasena,
+          icon: const Icon(Icons.lock_outline),
+          label: const Text('Cambiar contraseña'),
+        ),
       ],
     );
   }

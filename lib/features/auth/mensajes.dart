@@ -19,6 +19,15 @@ class MensajesAuth {
   static const camposVacios = 'Ingresa tu correo y tu contraseña.';
   static const errorRegistroGeneral =
       'Ocurrió un error al crear la cuenta. Inténtalo de nuevo.';
+  static const correoRestablecimientoEnviado =
+      'Si el correo está registrado, te enviamos un enlace para crear una contraseña nueva.';
+  static const contrasenaActualIncorrecta =
+      'La contraseña actual no es correcta.';
+  static const contrasenaActualizada = 'Tu contraseña se actualizó.';
+  static const errorCambioContrasena =
+      'No se pudo cambiar la contraseña. Inténtalo de nuevo.';
+  static const errorRecuperacion =
+      'No se pudo enviar el correo. Inténtalo de nuevo.';
 
   static String mensajeDeInicioSesion(Object error) {
     if (error is FirebaseAuthException) {
@@ -37,6 +46,40 @@ class MensajesAuth {
       }
     }
     return errorRed;
+  }
+
+  static String mensajeDeRecuperacion(Object error) {
+    if (error is FirebaseAuthException) {
+      switch (error.code) {
+        case 'network-request-failed':
+          return errorRed;
+        case 'too-many-requests':
+          return 'Demasiados intentos. Espera un momento y vuelve a intentar.';
+      }
+    }
+    return errorRecuperacion;
+  }
+
+  static String mensajeDeCambioContrasena(Object error) {
+    if (error is FirebaseAuthException) {
+      switch (error.code) {
+        case 'wrong-password':
+        case 'invalid-credential':
+        case 'invalid-login-credentials':
+          return contrasenaActualIncorrecta;
+        case 'weak-password':
+          return 'La contraseña debe tener al menos 8 caracteres.';
+        case 'network-request-failed':
+          return errorRed;
+        case 'requires-recent-login':
+        case 'user-not-found':
+        case 'user-disabled':
+        case 'user-token-expired':
+        case 'invalid-user-token':
+          return errorSesion;
+      }
+    }
+    return errorCambioContrasena;
   }
 
   static String mensajeDeRegistro(Object error) {

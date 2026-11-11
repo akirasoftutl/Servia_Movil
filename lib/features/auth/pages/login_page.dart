@@ -12,6 +12,7 @@ import '../data/auth_service.dart';
 import '../data/perfil_service.dart';
 import '../data/registro_cliente_service.dart';
 import '../mensajes.dart';
+import 'recuperar_contrasena_page.dart';
 import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -134,6 +135,18 @@ class _LoginPageState extends State<LoginPage> {
     });
   }
 
+  Future<void> _abrirRecuperacion() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => RecuperarContrasenaPage(
+          authService: _authService,
+          correoInicial: _correoController.text.trim(),
+        ),
+      ),
+    );
+  }
+
   Future<void> _abrirRegistro() async {
     await Navigator.push(
       context,
@@ -212,7 +225,28 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   const SizedBox(height: Espacios.l),
-                  const EtiquetaCampo('Contraseña'),
+                  Row(
+                    children: [
+                      const EtiquetaCampo('Contraseña'),
+                      Expanded(
+                        child: TextButton(
+                          onPressed: _cargando ? null : _abrirRecuperacion,
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: Espacios.s,
+                            ),
+                          ),
+                          child: const Align(
+                            alignment: Alignment.centerRight,
+                            child: Text(
+                              '¿Olvidaste tu contraseña?',
+                              textAlign: TextAlign.right,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                   TextField(
                     controller: _contrasenaController,
                     obscureText: _ocultarContrasena,
@@ -232,7 +266,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: Espacios.xl),
+                  const SizedBox(height: Espacios.l),
                   ElevatedButton(
                     onPressed: _cargando ? null : _iniciarSesion,
                     child: _cargando
