@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Paleta de Servia para la app del cliente (pendiente de aprobación del PO).
 ///
