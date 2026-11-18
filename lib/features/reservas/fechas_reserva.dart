@@ -51,6 +51,25 @@ DateTime inicioDeCita(String fecha, String hora) {
 
 String _dos(int n) => n.toString().padLeft(2, '0');
 
+/// Pasa un instante ISO 8601 (normalmente UTC) a America/Mexico_City.
+/// Nunca usa la zona del teléfono.
+DateTime enZonaMexico(DateTime instante) =>
+    tz.TZDateTime.from(instante, _zonaMexico);
+
+/// `AAAA-MM-DD` del instante en America/Mexico_City, listo para
+/// [formatearFechaLarga].
+String fechaEnMexico(DateTime instante) {
+  final local = enZonaMexico(instante);
+  return '${local.year.toString().padLeft(4, '0')}-${_dos(local.month)}-'
+      '${_dos(local.day)}';
+}
+
+/// `HH:mm` del instante en America/Mexico_City.
+String horaEnMexico(DateTime instante) {
+  final local = enZonaMexico(instante);
+  return '${_dos(local.hour)}:${_dos(local.minute)}';
+}
+
 /// ISO 8601 con la zona de México, por ejemplo `2026-11-10T10:00:00-06:00`.
 String inicioIsoConZona(String fecha, String hora) {
   final inicio = inicioDeCita(fecha, hora) as tz.TZDateTime;

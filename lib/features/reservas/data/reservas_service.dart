@@ -4,6 +4,7 @@ import '../../../core/network/api_client.dart';
 import '../../../core/network/api_exception.dart';
 import '../../negocios/data/lectura_json.dart';
 import 'reserva_creada.dart';
+import 'reserva_resumen.dart';
 
 /// Datos de la solicitud de reserva (`POST /reservas`).
 class SolicitudReserva {
@@ -54,5 +55,27 @@ class ReservasService {
     }
     final datos = jsonDecode(respuesta.body);
     return ReservaCreada.fromJson(leerObjeto(datos));
+  }
+
+  /// Lista las reservas del cliente (`GET /reservas/mias`) paginadas por cursor.
+  /// [vista] es `proximas` o `historial`, según la tabla activa.
+  /// Lanza [ApiException] con el código HTTP y [FormatException] si el cuerpo
+  /// no respeta el contrato.
+  Future<PaginaReservas> listarMias(
+    String token, {
+    String vista = 'proximas',
+    String? cursor,
+  }) async {
+    final query = <String, String>{'vista': vista};
+    if (cursor != null) query['cursor'] = cursor;
+    final uri = Uri(path: '/reservas/mias', queryParameters: query);
+    final respuesta = await _api.get('$uri', token: token);
+    if (respuesta.statusCode != 200) {
+      throw ApiException(
+        respuesta.statusCode,
+        'No se pudieron cargar tus reservas.',
+      );
+    }
+    return PaginaReservas.fromJson(leerObjeto(jsonDecode(respuesta.body)));
   }
 }
