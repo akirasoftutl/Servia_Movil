@@ -47,6 +47,26 @@ class MensajesReservas {
   static const estadoPendiente = 'Pendiente';
   static const volverAlInicio = 'Volver al inicio';
 
+  // «Mis reservas» (MVP-19).
+  static const tituloMisReservas = 'Mis reservas';
+  static const tabProximas = 'Próximas';
+  static const tabHistorial = 'Historial';
+  static const sinReservasProximas = 'No tienes reservas próximas.';
+  static const sinReservasHistorial =
+      'Todavía no tienes reservas en tu historial.';
+  static const cargandoReservas = 'Cargando tus reservas...';
+  static const cargando = 'Cargando...';
+  static const cargarMas = 'Cargar más';
+  static const sesionVencidaConsulta =
+      'Tu sesión ya no es válida. Inicia sesión de nuevo.';
+  static const errorConsulta =
+      'No se pudieron cargar tus reservas. Inténtalo de nuevo.';
+  static const estadoConfirmada = 'Confirmada';
+  static const estadoRechazada = 'Rechazada';
+  static const estadoRechazadaVencimiento = 'Rechazada por vencimiento';
+  static const estadoCancelada = 'Cancelada';
+  static const estadoCompletada = 'Completada';
+
   /// Mensaje de [error] al enviar la solicitud. El 409 lo atiende el flujo.
   static String mensajeDeEnvio(Object error) {
     if (error is TimeoutException) return errorRed;
@@ -69,4 +89,20 @@ class MensajesReservas {
     if (error is FormatException) return errorGeneral;
     return errorRed;
   }
+
+  /// Mensaje de [error] al consultar `GET /reservas/mias`.
+  static String mensajeDeListado(Object error) {
+    if (error is ApiException) {
+      if (error.statusCode == 401) return sesionVencidaConsulta;
+      if (error.statusCode >= 500) return errorApi;
+      return errorConsulta;
+    }
+    if (error is TimeoutException) return errorRed;
+    if (error is FormatException) return errorConsulta;
+    return errorRed;
+  }
+
+  /// Con la sesión vencida no se ofrece reintentar: hay que iniciar sesión.
+  static bool puedeReintentarListado(Object error) =>
+      error is! ApiException || error.statusCode != 401;
 }

@@ -3,8 +3,14 @@ import 'package:servia/features/reservas/fechas_reserva.dart';
 
 void main() {
   test('el inicio se lee en America/Mexico_City y va con zona -06:00', () {
-    expect(inicioIsoConZona('2026-11-10', '10:00'), '2026-11-10T10:00:00-06:00');
-    expect(inicioIsoConZona('2026-07-04', '09:30'), '2026-07-04T09:30:00-06:00');
+    expect(
+      inicioIsoConZona('2026-11-10', '10:00'),
+      '2026-11-10T10:00:00-06:00',
+    );
+    expect(
+      inicioIsoConZona('2026-07-04', '09:30'),
+      '2026-07-04T09:30:00-06:00',
+    );
     // 10:00 de México son las 16:00 UTC, sin importar la zona del teléfono.
     expect(
       inicioDeCita('2026-11-10', '10:00').toUtc(),
@@ -57,4 +63,18 @@ void main() {
     expect(formatearFechaLarga('2026-11-10'), 'martes 10 de noviembre de 2026');
     expect(formatearFechaLarga('2026-12-06'), 'domingo 6 de diciembre de 2026');
   });
+
+  test(
+    'un ISO UTC se lee en America/Mexico_City, nunca en la zona del teléfono',
+    () {
+      final inicio = DateTime.utc(2026, 11, 10, 16); // 10:00 de México
+      expect(fechaEnMexico(inicio), '2026-11-10');
+      expect(horaEnMexico(inicio), '10:00');
+
+      // Medianoche en México ya es día siguiente en UTC.
+      final noche = DateTime.utc(2026, 11, 11, 6); // 00:00 del 11 en México
+      expect(fechaEnMexico(noche), '2026-11-11');
+      expect(horaEnMexico(noche), '00:00');
+    },
+  );
 }

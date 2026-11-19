@@ -11,6 +11,7 @@ import 'package:servia/features/negocios/data/disponibilidad.dart';
 import 'package:servia/features/negocios/data/disponibilidad_service.dart';
 import 'package:servia/features/negocios/data/servicio.dart';
 import 'package:servia/features/reservas/data/reserva_creada.dart';
+import 'package:servia/features/reservas/data/reserva_resumen.dart';
 import 'package:servia/features/reservas/data/reservas_service.dart';
 import 'package:servia/features/reservas/resultado_reserva.dart';
 import 'package:servia/features/reservas/pages/resumen_reserva_page.dart';
@@ -21,7 +22,8 @@ class UsuarioFalso extends Fake implements User {
 }
 
 class SesionFalsa extends AuthService {
-  SesionFalsa({bool conSesion = true}) : usuario = conSesion ? UsuarioFalso() : null;
+  SesionFalsa({bool conSesion = true})
+    : usuario = conSesion ? UsuarioFalso() : null;
   final eventos = StreamController<User?>.broadcast();
   User? usuario;
   int cierres = 0;
@@ -87,11 +89,26 @@ ReservaCreada reservaCreada({String folio = 'SRV-7KQ2MX'}) => ReservaCreada(
 );
 
 class ReservasFalso extends ReservasService {
-  ReservasFalso({this.error, this.espera});
+  ReservasFalso({
+    this.error,
+    this.espera,
+    this.errorListado,
+    List<PaginaReservas>? paginas,
+  }) : paginas = paginas ?? const [PaginaReservas(items: [], siguiente: null)];
+
   final Object? error;
   final Completer<void>? espera;
+
+  /// Error devuelto por `listarMias` (distinto del de `crear`).
+  final Object? errorListado;
+
+  /// Páginas que se sirven en orden; se repite la última si se pide otra.
+  final List<PaginaReservas> paginas;
   final solicitudes = <SolicitudReserva>[];
   final tokens = <String>[];
+  final vistas = <String>[];
+  final cursores = <String?>[];
+  int _pagina = 0;
 
   @override
   Future<ReservaCreada> crear(String token, SolicitudReserva solicitud) async {
@@ -101,7 +118,41 @@ class ReservasFalso extends ReservasService {
     if (error != null) throw error!;
     return reservaCreada();
   }
+
+  @override
+  Future<PaginaReservas> listarMias(
+    String token, {
+    String vista = 'proximas',
+    String? cursor,
+  }) async {
+    tokens.add(token);
+    vistas.add(vista);
+    cursores.add(cursor);
+    if (espera != null) await espera!.future;
+    if (errorListado != null) throw errorListado!;
+    final indice = _pagina < paginas.length ? _pagina : paginas.length - 1;
+    _pagina++;
+    return paginas[indice];
+  }
 }
+
+ReservaResumen reservaResumen({
+  String id = 'r1',
+  String folio = 'SRV-7KQ2MX',
+  String estado = 'pendiente',
+  DateTime? inicio,
+  DateTime? fin,
+  String servicio = 'Corte de cabello',
+  String negocio = 'Barbería Central',
+}) => ReservaResumen(
+  id: id,
+  folio: folio,
+  estado: estado,
+  inicio: inicio ?? DateTime.utc(2026, 11, 10, 16),
+  fin: fin ?? DateTime.utc(2026, 11, 10, 17),
+  servicio: servicio,
+  negocio: negocio,
+);
 
 const servicioPrueba = Servicio(
   id: 's1',
@@ -111,7 +162,8 @@ const servicioPrueba = Servicio(
 );
 
 /// Hora de la cita: martes 10 de noviembre de 2026, 10:00 de México (16:00 UTC).
-DateTime Function() ahoraEn(DateTime momento) => () => momento;
+DateTime Function() ahoraEn(DateTime momento) =>
+    () => momento;
 
 class ProbadorResumen {
   ResultadoReserva? resultado;
