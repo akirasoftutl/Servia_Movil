@@ -12,9 +12,6 @@ import '../data/perfil_cliente.dart';
 import '../data/perfil_cliente_service.dart';
 import '../mensajes.dart';
 
-/// «Mi perfil» (MVP-05): el cliente ve y edita su nombre, correo y teléfono.
-/// Lee y guarda con la API (`/usuarios/yo`); nunca escribe en Firestore.
-/// Los estilos salen del tema (Theme.of) y de los componentes de Material 3.
 class MiPerfilPage extends StatefulWidget {
   const MiPerfilPage({super.key, this.authService, this.perfilClienteService});
 
@@ -171,9 +168,6 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
     'requires-recent-login',
   };
 
-  /// El correo ya cambió en la API: se renueva el token para que la sesión siga.
-  /// Un fallo de red no deshace el guardado ni cierra nada. Si la sesión ya no
-  /// es válida, se vuelve al inicio y se pide iniciar sesión con el nuevo correo.
   Future<void> _renovarToken(User usuario) async {
     final navegador = Navigator.of(context);
     final avisos = ScaffoldMessenger.of(context);
@@ -194,10 +188,66 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
     }
   }
 
+  String _obtenerInicial(String nombre) {
+    final limpio = nombre.trim();
+    if (limpio.isEmpty) return 'U';
+    return limpio[0].toUpperCase();
+  }
+
+  InputDecoration _decoracionCampo({
+    required String hintText,
+    String? errorText,
+  }) {
+    const bordeBase = OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(12)),
+      borderSide: BorderSide(color: Color(0xFFD1D5DB), width: 1.2),
+    );
+
+    const bordeError = OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(12)),
+      borderSide: BorderSide(color: Color(0xFFDC2626), width: 1.2),
+    );
+
+    return InputDecoration(
+      hintText: hintText,
+      errorText: errorText,
+      hintStyle: const TextStyle(
+        color: Color(0xFF9CA3AF),
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+      ),
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      border: bordeBase,
+      enabledBorder: bordeBase,
+      focusedBorder: const OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+        borderSide: BorderSide(color: Color(0xFF111827), width: 1.5),
+      ),
+      errorBorder: bordeError,
+      focusedErrorBorder: bordeError,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text(MensajesPerfil.titulo)),
+      backgroundColor: const Color(0xFFF7F7F8),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF7F7F8),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        iconTheme: const IconThemeData(color: Color(0xFF111827)),
+        title: const Text(
+          MensajesPerfil.titulo,
+          style: TextStyle(
+            color: Color(0xFF111827),
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
       body: _cuerpo(context),
     );
   }
@@ -216,100 +266,445 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
   }
 
   Widget _vista(PerfilCliente perfil) {
-    final tema = Theme.of(context);
-    Widget dato(IconData icono, String etiqueta, String valor) => ListTile(
-      leading: Icon(icono),
-      title: Text(etiqueta),
-      subtitle: Text(valor),
-      // Etiqueta pequeña arriba y el dato con más peso.
-      titleTextStyle: tema.textTheme.bodySmall,
-      subtitleTextStyle: tema.textTheme.titleMedium,
-    );
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        Espacios.l,
-        Espacios.s,
-        Espacios.l,
-        Espacios.xxl,
-      ),
-      children: [
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: Espacios.xs),
-            child: Column(
+    Widget filaDato({
+      required IconData icono,
+      required String etiqueta,
+      required String valor,
+    }) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        child: Row(
+          children: [
+            Icon(icono, size: 22, color: const Color(0xFF111827)),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    etiqueta,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF6B7280),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    valor.isNotEmpty ? valor : 'Sin registrar',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 480),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
+          children: [
+            // Encabezado superior: Nombre grande a la izquierda + Avatar verde con inicial a la derecha
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                dato(Icons.person_outline, 'Nombre', perfil.nombre),
-                const Divider(indent: Espacios.l, endIndent: Espacios.l),
-                dato(Icons.mail_outline, 'Correo', perfil.correo),
-                const Divider(indent: Espacios.l, endIndent: Espacios.l),
-                dato(Icons.phone_outlined, 'Teléfono', perfil.telefono),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        perfil.nombre,
+                        style: const TextStyle(
+                          fontSize: 30,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF111827),
+                          height: 1.15,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Perfil personal',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFF6B7280),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: const BoxDecoration(
+                    color: const Color.fromARGB(255, 142, 69, 184),
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    _obtenerInicial(perfil.nombre),
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
               ],
             ),
-          ),
+
+            const SizedBox(height: 20),
+
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+              ),
+              child: Column(
+                children: [
+                  filaDato(
+                    icono: Icons.person_outline,
+                    etiqueta: 'Nombre',
+                    valor: perfil.nombre,
+                  ),
+                  const Divider(
+                    height: 1,
+                    indent: 56,
+                    endIndent: 18,
+                    color: Color(0xFFF3F4F6),
+                  ),
+                  filaDato(
+                    icono: Icons.mail_outline,
+                    etiqueta: 'Correo electrónico',
+                    valor: perfil.correo,
+                  ),
+                  const Divider(
+                    height: 1,
+                    indent: 56,
+                    endIndent: 18,
+                    color: Color(0xFFF3F4F6),
+                  ),
+                  filaDato(
+                    icono: Icons.phone_outlined,
+                    etiqueta: 'Teléfono',
+                    valor: perfil.telefono,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+              ),
+              child: Column(
+                children: [
+                  InkWell(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(16),
+                    ),
+                    onTap: () {
+                      // TODO: Acción o pantalla de soporte
+                    },
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 16,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.support_outlined,
+                            size: 22,
+                            color: Color(0xFF111827),
+                          ),
+                          SizedBox(width: 16),
+                          Expanded(
+                            child: Text(
+                              'Soporte',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF111827),
+                              ),
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right,
+                            size: 20,
+                            color: Color(0xFF9CA3AF),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const Divider(
+                    height: 1,
+                    indent: 56,
+                    endIndent: 18,
+                    color: Color(0xFFF3F4F6),
+                  ),
+                  InkWell(
+                    borderRadius: const BorderRadius.vertical(
+                      bottom: Radius.circular(16),
+                    ),
+                    onTap: () {
+                      // TODO: Acción de idioma
+                    },
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 16,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.language_outlined,
+                            size: 22,
+                            color: Color(0xFF111827),
+                          ),
+                          SizedBox(width: 16),
+                          Expanded(
+                            child: Text(
+                              'Español (México)',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF111827),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            SizedBox(
+              height: 54,
+              child: ElevatedButton(
+                onPressed: _editar,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0F0F0F),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: const StadiumBorder(),
+                  textStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                child: const Text('Editar información'),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+              ),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(28),
+                onTap: () async {
+                  await _auth.cerrarSesion();
+                  if (!mounted) return;
+                  Navigator.of(context).popUntil((ruta) => ruta.isFirst);
+                },
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout, size: 22, color: Color(0xFFDC2626)),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          'Cerrar sesión',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFFDC2626),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: Espacios.xl),
-        FilledButton(onPressed: _editar, child: const Text('Editar')),
-      ],
+      ),
     );
   }
 
   Widget _formulario(BuildContext context) {
-    return Form(
-      key: _formKey,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          Espacios.l,
-          Espacios.m,
-          Espacios.l,
-          Espacios.xxl,
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 480),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
+            children: [
+              const Text(
+                'Editar perfil',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF111827),
+                  letterSpacing: -0.4,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Actualiza tus datos personales.',
+                style: TextStyle(fontSize: 15, color: Color(0xFF6B7280)),
+              ),
+              const SizedBox(height: 24),
+
+              if (_errorGeneral != null) ...[
+                Aviso(texto: _errorGeneral!),
+                const SizedBox(height: Espacios.l),
+              ],
+
+              const Text(
+                'Nombre completo',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF111827),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _nombre,
+                enabled: !_guardando,
+                textCapitalization: TextCapitalization.words,
+                validator: ValidacionesCliente.nombre,
+                style: const TextStyle(fontSize: 16, color: Color(0xFF111827)),
+                decoration: _decoracionCampo(hintText: 'Tu nombre completo'),
+              ),
+
+              const SizedBox(height: 16),
+
+              const Text(
+                'Correo electrónico',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF111827),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _correo,
+                enabled: !_guardando,
+                keyboardType: TextInputType.emailAddress,
+                validator: ValidacionesCliente.correo,
+                onChanged: (_) {
+                  if (_errorCorreo != null) setState(() => _errorCorreo = null);
+                },
+                style: const TextStyle(fontSize: 16, color: Color(0xFF111827)),
+                decoration: _decoracionCampo(
+                  hintText: 'Dirección de correo electrónico',
+                  errorText: _errorCorreo,
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              const Text(
+                'Teléfono (10 dígitos)',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF111827),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _telefono,
+                enabled: !_guardando,
+                keyboardType: TextInputType.phone,
+                validator: ValidacionesCliente.telefono,
+                style: const TextStyle(fontSize: 16, color: Color(0xFF111827)),
+                decoration: _decoracionCampo(hintText: 'Teléfono a 10 dígitos'),
+              ),
+
+              const SizedBox(height: 28),
+
+              SizedBox(
+                height: 54,
+                child: ElevatedButton(
+                  onPressed: _guardando ? null : _guardar,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0F0F0F),
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: const Color(0xFF9CA3AF),
+                    elevation: 0,
+                    shape: const StadiumBorder(),
+                    textStyle: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  child: _guardando
+                      ? const SizedBox.square(
+                          dimension: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Guardar'),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              SizedBox(
+                height: 48,
+                child: OutlinedButton(
+                  onPressed: _guardando ? null : _cancelar,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF111827),
+                    side: const BorderSide(
+                      color: Color(0xFFD1D5DB),
+                      width: 1.2,
+                    ),
+                    shape: const StadiumBorder(),
+                    textStyle: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  child: const Text('Cancelar'),
+                ),
+              ),
+            ],
+          ),
         ),
-        children: [
-          if (_errorGeneral != null) ...[
-            Aviso(texto: _errorGeneral!),
-            const SizedBox(height: Espacios.l),
-          ],
-          TextFormField(
-            controller: _nombre,
-            enabled: !_guardando,
-            textCapitalization: TextCapitalization.words,
-            validator: ValidacionesCliente.nombre,
-            decoration: const InputDecoration(labelText: 'Nombre completo'),
-          ),
-          const SizedBox(height: Espacios.l),
-          TextFormField(
-            controller: _correo,
-            enabled: !_guardando,
-            keyboardType: TextInputType.emailAddress,
-            validator: ValidacionesCliente.correo,
-            onChanged: (_) {
-              if (_errorCorreo != null) setState(() => _errorCorreo = null);
-            },
-            decoration: InputDecoration(
-              labelText: 'Correo',
-              errorText: _errorCorreo,
-            ),
-          ),
-          const SizedBox(height: Espacios.l),
-          TextFormField(
-            controller: _telefono,
-            enabled: !_guardando,
-            keyboardType: TextInputType.phone,
-            validator: ValidacionesCliente.telefono,
-            decoration: const InputDecoration(
-              labelText: 'Teléfono (10 dígitos)',
-            ),
-          ),
-          const SizedBox(height: Espacios.xl),
-          FilledButton(
-            onPressed: _guardando ? null : _guardar,
-            child: Text(_guardando ? 'Guardando...' : 'Guardar'),
-          ),
-          const SizedBox(height: Espacios.s),
-          TextButton(
-            onPressed: _guardando ? null : _cancelar,
-            child: const Text('Cancelar'),
-          ),
-        ],
       ),
     );
   }
