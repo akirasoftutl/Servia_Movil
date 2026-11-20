@@ -32,6 +32,7 @@ class MensajesNegocios {
   static const reservar = 'Reservar';
   static const detalleServicio = 'Detalle del servicio';
   static const horario = 'Horario de atención';
+  static const galeria = 'Galería';
 
   static String mensajeDeError(Object error, {bool esServicio = false}) {
     if (error is ApiException) {

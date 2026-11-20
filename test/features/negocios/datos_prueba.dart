@@ -24,6 +24,16 @@ Map<String, dynamic> negocioJson({bool aceptaReservas = true}) => {
   },
 };
 
+Map<String, dynamic> fotoJson(String id, String url) => {
+  'id': id,
+  'url': url,
+};
+
+Map<String, dynamic> fotosJson({
+  Map<String, dynamic>? portada,
+  List<Map<String, dynamic>> galeria = const [],
+}) => {'portada': portada, 'galeria': galeria};
+
 const serviciosPrueba = [
   Servicio(id: 's2', nombre: 'Z Corte', precio: 150, duracionMin: 90),
   Servicio(id: 's1', nombre: 'A Masaje', precio: 150.5, duracionMin: 30),

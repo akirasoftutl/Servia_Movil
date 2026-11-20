@@ -7,6 +7,7 @@ import '../data/negocio.dart';
 import '../data/negocios_service.dart';
 import '../formatos.dart';
 import '../mensajes.dart';
+import 'fotos_negocio.dart';
 import 'miniatura_negocio.dart';
 import 'seccion_servicios.dart';
 
@@ -17,10 +18,12 @@ class PerfilNegocioPage extends StatefulWidget {
     super.key,
     required this.negocioId,
     this.negociosService,
-  });
+    ProveedorImagenNegocio? proveedorFotos,
+  }) : proveedorFotos = proveedorFotos ?? NetworkImage.new;
 
   final String negocioId;
   final NegociosService? negociosService;
+  final ProveedorImagenNegocio proveedorFotos;
 
   @override
   State<PerfilNegocioPage> createState() => _PerfilNegocioPageState();
@@ -97,6 +100,7 @@ class _PerfilNegocioPageState extends State<PerfilNegocioPage> {
           negocio: _negocio!,
           categoria: _categoria!,
           service: _service,
+          proveedorFotos: widget.proveedorFotos,
         );
     }
     return Scaffold(
@@ -111,37 +115,56 @@ class _ContenidoPerfil extends StatelessWidget {
     required this.negocio,
     required this.categoria,
     required this.service,
+    required this.proveedorFotos,
   });
   final NegociosService service;
   final Negocio negocio;
   final String categoria;
+  final ProveedorImagenNegocio proveedorFotos;
 
   @override
-  Widget build(BuildContext context) => SingleChildScrollView(
-    padding: const EdgeInsets.fromLTRB(
-      Espacios.l,
-      Espacios.s,
-      Espacios.l,
-      Espacios.xxl,
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _EncabezadoNegocio(negocio: negocio, categoria: categoria),
-        const SizedBox(height: Espacios.xl),
-        _ContactoNegocio(negocio: negocio),
-        const SizedBox(height: Espacios.xl),
-        _HorarioSemanal(horario: negocio.horario),
-        const SizedBox(height: Espacios.xl),
-        SeccionServicios(
-          negocioId: negocio.id,
-          negocioNombre: negocio.nombre,
-          aceptaReservas: negocio.aceptaReservas,
-          service: service,
-        ),
-      ],
-    ),
-  );
+  Widget build(BuildContext context) {
+    final fotos = negocio.fotos;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(
+        Espacios.l,
+        Espacios.s,
+        Espacios.l,
+        Espacios.xxl,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (fotos.portada != null) ...[
+            PortadaNegocio(
+              foto: fotos.portada!,
+              proveedor: proveedorFotos,
+            ),
+            const SizedBox(height: Espacios.l),
+          ],
+          if (fotos.galeria.isNotEmpty) ...[
+            GaleriaFotosNegocio(
+              fotos: fotos.galeria,
+              proveedor: proveedorFotos,
+            ),
+            const SizedBox(height: Espacios.xl),
+          ],
+          _EncabezadoNegocio(negocio: negocio, categoria: categoria),
+          const SizedBox(height: Espacios.xl),
+          _ContactoNegocio(negocio: negocio),
+          const SizedBox(height: Espacios.xl),
+          _HorarioSemanal(horario: negocio.horario),
+          const SizedBox(height: Espacios.xl),
+          SeccionServicios(
+            negocioId: negocio.id,
+            negocioNombre: negocio.nombre,
+            aceptaReservas: negocio.aceptaReservas,
+            service: service,
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _EncabezadoNegocio extends StatelessWidget {
