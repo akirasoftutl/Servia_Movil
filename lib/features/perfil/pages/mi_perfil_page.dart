@@ -356,7 +356,7 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
                   width: 56,
                   height: 56,
                   decoration: const BoxDecoration(
-                    color: const Color.fromARGB(255, 142, 69, 184),
+                    color: Color.fromARGB(255, 142, 69, 184),
                     shape: BoxShape.circle,
                   ),
                   alignment: Alignment.center,

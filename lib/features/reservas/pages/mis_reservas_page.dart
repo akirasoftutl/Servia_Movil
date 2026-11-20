@@ -211,11 +211,7 @@ class _ListaReservasState extends State<_ListaReservas>
   @override
   void didUpdateWidget(covariant _ListaReservas anterior) {
     super.didUpdateWidget(anterior);
-    if (widget.activa &&
-        !anterior.activa &&
-        !_cargado &&
-        _error == null &&
-        !_cargandoMas) {
+    if (widget.activa && !anterior.activa) {
       _cargar();
     }
   }

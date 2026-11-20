@@ -33,11 +33,27 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _indiceActual = 0;
   late final AuthService _auth;
+  late final List<Key> _clavesPantallas;
 
   @override
   void initState() {
     super.initState();
     _auth = widget.authService ?? AuthService();
+    _clavesPantallas = List<Key>.generate(4, (_) => UniqueKey());
+  }
+
+  void _seleccionar(int nuevoIndice) {
+    if (nuevoIndice == 3 && _auth.usuarioActual == null) {
+      widget.onSolicitarLogin?.call();
+      return;
+    }
+
+    setState(() {
+      if (nuevoIndice == 2) {
+        _clavesPantallas[nuevoIndice] = UniqueKey();
+      }
+      _indiceActual = nuevoIndice;
+    });
   }
 
   String _obtenerInicialUsuario() {
@@ -58,28 +74,37 @@ class _HomePageState extends State<HomePage> {
     final inicial = _obtenerInicialUsuario();
 
     final pantallas = <Widget>[
-      ListaNegocios(negociosService: widget.negociosService),
+      ListaNegocios(
+        key: _clavesPantallas[0],
+        negociosService: widget.negociosService,
+      ),
 
-      ListaNegocios(negociosService: widget.negociosService),
+      ListaNegocios(
+        key: _clavesPantallas[1],
+        negociosService: widget.negociosService,
+      ),
 
       if (estaLogueado)
         MisReservasPage(
+          key: _clavesPantallas[2],
           authService: _auth,
           reservasService: widget.reservasService,
         )
       else
         ActividadScreen(
-          onBuscarLugares: () => setState(() => _indiceActual = 0),
+          key: _clavesPantallas[2],
+          onBuscarLugares: () => _seleccionar(0),
           onIniciarSesion: widget.onSolicitarLogin,
         ),
 
       if (estaLogueado)
         MiPerfilPage(
+          key: _clavesPantallas[3],
           authService: _auth,
           perfilClienteService: widget.perfilClienteService,
         )
       else
-        const SizedBox.shrink(),
+        SizedBox.shrink(key: _clavesPantallas[3]),
     ];
 
     return Scaffold(
@@ -89,14 +114,7 @@ class _HomePageState extends State<HomePage> {
         indiceActual: _indiceActual,
         inicialUsuario: inicial,
         estaLogueado: estaLogueado,
-        onSeleccionar: (nuevoIndice) {
-          if (nuevoIndice == 3 && !estaLogueado) {
-            widget.onSolicitarLogin?.call();
-            return;
-          }
-
-          setState(() => _indiceActual = nuevoIndice);
-        },
+        onSeleccionar: _seleccionar,
       ),
     );
   }
