@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:servia/core/widgets/estados.dart';
 import 'package:servia/features/auth/pages/auth_gate.dart';

@@ -1,5 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../../core/theme/tokens.dart';

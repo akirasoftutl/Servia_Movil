@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:servia/features/negocios/data/negocio_resumen.dart';
 import 'package:servia/features/negocios/mensajes.dart';
