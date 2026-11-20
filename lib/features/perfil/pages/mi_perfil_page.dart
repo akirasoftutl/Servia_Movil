@@ -7,6 +7,7 @@ import '../../../core/widgets/aviso.dart';
 import '../../../core/widgets/estados.dart';
 import '../../auth/data/auth_service.dart';
 import '../../auth/mensajes.dart';
+import '../../auth/pages/cambiar_contrasena_page.dart';
 import '../../auth/validaciones.dart';
 import '../data/perfil_cliente.dart';
 import '../data/perfil_cliente_service.dart';
@@ -102,6 +103,14 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
       _errorGeneral = null;
       _errorCorreo = null;
     });
+  }
+
+  void _abrirCambioContrasena() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => CambiarContrasenaPage(authService: _auth),
+      ),
+    );
   }
 
   Future<void> _guardar() async {
@@ -513,6 +522,29 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
                   ),
                 ),
                 child: const Text('Editar información'),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            SizedBox(
+              height: 48,
+              child: OutlinedButton.icon(
+                onPressed: _abrirCambioContrasena,
+                icon: const Icon(Icons.lock_outline),
+                label: const Text('Cambiar contraseña'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF111827),
+                  side: const BorderSide(
+                    color: Color(0xFFD1D5DB),
+                    width: 1.2,
+                  ),
+                  shape: const StadiumBorder(),
+                  textStyle: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ),
 

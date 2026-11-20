@@ -1,3 +1,4 @@
+import 'fotos_negocio.dart';
 import 'lectura_json.dart';
 
 const diasSemana = <String, String>{
@@ -46,6 +47,7 @@ class Negocio {
   final String? direccionTexto;
   final String? telefono;
   final String? correoContacto;
+  final FotosNegocio fotos;
   final bool aceptaReservas;
   final Map<String, HorarioDia?> horario;
 
@@ -57,6 +59,7 @@ class Negocio {
     this.direccionTexto,
     this.telefono,
     this.correoContacto,
+    this.fotos = const FotosNegocio(),
     required this.aceptaReservas,
     required this.horario,
   });
@@ -83,6 +86,7 @@ class Negocio {
       direccionTexto: _leerDireccionTexto(json),
       telefono: telefono.isEmpty ? null : telefono,
       correoContacto: leerTextoOpcional(json, 'correoContacto'),
+      fotos: FotosNegocio.fromJson(json['fotos']),
       aceptaReservas: leerBooleano(json, 'aceptaReservas'),
       horario: Map.unmodifiable(horario),
     );

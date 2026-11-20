@@ -100,6 +100,49 @@ void main() {
         expect(negocio.telefono, isNull);
       }
     });
+    test('lee portada y galería del perfil público', () {
+      final negocio = Negocio.fromJson(
+        negocioJson()
+          ..['fotos'] = fotosJson(
+            portada: fotoJson('p1', 'https://fotos.test/p1.jpg'),
+            galeria: [
+              fotoJson('g1', 'https://fotos.test/g1.jpg'),
+              fotoJson('g2', 'https://fotos.test/g2.jpg'),
+            ],
+          ),
+      );
+      expect(negocio.fotos.portada?.id, 'p1');
+      expect(negocio.fotos.portada?.url, 'https://fotos.test/p1.jpg');
+      expect(
+        negocio.fotos.galeria.map((foto) => foto.url).toList(),
+        ['https://fotos.test/g1.jpg', 'https://fotos.test/g2.jpg'],
+      );
+    });
+    test('API anterior sin campo fotos se lee como sin fotos', () {
+      final negocio = Negocio.fromJson(negocioJson()..remove('fotos'));
+      expect(negocio.fotos.portada, isNull);
+      expect(negocio.fotos.galeria, isEmpty);
+    });
+    test('fotos malformadas no rompen la lectura del perfil', () {
+      for (final valor in [
+        null,
+        42,
+        'fotos',
+        <String, dynamic>{},
+        {'portada': 42, 'galeria': 'no es lista'},
+        {'portada': {'url': ''}, 'galeria': [1, {'url': 'ok'}]},
+      ]) {
+        final negocio = Negocio.fromJson(negocioJson()..['fotos'] = valor);
+        final galeria = valor is Map ? valor['galeria'] : null;
+        expect(negocio.nombre, 'Salón Aurora', reason: '$valor');
+        expect(negocio.fotos.portada, isNull, reason: '$valor');
+        expect(
+          negocio.fotos.galeria.length,
+          galeria is List ? 1 : 0,
+          reason: '$valor',
+        );
+      }
+    });
     test(
       'rechaza campos ausentes y tipos erróneos con excepción de formato',
       () {

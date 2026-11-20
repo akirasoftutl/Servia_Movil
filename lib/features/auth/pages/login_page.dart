@@ -9,6 +9,7 @@ import '../data/auth_service.dart';
 import '../data/perfil_service.dart';
 import '../data/registro_cliente_service.dart';
 import '../mensajes.dart';
+import 'recuperar_contrasena_page.dart';
 import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -159,6 +160,18 @@ class _LoginPageState extends State<LoginPage> {
       _cargando = false;
       _error = rechazo;
     });
+  }
+
+  Future<void> _abrirRecuperacion() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => RecuperarContrasenaPage(
+          authService: _authService,
+          correoInicial: _correoController.text.trim(),
+        ),
+      ),
+    );
   }
 
   Future<void> _abrirRegistro() async {
@@ -312,16 +325,36 @@ class _LoginPageState extends State<LoginPage> {
                       hintText: 'Dirección de correo electrónico',
                     ),
                   ),
-
                   const SizedBox(height: 16),
 
-                  const Text(
-                    'Contraseña',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF111827),
-                    ),
+                  Row(
+                    children: [
+                      const Text(
+                        'Contraseña',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF111827),
+                        ),
+                      ),
+                      Expanded(
+                        child: TextButton(
+                          onPressed: _cargando ? null : _abrirRecuperacion,
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: Espacios.s,
+                            ),
+                          ),
+                          child: const Align(
+                            alignment: Alignment.centerRight,
+                            child: Text(
+                              '¿Olvidaste tu contraseña?',
+                              textAlign: TextAlign.right,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   TextField(
