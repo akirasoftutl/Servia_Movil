@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/colores_servia.dart';
 import '../../../core/theme/tokens.dart';
 
-/// Marcador de la imagen de un negocio (la API aún no expone fotos): la
-/// inicial del nombre sobre el tono de marca.
+/// Marcador del negocio cuando no hay foto: la inicial del nombre sobre el
+/// tono de marca.
 class MiniaturaNegocio extends StatelessWidget {
   const MiniaturaNegocio({
     super.key,

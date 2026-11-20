@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 class ApiClient {
   static const String baseUrl = String.fromEnvironment(
     'API_URL',
-    defaultValue: 'http://192.168.1.7:3000',
+    defaultValue: 'http://192.168.1.19:3000',
   );
 
   static const Duration tiempoLimite = Duration(seconds: 15);
