@@ -14,6 +14,7 @@ import 'package:servia/features/negocios/pages/lista_negocios_page.dart';
 import 'package:servia/features/negocios/pages/perfil_negocio_page.dart';
 import 'package:servia/features/negocios/rutas_negocios.dart';
 import 'package:servia/features/perfil/pages/mi_perfil_page.dart';
+import 'package:servia/features/reservas/pages/mis_reservas_page.dart';
 
 import '../features/negocios/fakes.dart';
 import '../features/perfil/fakes_perfil.dart';
@@ -234,6 +235,39 @@ void main() {
         MiPerfilPage(
           authService: SesionPerfilFalsa([]),
           perfilClienteService: PerfilClienteFalso([], error: Exception()),
+        ),
+      );
+      expect(find.byType(EstadoError), findsOneWidget);
+    });
+
+    testWidgets('Mis reservas: cargando, vacío y error', (tester) async {
+      final espera = Completer<void>();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MisReservasPage(
+            authService: SesionFalsa(),
+            reservasService: ReservasFalso(espera: espera),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.byType(EstadoCargando), findsOneWidget);
+      espera.complete();
+
+      await abrir(
+        tester,
+        MisReservasPage(
+          authService: SesionFalsa(),
+          reservasService: ReservasFalso(),
+        ),
+      );
+      expect(find.byType(EstadoVacio), findsOneWidget);
+
+      await abrir(
+        tester,
+        MisReservasPage(
+          authService: SesionFalsa(),
+          reservasService: ReservasFalso(errorListado: Exception('red')),
         ),
       );
       expect(find.byType(EstadoError), findsOneWidget);

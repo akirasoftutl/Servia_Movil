@@ -7,6 +7,8 @@ import '../../negocios/data/negocios_service.dart';
 import '../../negocios/pages/lista_negocios_page.dart';
 import '../../perfil/data/perfil_cliente_service.dart';
 import '../../perfil/pages/mi_perfil_page.dart';
+import '../../reservas/data/reservas_service.dart';
+import '../../reservas/pages/mis_reservas_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({
@@ -15,11 +17,13 @@ class HomePage extends StatelessWidget {
     this.negociosService,
     this.authService,
     this.perfilClienteService,
+    this.reservasService,
   });
 
   final NegociosService? negociosService;
   final AuthService? authService;
   final PerfilClienteService? perfilClienteService;
+  final ReservasService? reservasService;
   final VoidCallback onCerrarSesion;
 
   @override
@@ -35,6 +39,18 @@ class HomePage extends StatelessWidget {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'Mis reservas',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => MisReservasPage(
+                  authService: authService,
+                  reservasService: reservasService,
+                ),
+              ),
+            ),
+            icon: const Icon(Icons.event_note),
+          ),
           IconButton(
             tooltip: 'Mi perfil',
             onPressed: () => Navigator.of(context).push(

@@ -8,6 +8,7 @@ import '../../../core/theme/tokens.dart';
 import '../../../core/widgets/estados.dart';
 import '../../../core/widgets/marca_servia.dart';
 import '../../home/pages/home_page.dart';
+import '../../reservas/data/reservas_service.dart';
 import '../data/auth_service.dart';
 import '../data/perfil_service.dart';
 import '../../perfil/data/perfil_cliente_service.dart';
@@ -24,12 +25,14 @@ class AuthGate extends StatefulWidget {
     this.perfilService,
     this.registroClienteService,
     this.perfilClienteService,
+    this.reservasService,
   });
 
   final AuthService? authService;
   final PerfilService? perfilService;
   final RegistroClienteService? registroClienteService;
   final PerfilClienteService? perfilClienteService;
+  final ReservasService? reservasService;
 
   @override
   State<AuthGate> createState() => _AuthGateState();
@@ -141,6 +144,7 @@ class _AuthGateState extends State<AuthGate> {
           onCerrarSesion: _cerrarSesion,
           authService: _authService,
           perfilClienteService: widget.perfilClienteService,
+          reservasService: widget.reservasService,
         );
       case _EstadoSesion.errorRed:
         return _PantallaErrorRed(onReintentar: _reintentar);
