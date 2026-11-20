@@ -37,15 +37,6 @@ class _ListaNegociosState extends State<ListaNegocios> {
   static const _distanciaCarga = 200;
   static const _maximoPaginasVacias = 5;
 
-  static const _imagenesTemporales = <String>[
-    'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1519415510236-718bdfcd89c8?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1633681926022-84c23e8cb2d6?auto=format&fit=crop&w=800&q=80',
-  ];
-
   late final NegociosService _service;
   final _scroll = ScrollController();
   final _texto = TextEditingController();
@@ -229,13 +220,9 @@ class _ListaNegociosState extends State<ListaNegocios> {
     return id;
   }
 
-  String _imagenDeNegocio(NegocioResumen negocio, int indice) {
-    // Futuramente, cuando NegocioResumen incluya la URL real, descomenta:
-    // if (negocio.imagenUrl != null && negocio.imagenUrl!.isNotEmpty) {
-    //   return negocio.imagenUrl!;
-    // }
-    final hash = negocio.id.hashCode.abs() + indice;
-    return _imagenesTemporales[hash % _imagenesTemporales.length];
+  String? _imagenDeNegocio(NegocioResumen negocio) {
+    final url = negocio.imagenUrl;
+    return url != null && url.isNotEmpty ? url : null;
   }
 
   void _abrirDetalleNegocio(NegocioResumen negocio) {
@@ -312,7 +299,7 @@ class _ListaNegociosState extends State<ListaNegocios> {
                 child: _TarjetaNegocioHorizontal(
                   negocio: negocio,
                   categoria: _nombreCategoria(negocio.categoriaId),
-                  imagenUrl: _imagenDeNegocio(negocio, indice),
+                  imagenUrl: _imagenDeNegocio(negocio),
                   onTap: () => _abrirDetalleNegocio(negocio),
                 ),
               );
@@ -355,7 +342,7 @@ class _ListaNegociosState extends State<ListaNegocios> {
                   return _TarjetaNegocioCarrusel(
                     negocio: negocio,
                     categoria: _nombreCategoria(negocio.categoriaId),
-                    imagenUrl: _imagenDeNegocio(negocio, i),
+                    imagenUrl: _imagenDeNegocio(negocio),
                     etiquetaSuperior: 'Destacado',
                     onTap: () => _abrirDetalleNegocio(negocio),
                   );
@@ -380,7 +367,7 @@ class _ListaNegociosState extends State<ListaNegocios> {
                   return _TarjetaNegocioCarrusel(
                     negocio: negocio,
                     categoria: _nombreCategoria(negocio.categoriaId),
-                    imagenUrl: _imagenDeNegocio(negocio, i + 3),
+                    imagenUrl: _imagenDeNegocio(negocio),
                     etiquetaSuperior: 'Nuevo',
                     onTap: () => _abrirDetalleNegocio(negocio),
                   );
@@ -425,7 +412,7 @@ class _ListaNegociosState extends State<ListaNegocios> {
                     _TarjetaNegocioHorizontal(
                       negocio: _items[i],
                       categoria: _nombreCategoria(_items[i].categoriaId),
-                      imagenUrl: _imagenDeNegocio(_items[i], i),
+                      imagenUrl: _imagenDeNegocio(_items[i]),
                       onTap: () => _abrirDetalleNegocio(_items[i]),
                     ),
                     const SizedBox(height: 14),
@@ -744,7 +731,7 @@ class _TarjetaNegocioCarrusel extends StatelessWidget {
 
   final NegocioResumen negocio;
   final String categoria;
-  final String imagenUrl;
+  final String? imagenUrl;
   final String etiquetaSuperior;
   final VoidCallback onTap;
 
@@ -762,21 +749,11 @@ class _TarjetaNegocioCarrusel extends StatelessWidget {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  child: Image.network(
-                    imagenUrl,
+                  child: _ImagenPortada(
+                    url: imagenUrl,
                     width: 265,
                     height: 165,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => Container(
-                      width: 265,
-                      height: 165,
-                      color: const Color(0xFFF3F4F6),
-                      child: const Icon(
-                        Icons.storefront_outlined,
-                        size: 40,
-                        color: Color(0xFF9CA3AF),
-                      ),
-                    ),
+                    iconSize: 40,
                   ),
                 ),
                 Positioned(
@@ -881,7 +858,7 @@ class _TarjetaNegocioHorizontal extends StatelessWidget {
 
   final NegocioResumen negocio;
   final String categoria;
-  final String imagenUrl;
+  final String? imagenUrl;
   final VoidCallback onTap;
 
   @override
@@ -901,20 +878,11 @@ class _TarjetaNegocioHorizontal extends StatelessWidget {
               borderRadius: const BorderRadius.horizontal(
                 left: Radius.circular(15),
               ),
-              child: Image.network(
-                imagenUrl,
+              child: _ImagenPortada(
+                url: imagenUrl,
                 width: 108,
                 height: 108,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => Container(
-                  width: 108,
-                  height: 108,
-                  color: const Color(0xFFF3F4F6),
-                  child: const Icon(
-                    Icons.storefront_outlined,
-                    color: Color(0xFF9CA3AF),
-                  ),
-                ),
+                iconSize: 24,
               ),
             ),
             Expanded(
@@ -985,6 +953,46 @@ class _TarjetaNegocioHorizontal extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Portada del negocio en la lista. Sin URL (o si falla la carga) muestra el
+/// mismo marcador que ya se usaba para los errores de imagen.
+class _ImagenPortada extends StatelessWidget {
+  const _ImagenPortada({
+    required this.url,
+    required this.width,
+    required this.height,
+    required this.iconSize,
+  });
+
+  final String? url;
+  final double width;
+  final double height;
+  final double iconSize;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget marcador() => Container(
+      width: width,
+      height: height,
+      color: const Color(0xFFF3F4F6),
+      child: Icon(
+        Icons.storefront_outlined,
+        size: iconSize,
+        color: const Color(0xFF9CA3AF),
+      ),
+    );
+
+    if (url == null || url!.isEmpty) return marcador();
+
+    return Image.network(
+      url!,
+      width: width,
+      height: height,
+      fit: BoxFit.cover,
+      errorBuilder: (_, _, _) => marcador(),
     );
   }
 }

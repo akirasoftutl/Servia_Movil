@@ -327,35 +327,15 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  Row(
-                    children: [
-                      const Text(
-                        'Contraseña',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF111827),
-                        ),
-                      ),
-                      Expanded(
-                        child: TextButton(
-                          onPressed: _cargando ? null : _abrirRecuperacion,
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: Espacios.s,
-                            ),
-                          ),
-                          child: const Align(
-                            alignment: Alignment.centerRight,
-                            child: Text(
-                              '¿Olvidaste tu contraseña?',
-                              textAlign: TextAlign.right,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                  const Text(
+                    'Contraseña',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF111827),
+                    ),
                   ),
+
                   const SizedBox(height: 8),
                   TextField(
                     controller: _contrasenaController,
@@ -492,10 +472,7 @@ class _LoginPageState extends State<LoginPage> {
                         onPressed: _cargando ? null : _abrirRegistro,
                         child: ShaderMask(
                           shaderCallback: (bounds) => const LinearGradient(
-                            colors: [
-                              Color(0xFFE05A97), 
-                              Color(0xFF9D4EDD), 
-                            ],
+                            colors: [Color(0xFFE05A97), Color(0xFF9D4EDD)],
                           ).createShader(bounds),
                           child: const Text(
                             'Regístrate',
@@ -508,6 +485,23 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ],
+                  ),
+
+                  Center(
+                    child: TextButton(
+                      onPressed: _cargando ? null : _abrirRecuperacion,
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF6B7280),
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        textStyle: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      child: const Text('¿Olvidaste tu contraseña?'),
+                    ),
                   ),
                 ],
               ),
