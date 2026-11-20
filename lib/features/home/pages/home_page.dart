@@ -6,6 +6,7 @@ import '../../negocios/pages/lista_negocios_page.dart';
 import '../../perfil/data/perfil_cliente_service.dart';
 import '../../perfil/pages/mi_perfil_page.dart';
 import '../../reservas/data/reservas_service.dart';
+import '../../reservas/pages/actividad_screen.dart';
 import '../../reservas/pages/mis_reservas_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -67,7 +68,10 @@ class _HomePageState extends State<HomePage> {
           reservasService: widget.reservasService,
         )
       else
-        const SizedBox.shrink(),
+        ActividadScreen(
+          onBuscarLugares: () => setState(() => _indiceActual = 0),
+          onIniciarSesion: widget.onSolicitarLogin,
+        ),
 
       if (estaLogueado)
         MiPerfilPage(

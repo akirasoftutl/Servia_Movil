@@ -19,9 +19,9 @@ class ListaNegociosPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        backgroundColor: Colors.white,
-        body: ListaNegocios(negociosService: negociosService),
-      );
+    backgroundColor: Colors.white,
+    body: ListaNegocios(negociosService: negociosService),
+  );
 }
 
 class ListaNegocios extends StatefulWidget {
@@ -131,8 +131,9 @@ class _ListaNegociosState extends State<ListaNegocios> {
       final categorias = await _service.obtenerCategorias();
       if (!mounted) return;
       setState(
-        () => _categorias = categorias.where((c) => c.activo).toList()
-          ..sort((a, b) => a.orden.compareTo(b.orden)),
+        () =>
+            _categorias = categorias.where((c) => c.activo).toList()
+              ..sort((a, b) => a.orden.compareTo(b.orden)),
       );
     } catch (_) {
       if (!mounted) return;
@@ -217,9 +218,9 @@ class _ListaNegociosState extends State<ListaNegocios> {
   }
 
   Widget _continuacion() => TextButton(
-        onPressed: () => _cargar(siguientePagina: true),
-        child: const Text(MensajesNegocios.cargarMas),
-      );
+    onPressed: () => _cargar(siguientePagina: true),
+    child: const Text(MensajesNegocios.cargarMas),
+  );
 
   String _nombreCategoria(String id) {
     for (final categoria in _categorias) {
@@ -240,10 +241,8 @@ class _ListaNegociosState extends State<ListaNegocios> {
   void _abrirDetalleNegocio(NegocioResumen negocio) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => PerfilNegocioPage(
-          negocioId: negocio.id,
-          negociosService: _service,
-        ),
+        builder: (_) =>
+            PerfilNegocioPage(negocioId: negocio.id, negociosService: _service),
       ),
     );
   }
@@ -584,7 +583,6 @@ class _EncabezadoExploracion extends StatelessWidget {
   }
 }
 
-/// Cuadrícula de categorías: "Todo" + las categorías activas que vienen de la API.
 class _CuadriculaCategorias extends StatelessWidget {
   const _CuadriculaCategorias({
     required this.categorias,
@@ -601,7 +599,7 @@ class _CuadriculaCategorias extends StatelessWidget {
       case 'cabello-barba':
         return Icons.content_cut_rounded;
       case 'estetica-facial-corporal':
-        return Icons.spa_outlined;
+        return Icons.face_retouching_natural_outlined;
       case 'fitness':
         return Icons.fitness_center_rounded;
       case 'maquillaje-imagen':
@@ -614,7 +612,6 @@ class _CuadriculaCategorias extends StatelessWidget {
   }
 
   String _etiquetaCorta(Categoria categoria) {
-    // Usa el nombre real que viene de la API; se ajusta en 2 líneas si es largo.
     return categoria.nombre;
   }
 
@@ -639,12 +636,13 @@ class _CuadriculaCategorias extends StatelessWidget {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
       itemCount: elementos.length,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
+        crossAxisCount: 4,
         crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 0.96,
+        mainAxisSpacing: 16,
+        childAspectRatio: 0.62,
       ),
       itemBuilder: (context, index) {
         final item = elementos[index];
@@ -652,47 +650,46 @@ class _CuadriculaCategorias extends StatelessWidget {
 
         return GestureDetector(
           onTap: () => onSeleccionar(item.id),
+          behavior: HitTestBehavior.opaque,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
+              AspectRatio(
+                aspectRatio: 1,
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
-                  width: double.infinity,
                   decoration: BoxDecoration(
                     color: seleccionada
-                        ? const Color(0xFFF3E8FF)
-                        : const Color(0xFFF7F7F8),
-                    borderRadius: BorderRadius.circular(16),
+                        ? const Color(0xFFF0EDFA)
+                        : const Color(0xFFF5F5F5),
+                    borderRadius: BorderRadius.circular(36),
                     border: Border.all(
                       color: seleccionada
-                          ? const Color(0xFF7C3AED)
-                          : const Color(0xFFEEEEEE),
-                      width: seleccionada ? 1.5 : 1,
+                          ? const Color(0xFFDCD2F5)
+                          : const Color(0xFFE5E5E5),
+                      width: 1.5,
                     ),
                   ),
-                  child: Icon(
-                    item.icono,
-                    size: 28,
-                    color: seleccionada
-                        ? const Color(0xFF7C3AED)
-                        : const Color(0xFF111827),
+                  child: Center(
+                    child: Icon(
+                      item.icono,
+                      size: 34,
+                      color: const Color(0xFF111111),
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 9),
               Text(
                 item.nombre,
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 12,
-                  height: 1.15,
-                  fontWeight: seleccionada ? FontWeight.w700 : FontWeight.w500,
-                  color: seleccionada
-                      ? const Color(0xFF7C3AED)
-                      : const Color(0xFF111827),
+                  fontSize: 10,
+                  height: 1.25,
+                  fontWeight: seleccionada ? FontWeight.w600 : FontWeight.w400,
+                  color: const Color(0xFF111111),
                 ),
               ),
             ],
@@ -736,7 +733,6 @@ class _TituloSeccion extends StatelessWidget {
   }
 }
 
-/// Tarjeta grande para los carruseles horizontales (Recomendado / Nuevo en Servia)
 class _TarjetaNegocioCarrusel extends StatelessWidget {
   const _TarjetaNegocioCarrusel({
     required this.negocio,
@@ -862,15 +858,10 @@ class _TarjetaNegocioCarrusel extends StatelessWidget {
 
             // Categoría y estado de reservas
             Text(
-              negocio.aceptaReservas
-                  ? '$categoria · Disponible'
-                  : categoria,
+              negocio.aceptaReservas ? '$categoria · Disponible' : categoria,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Color(0xFF9CA3AF),
-              ),
+              style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
             ),
           ],
         ),
@@ -902,10 +893,7 @@ class _TarjetaNegocioHorizontal extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: const Color(0xFFE5E7EB),
-            width: 1,
-          ),
+          border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
         ),
         child: Row(
           children: [
