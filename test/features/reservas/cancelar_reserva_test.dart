@@ -309,4 +309,23 @@ void main() {
       findsOneWidget,
     );
   });
+  for (final estado in [
+    'cancelada',
+    'rechazada',
+    'rechazada_vencimiento',
+    'completada',
+  ]) {
+    for (final cancelable in [true, false]) {
+      testWidgets('52 C5 $estado con permiso $cancelable no ofrece acciones', (
+        tester,
+      ) async {
+        final e = Escenario(estado: estado, cancelable: cancelable);
+        await e.abrir(tester);
+        expect(find.byType(FilledButton), findsNothing);
+        expect(find.byType(TextButton), findsNothing);
+        expect(find.text(MensajesReservas.limiteCancelacion), findsNothing);
+        expect(e.envios, 0);
+      });
+    }
+  }
 }
