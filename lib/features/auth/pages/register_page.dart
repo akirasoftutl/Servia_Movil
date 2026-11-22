@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/tokens.dart';
 import '../../../core/widgets/aviso.dart';
-import '../../../core/widgets/marca_servia.dart';
 import '../data/auth_service.dart';
 import '../data/registro_cliente_service.dart';
 import '../mensajes.dart';
@@ -107,90 +106,212 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
+  InputDecoration _decoracionCampo({
+    required String hintText,
+    Widget? suffixIcon,
+  }) {
+    const bordeBase = OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(12)),
+      borderSide: BorderSide(color: Color(0xFFD1D5DB), width: 1.2),
+    );
+
+    const bordeError = OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(12)),
+      borderSide: BorderSide(color: Color(0xFFDC2626), width: 1.2),
+    );
+
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: const TextStyle(
+        color: Color(0xFF9CA3AF),
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+      ),
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      border: bordeBase,
+      enabledBorder: bordeBase,
+      focusedBorder: const OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+        borderSide: BorderSide(color: Color(0xFF111827), width: 1.5),
+      ),
+      errorBorder: bordeError,
+      focusedErrorBorder: bordeError,
+      suffixIcon: suffixIcon,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final tema = Theme.of(context);
-    final textos = tema.textTheme;
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: Espacios.xl,
-              vertical: Espacios.l,
-            ),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 440),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 440),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               child: Form(
                 key: _formKey,
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Center(
-                      child: LogoServia(tamano: 60, enMosaico: true),
-                    ),
-                    const SizedBox(height: Espacios.l),
-                    Text(
-                      'Crea una cuenta',
-                      textAlign: TextAlign.center,
-                      style: textos.headlineMedium,
-                    ),
-                    const SizedBox(height: Espacios.xs),
-                    Text(
-                      'Regístrate para comenzar',
-                      textAlign: TextAlign.center,
-                      style: textos.bodyLarge?.copyWith(
-                        color: tema.colorScheme.onSurfaceVariant,
+                    // Botón superior derecho 'X' para regresar al login
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: IconButton(
+                        onPressed: _cargando
+                            ? null
+                            : () => Navigator.pop(context),
+                        icon: const Icon(
+                          Icons.close,
+                          color: Color(0xFF111827),
+                          size: 26,
+                        ),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
                       ),
                     ),
-                    const SizedBox(height: Espacios.xl),
+                    const SizedBox(height: 16),
+
+                    // Título principal alineado a la izquierda
+                    const Text(
+                      'Crea una cuenta',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111827),
+                        height: 1.15,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Subtítulo
+                    const Text(
+                      'Regístrate para comenzar.',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFF6B7280),
+                      ),
+                    ),
+
                     if (_errorGeneral != null) ...[
-                      Aviso(texto: _errorGeneral!),
                       const SizedBox(height: Espacios.l),
+                      Aviso(texto: _errorGeneral!),
                     ],
-                    const EtiquetaCampo('Nombre completo'),
+
+                    const SizedBox(height: 28),
+
+                    // Campo: Nombre completo
+                    const Text(
+                      'Nombre completo',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF111827),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     TextFormField(
                       controller: _nombreController,
                       textCapitalization: TextCapitalization.words,
+                      textInputAction: TextInputAction.next,
                       validator: ValidacionesCliente.nombre,
-                      decoration: const InputDecoration(
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF111827),
+                      ),
+                      decoration: _decoracionCampo(
                         hintText: 'Tu nombre y apellido',
                       ),
                     ),
-                    const SizedBox(height: Espacios.l),
-                    const EtiquetaCampo('Teléfono'),
+
+                    const SizedBox(height: 16),
+
+                    // Campo: Teléfono
+                    const Text(
+                      'Teléfono',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF111827),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     TextFormField(
                       controller: _telefonoController,
                       keyboardType: TextInputType.phone,
+                      textInputAction: TextInputAction.next,
                       validator: ValidacionesCliente.telefono,
-                      decoration: const InputDecoration(
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF111827),
+                      ),
+                      decoration: _decoracionCampo(
                         hintText: 'Teléfono (10 dígitos)',
                       ),
                     ),
-                    const SizedBox(height: Espacios.l),
-                    const EtiquetaCampo('Correo electrónico'),
+
+                    const SizedBox(height: 16),
+
+                    // Campo: Correo electrónico
+                    const Text(
+                      'Correo electrónico',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF111827),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     TextFormField(
                       controller: _correoController,
                       keyboardType: TextInputType.emailAddress,
+                      autocorrect: false,
+                      textInputAction: TextInputAction.next,
                       validator: ValidacionesCliente.correo,
-                      decoration: const InputDecoration(
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF111827),
+                      ),
+                      decoration: _decoracionCampo(
                         hintText: 'Dirección de correo electrónico',
                       ),
                     ),
-                    const SizedBox(height: Espacios.l),
-                    const EtiquetaCampo('Contraseña'),
+
+                    const SizedBox(height: 16),
+
+                    // Campo: Contraseña
+                    const Text(
+                      'Contraseña',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF111827),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     TextFormField(
                       controller: _contrasenaController,
                       obscureText: _ocultarContrasena,
+                      textInputAction: TextInputAction.done,
+                      onFieldSubmitted: (_) => _registrar(),
                       validator: _validarContrasena,
-                      decoration: InputDecoration(
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF111827),
+                      ),
+                      decoration: _decoracionCampo(
                         hintText: 'Crea una contraseña',
                         suffixIcon: IconButton(
                           icon: Icon(
                             _ocultarContrasena
                                 ? Icons.visibility_off_outlined
                                 : Icons.visibility_outlined,
+                            color: const Color(0xFF6B7280),
                           ),
                           onPressed: () {
                             setState(
@@ -200,27 +321,49 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: Espacios.xl),
-                    ElevatedButton(
-                      onPressed: _cargando ? null : _registrar,
-                      child: _cargando
-                          ? const SizedBox.square(
-                              dimension: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                              ),
-                            )
-                          : const Text('Crear cuenta'),
+
+                    const SizedBox(height: 28),
+
+                    // Botón principal estilo píldora negra
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 54),
+                      child: ElevatedButton(
+                        onPressed: _cargando ? null : _registrar,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0F0F0F),
+                          foregroundColor: Colors.white,
+                          disabledBackgroundColor: const Color(0xFF9CA3AF),
+                          elevation: 0,
+                          shape: const StadiumBorder(),
+                          textStyle: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        child: _cargando
+                            ? const SizedBox.square(
+                                dimension: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text('Crear cuenta'),
+                      ),
                     ),
-                    const SizedBox(height: Espacios.s),
+
+                    const SizedBox(height: 20),
+
+                    // Enlace discreto para volver al inicio de sesión
                     Wrap(
                       alignment: WrapAlignment.center,
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        Text(
+                        const Text(
                           '¿Ya tienes cuenta?',
-                          style: textos.bodyMedium?.copyWith(
-                            color: tema.colorScheme.onSurfaceVariant,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF6B7280),
                           ),
                         ),
                         TextButton(
@@ -229,7 +372,19 @@ class _RegisterPageState extends State<RegisterPage> {
                               : () {
                                   Navigator.pop(context);
                                 },
-                          child: const Text('Inicia sesión'),
+                          child: ShaderMask(
+                            shaderCallback: (bounds) => const LinearGradient(
+                              colors: [Color(0xFFE05A97), Color(0xFF9D4EDD)],
+                            ).createShader(bounds),
+                            child: const Text(
+                              'Inicia sesión',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ),

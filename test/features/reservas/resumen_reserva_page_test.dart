@@ -10,9 +10,12 @@ import 'package:servia/features/reservas/resultado_reserva.dart';
 
 import 'fakes.dart';
 
+/// El rediseño usa un `ElevatedButton`, no un `FilledButton`, para enviar.
+Finder botonReserva(String texto) => find.widgetWithText(ElevatedButton, texto);
+
 Future<void> enviar(WidgetTester tester) async {
-  await tester.ensureVisible(find.text(MensajesReservas.enviar));
-  await tester.tap(find.text(MensajesReservas.enviar));
+  await tester.ensureVisible(botonReserva(MensajesReservas.enviar));
+  await tester.tap(botonReserva(MensajesReservas.enviar));
   for (var i = 0; i < 3; i++) {
     await tester.pump(const Duration(milliseconds: 400));
   }
@@ -27,16 +30,17 @@ void main() {
       'Corte de cabello',
       'martes 10 de noviembre de 2026',
       '10:00',
-      '1 h 30 min',
-      r'$150',
       MensajesReservas.contacto,
     ]) {
       expect(find.text(texto), findsOneWidget, reason: texto);
     }
-    expect(
-      find.text('Ana Pérez\nana@test.com\n4771234567'),
-      findsOneWidget,
-    );
+    // Duración y precio se repiten en la tarjeta y en la barra inferior.
+    expect(find.text('1 h 30 min'), findsNWidgets(2));
+    expect(find.text(r'$150'), findsNWidgets(2));
+    // El contacto ya no es un único bloque: cada dato tiene su propio Text.
+    for (final dato in ['Ana Pérez', 'ana@test.com', '4771234567']) {
+      expect(find.text(dato), findsOneWidget, reason: dato);
+    }
   });
 
   testWidgets('permite observaciones opcionales de hasta 500 caracteres y las envía',
@@ -100,8 +104,8 @@ void main() {
     await abrirResumen(tester, reservas: reservas);
     await enviar(tester);
     expect(find.text(MensajesReservas.enviando), findsOneWidget);
-    final boton = find.widgetWithText(FilledButton, MensajesReservas.enviando);
-    expect(tester.widget<FilledButton>(boton).onPressed, isNull);
+    final boton = botonReserva(MensajesReservas.enviando);
+    expect(tester.widget<ElevatedButton>(boton).onPressed, isNull);
     await tester.tap(boton, warnIfMissed: false);
     await tester.pump();
     expect(reservas.solicitudes, hasLength(1));
@@ -156,8 +160,8 @@ void main() {
       await tester.ensureVisible(find.text(caso.$2));
       expect(find.text(caso.$2), findsOneWidget);
       expect(find.text(MensajesReservas.enviando), findsNothing);
-      final boton = find.widgetWithText(FilledButton, MensajesReservas.enviar);
-      expect(tester.widget<FilledButton>(boton).onPressed, isNotNull);
+      final boton = botonReserva(MensajesReservas.enviar);
+      expect(tester.widget<ElevatedButton>(boton).onPressed, isNotNull);
       expect(find.byType(ResumenReservaPage), findsOneWidget);
     });
   });
@@ -181,8 +185,8 @@ void main() {
     final reservas = ReservasFalso();
     await abrirResumen(tester, perfil: PerfilFalso(tipo: 'negocio'), reservas: reservas);
     expect(find.text(MensajesReservas.soloClientes), findsOneWidget);
-    final boton = find.widgetWithText(FilledButton, MensajesReservas.enviar);
-    expect(tester.widget<FilledButton>(boton).onPressed, isNull);
+    final boton = botonReserva(MensajesReservas.enviar);
+    expect(tester.widget<ElevatedButton>(boton).onPressed, isNull);
     await tester.tap(boton, warnIfMissed: false);
     await tester.pump();
     expect(reservas.solicitudes, isEmpty);
@@ -197,8 +201,8 @@ void main() {
       reservas: reservas,
     );
     expect(find.text('Reintentar'), findsOneWidget);
-    final boton = find.widgetWithText(FilledButton, MensajesReservas.enviar);
-    expect(tester.widget<FilledButton>(boton).onPressed, isNull);
+    final boton = botonReserva(MensajesReservas.enviar);
+    expect(tester.widget<ElevatedButton>(boton).onPressed, isNull);
     expect(reservas.solicitudes, isEmpty);
   });
 }

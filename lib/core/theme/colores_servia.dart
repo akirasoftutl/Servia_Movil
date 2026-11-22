@@ -46,6 +46,9 @@ abstract final class ColoresServia {
   static const errorFondo = Color(0xFFFDECEE);
   static const enErrorFondo = Color(0xFF7A1724);
 
+  /// Morado usado en la app (nav activa y acentos).
+  static const morado = Color(0xFF7C3AED);
+
   /// Avisos flotantes (snackbars).
   static const inverso = Color(0xFF2F2621);
   static const enInverso = Color(0xFFFBF1EA);

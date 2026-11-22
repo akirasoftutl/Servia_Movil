@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/tokens.dart';
 import '../../../core/widgets/aviso.dart';
-import '../../../core/widgets/marca_servia.dart';
 import '../data/auth_service.dart';
 import '../mensajes.dart';
 import '../validaciones.dart';
@@ -88,59 +87,119 @@ class _RecuperarContrasenaPageState extends State<RecuperarContrasenaPage> {
       });
     }
   }
+InputDecoration _decoracionCampo({required String hintText}) {
+    const bordeBase = OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(12)),
+      borderSide: BorderSide(color: Color(0xFFD1D5DB), width: 1.2),
+    );
+
+    const bordeError = OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(12)),
+      borderSide: BorderSide(color: Color(0xFFDC2626), width: 1.2),
+    );
+
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: const TextStyle(
+        color: Color(0xFF9CA3AF),
+        fontSize: 15,
+        fontWeight: FontWeight.w400,
+      ),
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      border: bordeBase,
+      enabledBorder: bordeBase,
+      focusedBorder: const OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+        borderSide: BorderSide(color: Color(0xFF111827), width: 1.5),
+      ),
+      errorBorder: bordeError,
+      focusedErrorBorder: bordeError,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final tema = Theme.of(context);
-    final textos = tema.textTheme;
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: Espacios.xl,
-              vertical: Espacios.l,
-            ),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 440),
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 440),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
               child: Form(
                 key: _formKey,
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Center(
-                      child: LogoServia(tamano: 60, enMosaico: true),
-                    ),
-                    const SizedBox(height: Espacios.l),
-                    Text(
-                      'Recupera tu contraseña',
-                      textAlign: TextAlign.center,
-                      style: textos.headlineMedium,
-                    ),
-                    const SizedBox(height: Espacios.xs),
-                    Text(
-                      'Escribe el correo de tu cuenta y te enviaremos un enlace '
-                      'para crear una contraseña nueva.',
-                      textAlign: TextAlign.center,
-                      style: textos.bodyLarge?.copyWith(
-                        color: tema.colorScheme.onSurfaceVariant,
+                    // Botón superior derecho 'X' pegado arriba
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: IconButton(
+                        onPressed: _enviando
+                            ? null
+                            : () => Navigator.pop(context),
+                        icon: const Icon(
+                          Icons.close,
+                          color: Color(0xFF111827),
+                          size: 26,
+                        ),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
                       ),
                     ),
-                    const SizedBox(height: Espacios.xl),
+                    const SizedBox(height: 12),
+
+                    const Text(
+                      'Recupera tu\ncontraseña',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111827),
+                        height: 1.15,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+
+                    const Text(
+                      'Escribe el correo de tu cuenta y te enviaremos un enlace para crear una contraseña nueva.',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFF6B7280),
+                        height: 1.4,
+                      ),
+                    ),
+
                     if (_enviado) ...[
+                      const SizedBox(height: Espacios.l),
                       const Aviso(
                         tipo: TipoAviso.informacion,
                         icono: Icons.mark_email_read_outlined,
                         texto: MensajesAuth.correoRestablecimientoEnviado,
                       ),
-                      const SizedBox(height: Espacios.l),
                     ],
+
                     if (_error != null) ...[
-                      Aviso(texto: _error!),
                       const SizedBox(height: Espacios.l),
+                      Aviso(texto: _error!),
                     ],
-                    const EtiquetaCampo('Correo electrónico'),
+
+                    const SizedBox(height: 28),
+
+                    const Text(
+                      'Correo electrónico',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF111827),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     TextFormField(
                       controller: _correoController,
                       enabled: !_enviando,
@@ -149,29 +208,46 @@ class _RecuperarContrasenaPageState extends State<RecuperarContrasenaPage> {
                       textInputAction: TextInputAction.done,
                       validator: ValidacionesCliente.correo,
                       onFieldSubmitted: (_) => _enviar(),
-                      decoration: const InputDecoration(
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: Color(0xFF111827),
+                      ),
+                      decoration: _decoracionCampo(
                         hintText: 'Dirección de correo electrónico',
                       ),
                     ),
-                    const SizedBox(height: Espacios.xl),
-                    ElevatedButton(
-                      onPressed: _enviando ? null : _enviar,
-                      child: _enviando
-                          ? const SizedBox.square(
-                              dimension: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                              ),
-                            )
-                          : const Text('Enviar enlace'),
+
+                    const SizedBox(height: 28),
+
+                
+                    SizedBox(
+                      height: 54,
+                      child: ElevatedButton(
+                        onPressed: _enviando ? null : _enviar,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0F0F0F),
+                          foregroundColor: Colors.white,
+                          disabledBackgroundColor: const Color(0xFF9CA3AF),
+                          elevation: 0,
+                          shape: const StadiumBorder(),
+                          textStyle: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        child: _enviando
+                            ? const SizedBox.square(
+                                dimension: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text('Enviar enlace'),
+                      ),
                     ),
-                    const SizedBox(height: Espacios.s),
-                    TextButton(
-                      onPressed: _enviando
-                          ? null
-                          : () => Navigator.pop(context),
-                      child: const Text('Volver a iniciar sesión'),
-                    ),
+
+                    const SizedBox(height: 16),
                   ],
                 ),
               ),
@@ -181,4 +257,4 @@ class _RecuperarContrasenaPageState extends State<RecuperarContrasenaPage> {
       ),
     );
   }
-}
+  }

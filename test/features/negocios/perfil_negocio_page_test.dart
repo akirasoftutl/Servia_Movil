@@ -55,8 +55,9 @@ void main() {
       }
       final posiciones = <double>[];
       for (final dia in diasSemana.values) {
-        expect(find.text(dia), findsOneWidget);
-        posiciones.add(tester.getTopLeft(find.text(dia)).dy);
+        // El perfil rediseñado muestra los días en minúsculas.
+        expect(find.text(dia.toLowerCase()), findsOneWidget);
+        posiciones.add(tester.getTopLeft(find.text(dia.toLowerCase())).dy);
       }
       expect(posiciones, orderedEquals([...posiciones]..sort()));
       expect(find.text('09:00 – 18:00'), findsNWidgets(6));

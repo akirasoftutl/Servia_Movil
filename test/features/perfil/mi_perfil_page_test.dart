@@ -13,7 +13,19 @@ Widget pagina(SesionPerfilFalsa sesion, PerfilClienteFalso api) => MaterialApp(
   home: MiPerfilPage(authService: sesion, perfilClienteService: api),
 );
 
-Finder campo(String etiqueta) => find.widgetWithText(TextFormField, etiqueta);
+/// Las etiquetas nuevas van fuera del campo, así que se localiza cada
+/// TextField por su hint (que sí sigue dentro del InputDecoration).
+Finder campo(String etiqueta) {
+  final hint = switch (etiqueta) {
+    'Nombre completo' => 'Tu nombre completo',
+    'Correo' => 'Dirección de correo electrónico',
+    'Teléfono (10 dígitos)' => 'Teléfono a 10 dígitos',
+    _ => throw ArgumentError('Etiqueta desconocida: $etiqueta'),
+  };
+  return find.byWidgetPredicate(
+    (widget) => widget is TextField && widget.decoration?.hintText == hint,
+  );
+}
 
 Future<void> abrir(
   WidgetTester tester,
@@ -25,7 +37,7 @@ Future<void> abrir(
 }
 
 Future<void> editar(WidgetTester tester) async {
-  await tester.tap(find.text('Editar'));
+  await tester.tap(find.text('Editar información'));
   await tester.pumpAndSettle();
 }
 
@@ -48,7 +60,8 @@ void main() {
   ) async {
     final api = PerfilClienteFalso(eventos);
     await abrir(tester, sesion, api);
-    expect(find.text('Ana Pérez'), findsOneWidget);
+    // El nombre aparece en el encabezado y en la fila «Nombre».
+    expect(find.text('Ana Pérez'), findsNWidgets(2));
     expect(find.text('ana@test.com'), findsOneWidget);
     expect(find.text('4771234567'), findsOneWidget);
     expect(eventos, ['token', 'GET']);
@@ -70,7 +83,8 @@ void main() {
         'correo': null,
       });
       expect(find.text('Tus datos se guardaron.'), findsOneWidget);
-      expect(find.text('Ana Ruiz'), findsOneWidget);
+      // El nombre se muestra en el encabezado y en la fila «Nombre».
+      expect(find.text('Ana Ruiz'), findsNWidgets(2));
       expect(find.text('4770000000'), findsOneWidget);
       // Solo cambió nombre y teléfono: no hace falta renovar el token.
       expect(eventos.contains('token-nuevo'), isFalse);
@@ -78,7 +92,7 @@ void main() {
       // Reabrir la pantalla: los datos salen de la API.
       await tester.pumpWidget(const SizedBox());
       await abrir(tester, sesion, api);
-      expect(find.text('Ana Ruiz'), findsOneWidget);
+      expect(find.text('Ana Ruiz'), findsNWidgets(2));
       expect(find.text('4770000000'), findsOneWidget);
     },
   );
@@ -108,7 +122,9 @@ void main() {
       // El botón queda activo para corregir.
       expect(
         tester
-            .widget<FilledButton>(find.widgetWithText(FilledButton, 'Guardar'))
+            .widget<ElevatedButton>(
+              find.widgetWithText(ElevatedButton, 'Guardar'),
+            )
             .onPressed,
         isNotNull,
       );
@@ -155,7 +171,7 @@ void main() {
       expect(find.text('Tus datos se guardaron.'), findsOneWidget);
       expect(find.text('nuevo@test.com'), findsOneWidget);
       expect(find.text(MensajesAuth.errorRed), findsNothing);
-      expect(find.text('Editar'), findsOneWidget);
+      expect(find.text('Editar información'), findsOneWidget);
       expect(find.byType(MiPerfilPage), findsOneWidget);
     },
   );
@@ -272,7 +288,9 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(
         tester
-            .widget<FilledButton>(find.widgetWithText(FilledButton, 'Guardar'))
+            .widget<ElevatedButton>(
+              find.widgetWithText(ElevatedButton, 'Guardar'),
+            )
             .onPressed,
         isNotNull,
       );
@@ -286,7 +304,7 @@ void main() {
     await editar(tester);
     await guardar(tester);
     expect(api.actualizaciones, 0);
-    expect(find.text('Editar'), findsOneWidget);
+    expect(find.text('Editar información'), findsOneWidget);
   });
 
   testWidgets(
@@ -299,7 +317,7 @@ void main() {
       await abrir(tester, sesion, api);
       expect(find.text('Tu cuenta está desactivada.'), findsOneWidget);
       expect(find.text('Reintentar'), findsOneWidget);
-      expect(find.text('Editar'), findsNothing);
+      expect(find.text('Editar información'), findsNothing);
     },
   );
 
@@ -315,6 +333,6 @@ void main() {
     final api = PerfilClienteFalso(eventos);
     await abrir(tester, sesion, api);
     expect(eventos, isEmpty);
-    expect(find.text('Editar'), findsNothing);
+    expect(find.text('Editar información'), findsNothing);
   });
 }

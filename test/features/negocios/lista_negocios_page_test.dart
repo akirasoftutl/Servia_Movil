@@ -7,16 +7,14 @@ import 'package:servia/core/network/api_exception.dart';
 import 'package:servia/features/negocios/data/negocio_resumen.dart';
 import 'package:servia/features/negocios/mensajes.dart';
 import 'package:servia/features/negocios/pages/lista_negocios_page.dart';
+import 'package:servia/features/negocios/pages/perfil_negocio_page.dart';
 
 import 'fakes.dart';
+import 'utilidades_prueba.dart';
 
 Future<void> abrir(WidgetTester tester, ListaServiceFalso fake) async {
   await tester.pumpWidget(
-    MaterialApp(
-      home: ListaNegociosPage(negociosService: fake),
-      onGenerateRoute: (r) =>
-          MaterialPageRoute<void>(builder: (_) => Text('Ruta ${r.name}')),
-    ),
+    MaterialApp(home: ListaNegociosPage(negociosService: fake)),
   );
   await tester.pumpAndSettle();
 }
@@ -25,24 +23,50 @@ void main() {
   testWidgets(
     'respeta exactamente el orden, reservas, catálogo y abre el perfil',
     (tester) async {
+      // Con el viewport alto se construyen los dos carruseles y la lista final.
+      tester.view.physicalSize = const Size(800, 3000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
       final fake = ListaServiceFalso()
         ..responder = (_) async =>
             pagina([resumen('z', acepta: false), resumen('a')]);
       await abrir(tester, fake);
-      expect(find.byType(ListTile), findsNWidgets(2));
-      expect(
-        tester.getTopLeft(find.text('Negocio z')).dy,
-        lessThan(tester.getTopLeft(find.text('Negocio a')).dy),
+      // Cada negocio se muestra en los dos carruseles y en «Lugares cercanos».
+      // Las secciones inferiores quedan fuera de pantalla en el viewport de
+      // prueba, por eso se buscan también los widgets offstage.
+      expect(find.text('Negocio z', skipOffstage: false), findsNWidgets(3));
+      expect(find.text('Negocio a', skipOffstage: false), findsNWidgets(3));
+      // En los carruseles el orden es horizontal; en «Lugares cercanos»,
+      // vertical. Las tarjetas de esta última usan tipografía de 15 px.
+      Finder tarjetaCercana(String nombre) => find.byWidgetPredicate(
+        (widget) =>
+            widget is Text && widget.data == nombre && widget.style?.fontSize == 15,
       );
-      expect(find.text(MensajesNegocios.aceptaReservas), findsOneWidget);
-      expect(find.text(MensajesNegocios.noAceptaReservas), findsOneWidget);
-      expect(find.text('Cabello y barba'), findsNWidgets(2));
-      final titulo = tester.widget<Text>(find.text('Negocio z'));
-      expect(titulo.maxLines, 2);
+      expect(
+        tester.getTopLeft(find.text('Negocio z').first).dx,
+        lessThan(tester.getTopLeft(find.text('Negocio a').first).dx),
+      );
+      expect(
+        tester.getTopLeft(tarjetaCercana('Negocio z')).dy,
+        lessThan(tester.getTopLeft(tarjetaCercana('Negocio a')).dy),
+      );
+      // El estado de reservas se refleja ahora en la etiqueta del carrusel.
+      expect(
+        find.text('Cabello y barba · Disponible', skipOffstage: false),
+        findsNWidgets(2),
+      );
+      // Una etiqueta más: la de la categoría en la nueva cuadrícula.
+      expect(
+        find.text('Cabello y barba', skipOffstage: false),
+        findsNWidgets(3),
+      );
+      final titulo = tester.widget<Text>(find.text('Negocio z').first);
+      expect(titulo.maxLines, 1);
       expect(titulo.overflow, TextOverflow.ellipsis);
-      await tester.tap(find.text('Negocio a'));
+      await tester.tap(find.text('Negocio a').first);
       await tester.pumpAndSettle();
-      expect(find.text('Ruta /negocios/a'), findsOneWidget);
+      // El listado abre el perfil con un MaterialPageRoute directo.
+      expect(find.byType(PerfilNegocioPage), findsOneWidget);
     },
   );
   testWidgets('usa el id si falla el catálogo', (tester) async {
@@ -50,7 +74,8 @@ void main() {
       ..errorCategorias = Exception()
       ..responder = (_) async => pagina([resumen('a')]);
     await abrir(tester, fake);
-    expect(find.text('cabello'), findsOneWidget);
+    expect(find.textContaining('cabello'), findsWidgets);
+    expect(find.text('Cabello y barba'), findsNothing);
   });
   testWidgets('pagina al desplazarse, no duplica y termina con cursor nulo', (
     tester,
@@ -61,22 +86,25 @@ void main() {
           ? pagina(List.generate(15, (i) => resumen('n$i')), 'dos')
           : pendiente.future;
     await abrir(tester, fake);
-    await tester.drag(find.byType(ListView), const Offset(0, -2000));
-    await tester.pump();
-    await tester.drag(find.byType(ListView), const Offset(0, -200));
+    expect(fake.llamadas, [null]);
+    await desplazarListaAlFinal(tester);
     await tester.pump();
     expect(fake.llamadas, [null, 'dos']);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
     pendiente.complete(pagina([resumen('ultimo')]));
     await tester.pumpAndSettle();
-    await tester.drag(find.byType(ListView), const Offset(0, -500));
-    await tester.pumpAndSettle();
     expect(find.text('Negocio ultimo'), findsOneWidget);
+    await desplazarListaAlFinal(tester);
     expect(fake.llamadas, [null, 'dos']);
   });
   testWidgets('completa páginas cortas sin desplazar ni duplicar peticiones', (
     tester,
   ) async {
+    // La portada nueva es más alta que la pantalla de prueba; con un viewport
+    // alto se conserva la intención original: completar páginas sin desplazar.
+    tester.view.physicalSize = const Size(800, 3000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     final pendiente = Completer<PaginaNegocios>();
     final fake = ListaServiceFalso()
       ..responder = (cursor) async {
@@ -90,15 +118,15 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(fake.llamadas, [null, 'dos']);
-    expect(find.text('Negocio a'), findsOneWidget);
+    expect(find.text('Negocio a'), findsWidgets);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
     await tester.pump();
     expect(fake.llamadas, [null, 'dos']);
     pendiente.complete(pagina([resumen('b')], 'tres'));
     await tester.pumpAndSettle();
     expect(fake.llamadas, [null, 'dos', 'tres']);
-    expect(find.text('Negocio b'), findsOneWidget);
-    expect(find.text('Negocio fin'), findsOneWidget);
+    expect(find.text('Negocio b'), findsWidgets);
+    expect(find.text('Negocio fin'), findsWidgets);
   });
   testWidgets('limita la carga automática y permite continuar páginas vacías', (
     tester,
@@ -108,7 +136,7 @@ void main() {
           c == null ? pagina([], 'sigue') : pagina([resumen('a')]);
     await abrir(tester, fake);
     expect(fake.llamadas, [null, 'sigue']);
-    expect(find.text('Negocio a'), findsOneWidget);
+    expect(find.text('Negocio a'), findsWidgets);
     await tester.pumpWidget(const SizedBox());
     final vacio = ListaServiceFalso()
       ..responder = (cursor) async =>
@@ -134,7 +162,7 @@ void main() {
         return pagina([resumen('fin')]);
       };
       await abrir(tester, fake);
-      await tester.drag(find.byType(ListView), const Offset(0, -1500));
+      await desplazarListaAlFinal(tester);
       await tester.pumpAndSettle();
       expect(find.text('Negocio n9'), findsOneWidget);
       expect(find.text(MensajesNegocios.errorRed), findsOneWidget);
@@ -163,7 +191,7 @@ void main() {
       fake.responder = (_) async => pagina([resumen('a')]);
       await tester.tap(find.text(MensajesNegocios.reintentar));
       await tester.pumpAndSettle();
-      expect(find.text('Negocio a'), findsOneWidget);
+      expect(find.text('Negocio a'), findsWidgets);
     });
   }
   testWidgets('reintenta el cursor que falló después de una página vacía', (
@@ -180,7 +208,7 @@ void main() {
       return pagina([resumen('fin')]);
     };
     await abrir(tester, fake);
-    await tester.drag(find.byType(ListView), const Offset(0, -2000));
+    await desplazarListaAlFinal(tester);
     await tester.pumpAndSettle();
     expect(find.text('Negocio n9'), findsOneWidget);
     await tester.ensureVisible(find.text(MensajesNegocios.reintentar));
@@ -207,7 +235,7 @@ void main() {
     await tester.tap(find.text(MensajesNegocios.reintentar));
     await tester.pumpAndSettle();
     expect(fake.llamadas, [null, 'dos', 'dos']);
-    expect(find.text('Negocio fin'), findsOneWidget);
+    expect(find.text('Negocio fin'), findsWidgets);
   });
   testWidgets('lista vacía muestra su mensaje', (tester) async {
     await abrir(tester, ListaServiceFalso());

@@ -25,15 +25,17 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Negocio inicio'), findsOneWidget);
-    expect(find.byTooltip('Mis reservas'), findsOneWidget);
-    expect(find.byIcon(Icons.event_note), findsOneWidget);
+    // La barra inferior nueva no usa tooltips: cada ítem tiene su etiqueta.
+    expect(find.text('Actividad'), findsOneWidget);
+    expect(find.byIcon(Icons.calendar_today_outlined), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Mis reservas'));
+    await tester.tap(find.text('Actividad'));
     await tester.pumpAndSettle();
     expect(find.byType(MisReservasPage), findsOneWidget);
     expect(find.text('No tienes reservas próximas.'), findsOneWidget);
 
-    await tester.pageBack();
+    // Es un IndexedStack: se vuelve tocando «Inicio», no con pageBack.
+    await tester.tap(find.text('Inicio'));
     await tester.pumpAndSettle();
     expect(find.byType(MisReservasPage), findsNothing);
     expect(find.text('Negocio inicio'), findsOneWidget);

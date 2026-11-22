@@ -89,7 +89,11 @@ void main() {
                 ],
                 siguiente: null,
               );
-            return HomePage(onCerrarSesion: () {}, negociosService: lista);
+            return HomePage(
+              onCerrarSesion: () {},
+              negociosService: lista,
+              authService: SesionFalsa(conSesion: false),
+            );
           },
           null,
         ),
@@ -159,7 +163,9 @@ void main() {
             perfilClienteService: PerfilClienteFalso([]),
           ),
           (t) async {
-            await t.tap(find.text('Editar'));
+            final botonEditar = find.text('Editar información');
+            await t.scrollUntilVisible(botonEditar, 300);
+            await t.tap(botonEditar);
             await t.pumpAndSettle();
           },
         ),

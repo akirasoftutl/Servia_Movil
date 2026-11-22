@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:servia/features/auth/data/perfil.dart';
 import 'package:servia/features/auth/data/perfil_service.dart';
+import 'package:servia/features/auth/mensajes.dart';
 import 'package:servia/features/auth/pages/auth_gate.dart';
 import 'package:servia/features/auth/pages/login_page.dart';
 import 'package:servia/features/home/pages/home_page.dart';
@@ -17,6 +18,13 @@ class PerfilGateFalso extends PerfilService {
   @override
   Future<Perfil> obtenerYo(String token) async =>
       Perfil(uid: 'u', nombre: 'Ana Pérez', correo: 'ana@test.com', tipo: tipo);
+}
+
+/// El acceso a «Mi perfil» ya no es un tooltip ni una ruta aparte: es la
+/// pestaña «Perfil» de la barra inferior del inicio.
+Future<void> abrirPestanaPerfil(WidgetTester tester) async {
+  await tester.tap(find.text('Perfil'));
+  await tester.pumpAndSettle();
 }
 
 void main() {
@@ -38,12 +46,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Negocio inicio'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Mi perfil'));
-    await tester.pumpAndSettle();
+    await abrirPestanaPerfil(tester);
     expect(find.byType(MiPerfilPage), findsOneWidget);
     expect(find.text('ana@test.com'), findsOneWidget);
 
-    await tester.pageBack();
+    await tester.tap(find.text('Inicio'));
     await tester.pumpAndSettle();
     expect(find.byType(MiPerfilPage), findsNothing);
     expect(find.text('Negocio inicio'), findsOneWidget);
@@ -67,15 +74,26 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(HomePage), findsOneWidget);
 
-      await tester.tap(find.byTooltip('Mi perfil'));
-      await tester.pumpAndSettle();
+      await abrirPestanaPerfil(tester);
       expect(find.byType(MiPerfilPage), findsOneWidget);
       expect(find.text('4771234567'), findsOneWidget);
-      await tester.pageBack();
-      await tester.pumpAndSettle();
 
-      await tester.tap(find.byTooltip('Cerrar sesión'));
+      // Cerrar sesión es una fila al final de la lista de MiPerfilPage.
+      await tester.scrollUntilVisible(
+        find.text('Cerrar sesión'),
+        200,
+        scrollable: find.descendant(
+          of: find.byType(MiPerfilPage),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      await tester.tap(find.text('Cerrar sesión'));
       await tester.pumpAndSettle();
+      expect(find.byType(HomePage), findsOneWidget);
+      expect(find.byType(MiPerfilPage), findsNothing);
+
+      // Sin sesión, la pestaña «Perfil» abre el login.
+      await abrirPestanaPerfil(tester);
       expect(find.byType(LoginPage), findsOneWidget);
       expect(find.byType(HomePage), findsNothing);
     },
@@ -87,8 +105,14 @@ void main() {
     addTearDown(sesion.cambios.close);
     await tester.pumpWidget(MaterialApp(home: AuthGate(authService: sesion)));
     await tester.pumpAndSettle();
+
+    // AuthGate muestra el inicio como invitado; el perfil pide login.
+    expect(find.byType(HomePage), findsOneWidget);
+    expect(find.byType(MiPerfilPage), findsNothing);
+    expect(find.text('Cerrar sesión'), findsNothing);
+
+    await abrirPestanaPerfil(tester);
     expect(find.byType(LoginPage), findsOneWidget);
-    expect(find.byTooltip('Mi perfil'), findsNothing);
     expect(find.byType(MiPerfilPage), findsNothing);
   });
 
@@ -107,7 +131,11 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    expect(find.byType(HomePage), findsOneWidget);
+    expect(find.byType(MiPerfilPage), findsNothing);
+
+    await abrirPestanaPerfil(tester);
     expect(find.byType(LoginPage), findsOneWidget);
-    expect(find.byTooltip('Mi perfil'), findsNothing);
+    expect(find.text(MensajesAuth.soloClientes), findsOneWidget);
   });
 }

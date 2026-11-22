@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-import '../../../core/theme/colores_servia.dart';
 import '../../../core/theme/tokens.dart';
 import '../../../core/widgets/aviso.dart';
 import '../../../core/widgets/estados.dart';
@@ -20,6 +19,7 @@ class DisponibilidadPage extends StatefulWidget {
     this.ahora = DateTime.now,
     this.aviso,
   });
+
   final String negocioId;
   final String servicioId;
   final DisponibilidadService? service;
@@ -42,6 +42,9 @@ class _DisponibilidadPageState extends State<DisponibilidadPage>
   Object? _errorHoras;
   int _consulta = 0;
   Timer? _vencimiento;
+
+  double _desplazamientoY = 0;
+  bool _arrastrando = false;
 
   @override
   void initState() {
@@ -144,21 +147,44 @@ class _DisponibilidadPageState extends State<DisponibilidadPage>
     );
   }
 
+  void _onVerticalDragStart(DragStartDetails details) {
+    setState(() => _arrastrando = true);
+  }
+
+  void _onVerticalDragUpdate(DragUpdateDetails details) {
+    setState(() {
+      _desplazamientoY = (_desplazamientoY + details.delta.dy).clamp(0.0, 700.0);
+    });
+  }
+
+  void _onVerticalDragEnd(DragEndDetails details) {
+    final velocidad = details.primaryVelocity ?? 0;
+    if (_desplazamientoY > 110 || velocidad > 650) {
+      Navigator.of(context).pop();
+      return;
+    }
+    setState(() {
+      _arrastrando = false;
+      _desplazamientoY = 0;
+    });
+  }
+
   Widget _error(
     Object error,
     VoidCallback reintentar, {
     bool compacto = false,
-  }) => EstadoError(
-    compacto: compacto,
-    mensaje: MensajesNegocios.mensajeDeError(error, esServicio: true),
-    onReintentar: MensajesNegocios.puedeReintentar(error) ? reintentar : null,
-  );
+  }) =>
+      EstadoError(
+        compacto: compacto,
+        mensaje: MensajesNegocios.mensajeDeError(error, esServicio: true),
+        onReintentar: MensajesNegocios.puedeReintentar(error) ? reintentar : null,
+      );
 
   Widget _sinDisponibilidad({bool compacto = false}) => EstadoVacio(
-    compacto: compacto,
-    icono: Icons.event_busy_outlined,
-    mensaje: 'No hay disponibilidad en este momento',
-  );
+        compacto: compacto,
+        icono: Icons.event_busy_outlined,
+        mensaje: 'No hay disponibilidad en este momento',
+      );
 
   /// Estado de toda la pantalla (cargando, error o sin días), si aplica.
   Widget? _estadoGeneral() {
@@ -172,87 +198,163 @@ class _DisponibilidadPageState extends State<DisponibilidadPage>
   Widget _contenido(BuildContext context) {
     final dias = _dias!;
     final horas = _horasVigentes;
-    final tema = Theme.of(context);
-    final c = tema.colorScheme;
+    final temaBase = Theme.of(context);
+
     Widget margen(List<Widget> hijos) => Padding(
-      padding: const EdgeInsets.symmetric(horizontal: Espacios.l),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: hijos,
-      ),
-    );
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: hijos,
+          ),
+        );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         margen([
-          if (widget.aviso != null) ...[
-            Aviso(texto: widget.aviso!, tipo: TipoAviso.advertencia),
-            const SizedBox(height: Espacios.l),
-          ],
-          Text('Elige una fecha', style: tema.textTheme.titleLarge),
-          const SizedBox(height: Espacios.xs),
-          Row(
+          const Text(
+            'Disponibilidad del servicio',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF111827),
+              height: 1.18,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Row(
             children: [
-              Icon(Icons.public, size: 16, color: c.onSurfaceVariant),
-              const SizedBox(width: Espacios.xs),
+              Icon(Icons.public, size: 15, color: Color(0xFF6B7280)),
+              SizedBox(width: 6),
               Flexible(
                 child: Text(
                   'Horarios de America/Mexico_City',
-                  style: tema.textTheme.bodySmall,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF6B7280),
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: Espacios.m),
-        ]),
-        // El calendario va de borde a borde para que cada día mida ≥ 48 dp
-        // de ancho aun en teléfonos de 360 dp.
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: c.surface,
-            border: Border.symmetric(
-              horizontal: BorderSide(color: c.outlineVariant),
+          if (widget.aviso != null) ...[
+            const SizedBox(height: 16),
+            Aviso(texto: widget.aviso!, tipo: TipoAviso.advertencia),
+          ],
+          const SizedBox(height: 20),
+          const Text(
+            'Elige una fecha',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF111827),
+              letterSpacing: -0.2,
             ),
           ),
-          child: CalendarDatePicker(
-            key: ValueKey(dias),
-            initialDate: null,
-            currentDate: dias.first.calendario,
-            firstDate: dias.first.calendario,
-            lastDate: dias.last.calendario,
-            selectableDayPredicate: (fecha) => dias.any(
-              (dia) => dia.fecha == fechaIso(fecha) && dia.disponible,
+          const SizedBox(height: 12),
+        ]),
+
+        // El calendario va de borde a borde para que cada día mida >= 48 dp
+        // de ancho aun en teléfonos de 360 dp.
+        Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFFF9FAFB),
+            border: Border.symmetric(
+              horizontal: BorderSide(color: Color(0xFFE5E7EB), width: 1),
             ),
-            onDateChanged: (fecha) => _cargarHoras(fechaIso(fecha)),
+          ),
+          child: Theme(
+            data: temaBase.copyWith(
+              colorScheme: temaBase.colorScheme.copyWith(
+                primary: const Color(0xFF0F0F0F),
+                onPrimary: Colors.white,
+                surface: const Color(0xFFF9FAFB),
+                onSurface: const Color(0xFF111827),
+                onSurfaceVariant: const Color(0xFF6B7280),
+              ),
+              datePickerTheme: DatePickerThemeData(
+                backgroundColor: const Color(0xFFF9FAFB),
+                dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return const Color(0xFF0F0F0F);
+                  }
+                  return null;
+                }),
+                dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return Colors.white;
+                  }
+                  if (states.contains(WidgetState.disabled)) {
+                    return const Color(0xFFD1D5DB);
+                  }
+                  return const Color(0xFF111827);
+                }),
+                todayForegroundColor: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return Colors.white;
+                  }
+                  return const Color(0xFF7C3AED);
+                }),
+                todayBorder: const BorderSide(
+                  color: Color(0xFF7C3AED),
+                  width: 1.2,
+                ),
+              ),
+            ),
+            child: CalendarDatePicker(
+              key: ValueKey(dias),
+              initialDate: null,
+              currentDate: dias.first.calendario,
+              firstDate: dias.first.calendario,
+              lastDate: dias.last.calendario,
+              selectableDayPredicate: (fecha) => dias.any(
+                (dia) => dia.fecha == fechaIso(fecha) && dia.disponible,
+              ),
+              onDateChanged: (fecha) => _cargarHoras(fechaIso(fecha)),
+            ),
           ),
         ),
+
         margen([
-          if (!dias.any((dia) => dia.disponible))
+          if (!dias.any((dia) => dia.disponible)) ...[
+            const SizedBox(height: 16),
             _sinDisponibilidad(compacto: true),
+          ],
           if (_fecha != null) ...[
-            const SizedBox(height: Espacios.xl),
-            Text('Horarios del $_fecha', style: tema.textTheme.titleMedium),
-            const SizedBox(height: Espacios.m),
+            const SizedBox(height: 24),
+            Text(
+              'Horarios del $_fecha',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF111827),
+                letterSpacing: -0.2,
+              ),
+            ),
+            const SizedBox(height: 12),
             if (_errorHoras != null)
               _error(_errorHoras!, () => _cargarHoras(_fecha!), compacto: true)
             else if (_horas == null)
-              const EstadoCargando(compacto: true)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: EstadoCargando(compacto: true),
+              )
             else ...[
               if (!horas.any((hora) => hora.disponible))
                 _sinDisponibilidad(compacto: true),
               if (horas.isNotEmpty)
-                Card(
-                  child: Column(
-                    children: [
-                      for (var i = 0; i < horas.length; i++) ...[
-                        if (i > 0) const Divider(),
-                        _FilaHora(
-                          hora: horas[i],
-                          onElegir: () => _seleccionar(horas[i]),
-                        ),
-                      ],
+                Column(
+                  children: [
+                    for (var i = 0; i < horas.length; i++) ...[
+                      if (i > 0) const SizedBox(height: 10),
+                      _FilaHora(
+                        hora: horas[i],
+                        onElegir: () => _seleccionar(horas[i]),
+                      ),
                     ],
-                  ),
+                  ],
                 ),
             ],
           ],
@@ -262,56 +364,184 @@ class _DisponibilidadPageState extends State<DisponibilidadPage>
   }
 
   @override
-  Widget build(BuildContext context) => Localizations.override(
-    context: context,
-    locale: const Locale('es', 'MX'),
-    delegates: GlobalMaterialLocalizations.delegates,
-    child: Builder(
-      builder: (context) => Scaffold(
-        appBar: AppBar(title: const Text('Disponibilidad del servicio')),
-        body:
-            _estadoGeneral() ??
-            SingleChildScrollView(
-              padding: const EdgeInsets.only(
-                top: Espacios.s,
-                bottom: Espacios.xxl,
+  Widget build(BuildContext context) {
+    return Localizations.override(
+      context: context,
+      locale: const Locale('es', 'MX'),
+      delegates: GlobalMaterialLocalizations.delegates,
+      child: Builder(
+        builder: (context) => Scaffold(
+          backgroundColor: const Color(0xFFF3F4F6),
+          body: SafeArea(
+            bottom: false,
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onVerticalDragStart: _onVerticalDragStart,
+              onVerticalDragUpdate: _onVerticalDragUpdate,
+              onVerticalDragEnd: _onVerticalDragEnd,
+              child: AnimatedContainer(
+                duration: _arrastrando
+                    ? Duration.zero
+                    : const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                transform: Matrix4.translationValues(0, _desplazamientoY, 0),
+                margin: const EdgeInsets.only(top: 8),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Column(
+                  children: [
+                    // Contorno superior idéntico al detalle de servicio: manejador + botón 'X'
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 12, 16, 8),
+                      child: Column(
+                        children: [
+                          Center(
+                            child: Container(
+                              width: 44,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFD1D5DB),
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: IconButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              icon: const Icon(
+                                Icons.close,
+                                color: Color(0xFF111827),
+                                size: 26,
+                              ),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: _estadoGeneral() ??
+                          SingleChildScrollView(
+                            physics: const ClampingScrollPhysics(),
+                            padding: const EdgeInsets.only(
+                              top: 4,
+                              bottom: Espacios.xxl,
+                            ),
+                            child: _contenido(context),
+                          ),
+                    ),
+                  ],
+                ),
               ),
-              child: _contenido(context),
             ),
+          ),
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _FilaHora extends StatelessWidget {
   const _FilaHora({required this.hora, required this.onElegir});
+
   final HoraDisponibilidad hora;
   final VoidCallback onElegir;
 
   @override
   Widget build(BuildContext context) {
-    final s = ColoresSemanticos.de(context);
-    final textos = Theme.of(context).textTheme;
-    return ListTile(
+    final disponible = hora.disponible;
+
+    return Material(
       key: ValueKey('hora-${hora.hora}'),
-      enabled: hora.disponible,
-      title: Text(
-        hora.hora,
-        style: textos.titleMedium?.copyWith(
-          fontFeatures: const [FontFeature.tabularFigures()],
+      color: disponible ? Colors.white : const Color(0xFFF9FAFB),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: disponible ? onElegir : null,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: disponible
+                  ? const Color(0xFFE5E7EB)
+                  : const Color(0xFFF3F4F6),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                disponible
+                    ? Icons.access_time_rounded
+                    : Icons.block_rounded,
+                size: 20,
+                color: disponible
+                    ? const Color(0xFF111827)
+                    : const Color(0xFF9CA3AF),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  hora.hora,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: disponible
+                        ? const Color(0xFF111827)
+                        : const Color(0xFF9CA3AF),
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+              if (disponible)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F0F0F),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    'Elegir',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    'Ocupado',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF9CA3AF),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
-      subtitle: Text(
-        hora.disponible ? 'Disponible' : 'Ocupado',
-        style: textos.bodySmall?.copyWith(
-          color: hora.disponible ? s.exito : null,
-        ),
-      ),
-      leading: Icon(
-        hora.disponible ? Icons.schedule : Icons.block,
-        color: hora.disponible ? ColoresServia.marca : null,
-      ),
-      onTap: hora.disponible ? onElegir : null,
     );
   }
 }

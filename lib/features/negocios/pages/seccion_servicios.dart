@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/tokens.dart';
 import '../../../core/widgets/estados.dart';
 import '../data/negocios_service.dart';
 import '../data/servicio.dart';
@@ -18,6 +17,7 @@ class SeccionServicios extends StatefulWidget {
     required this.aceptaReservas,
     required this.service,
   });
+
   final String negocioId;
   final String negocioNombre;
   final bool aceptaReservas;
@@ -61,12 +61,30 @@ class _SeccionServiciosState extends State<SeccionServicios> {
     }
   }
 
+  void _abrirServicio(Servicio servicio) {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => DetalleServicioPage(
+          negocioId: widget.negocioId,
+          servicioId: servicio.id,
+          aceptaReservas: widget.aceptaReservas,
+          negocioNombre: widget.negocioNombre,
+          negociosService: widget.service,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final Widget contenido;
     switch (_estado) {
       case _EstadoServicios.cargando:
-        contenido = const EstadoCargando(compacto: true);
+        contenido = const Padding(
+          padding: EdgeInsets.symmetric(vertical: 16),
+          child: EstadoCargando(compacto: true),
+        );
       case _EstadoServicios.error:
         contenido = EstadoError(
           compacto: true,
@@ -86,74 +104,137 @@ class _SeccionServiciosState extends State<SeccionServicios> {
         contenido = Column(
           children: [
             for (var i = 0; i < servicios.length; i++) ...[
-              if (i > 0)
-                const Divider(indent: Espacios.l, endIndent: Espacios.l),
-              _FilaServicio(
+              if (i > 0) const SizedBox(height: 12),
+              _TarjetaServicio(
                 servicio: servicios[i],
-                onAbrir: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => DetalleServicioPage(
-                      negocioId: widget.negocioId,
-                      servicioId: servicios[i].id,
-                      aceptaReservas: widget.aceptaReservas,
-                      negocioNombre: widget.negocioNombre,
-                      negociosService: widget.service,
-                    ),
-                  ),
-                ),
+                aceptaReservas: widget.aceptaReservas,
+                onAbrir: () => _abrirServicio(servicios[i]),
               ),
             ],
           ],
         );
     }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          MensajesNegocios.servicios,
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: Espacios.m),
-        SizedBox(
-          width: double.infinity,
-          child: Card(child: contenido),
-        ),
-      ],
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+      decoration: const BoxDecoration(
+        color: Color(0xFFF7F7F8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            MensajesNegocios.servicios,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF111827),
+              letterSpacing: -0.3,
+            ),
+          ),
+          const SizedBox(height: 16),
+          contenido,
+        ],
+      ),
     );
   }
 }
 
-class _FilaServicio extends StatelessWidget {
-  const _FilaServicio({required this.servicio, required this.onAbrir});
+class _TarjetaServicio extends StatelessWidget {
+  const _TarjetaServicio({
+    required this.servicio,
+    required this.aceptaReservas,
+    required this.onAbrir,
+  });
+
   final Servicio servicio;
+  final bool aceptaReservas;
   final VoidCallback onAbrir;
 
   @override
   Widget build(BuildContext context) {
-    final tema = Theme.of(context);
-    return ListTile(
-      onTap: onAbrir,
-      title: Text(servicio.nombre),
-      subtitle: Padding(
-        padding: const EdgeInsets.only(top: Espacios.xs),
-        child: Row(
-          children: [
-            Icon(
-              Icons.schedule,
-              size: 16,
-              color: tema.colorScheme.onSurfaceVariant,
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onAbrir,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: const Color(0xFFE5E7EB),
+              width: 1,
             ),
-            const SizedBox(width: Espacios.xs),
-            Flexible(child: Text(formatearDuracion(servicio.duracionMin))),
-          ],
-        ),
-      ),
-      trailing: Text(
-        formatearPrecio(servicio.precio),
-        style: tema.textTheme.titleMedium?.copyWith(
-          color: tema.colorScheme.primary,
-          fontWeight: FontWeight.w700,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Información izquierda: Título, duración y precio
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      servicio.nombre,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF111827),
+                        height: 1.25,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      formatearDuracion(servicio.duracionMin),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFF6B7280),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      formatearPrecio(servicio.precio),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111827),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+
+              // Botón tipo píldora a la derecha ("Reservar" o "Ver")
+              OutlinedButton(
+                onPressed: onAbrir,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF111827),
+                  backgroundColor: Colors.white,
+                  side: const BorderSide(
+                    color: Color(0xFFD1D5DB),
+                    width: 1,
+                  ),
+                  shape: const StadiumBorder(),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  textStyle: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                child: Text(aceptaReservas ? 'Reservar' : 'Ver detalle'),
+              ),
+            ],
+          ),
         ),
       ),
     );

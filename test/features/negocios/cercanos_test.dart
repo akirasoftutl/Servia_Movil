@@ -17,6 +17,8 @@ import 'package:servia/features/negocios/mensajes.dart';
 import 'package:servia/features/negocios/pages/tarjeta_negocio.dart';
 import 'package:servia/features/negocios/pages/negocios_cercanos.dart';
 
+import '../perfil/fakes_perfil.dart';
+
 class UbicacionFalsa extends GeolocatorPlatform {
   bool gps = true;
   bool falla = false;
@@ -89,6 +91,7 @@ Future<void> inicio(
     MaterialApp(
       home: HomePage(
         onCerrarSesion: () {},
+        authService: SesionPerfilFalsa([])..usuario = null,
         negociosService: negocios,
         proveedorUbicacion: UbicacionCliente(plataforma: ubicacion).obtener,
       ),
@@ -297,7 +300,7 @@ void main() {
       expect(find.text(MensajesNegocios.cercaDeTi), findsNothing);
       expect(find.text(MensajesNegocios.errorCercanos), findsNothing);
       expect(find.text(MensajesNegocios.reintentar), findsNothing);
-      expect(find.text(MensajesNegocios.buscar), findsOneWidget);
+      expect(find.text('Explorar todos los servicios'), findsOneWidget);
       expect(find.text(MensajesNegocios.listaVacia), findsOneWidget);
       expect(consultas, 0);
       if (caso != 'sin posición') expect(ubicacion.posiciones, 0);
@@ -340,6 +343,7 @@ void main() {
       MaterialApp(
         home: HomePage(
           onCerrarSesion: () {},
+          authService: SesionPerfilFalsa([])..usuario = null,
           proveedorUbicacion: () async => (lat: 21.1, lng: -101.7),
           negociosService: servicio(cercanos: (_) => pendiente.future),
         ),

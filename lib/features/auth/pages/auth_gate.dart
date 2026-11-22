@@ -38,19 +38,31 @@ class AuthGate extends StatefulWidget {
   State<AuthGate> createState() => _AuthGateState();
 }
 
+
 class _AuthGateState extends State<AuthGate> {
   late final AuthService _authService;
   late final PerfilService _perfilService;
 
   StreamSubscription<User?>? _suscripcion;
+
   _EstadoSesion _estado = _EstadoSesion.verificando;
   String? _mensaje;
+
+  bool _mostrarLogin = false;
 
   @override
   void initState() {
     super.initState();
+
     _authService = widget.authService ?? AuthService();
     _perfilService = widget.perfilService ?? PerfilService();
+
+    // Sin sesión mostramos de inmediato el inicio con su barra inferior, sin
+    // esperar a que el stream de Firebase emita el estado inicial.
+    if (_authService.usuarioActual == null) {
+      _estado = _EstadoSesion.sinSesion;
+    }
+
     _suscripcion = _authService.cambiosDeSesion.listen(_alCambiarSesion);
   }
 
@@ -63,14 +75,20 @@ class _AuthGateState extends State<AuthGate> {
   Future<void> _alCambiarSesion(User? usuario) async {
     if (usuario == null) {
       if (!mounted) return;
+
       setState(() {
         _estado = _EstadoSesion.sinSesion;
+        _mostrarLogin = false;
       });
+
       return;
     }
 
     if (!mounted) return;
-    setState(() => _estado = _EstadoSesion.verificando);
+
+    setState(() {
+      _estado = _EstadoSesion.verificando;
+    });
 
     try {
       final token = await usuario.getIdToken();
@@ -79,52 +97,95 @@ class _AuthGateState extends State<AuthGate> {
       if (!mounted) return;
 
       if (!perfil.esCliente) {
-        setState(() => _mensaje = MensajesAuth.soloClientes);
+        setState(() {
+          _mensaje = MensajesAuth.soloClientes;
+        });
+
         await _authService.cerrarSesion();
+
         if (!mounted) return;
+
         setState(() {
           _estado = _EstadoSesion.sinSesion;
+          _mostrarLogin = false;
         });
+
         return;
       }
 
       setState(() {
         _mensaje = null;
         _estado = _EstadoSesion.conSesion;
+        _mostrarLogin = false;
       });
     } on ApiException catch (error) {
       if (!mounted) return;
+
       if (error.statusCode == 403) {
-        setState(() => _mensaje = MensajesAuth.cuentaDesactivada);
+        setState(() {
+          _mensaje = MensajesAuth.cuentaDesactivada;
+        });
+
         await _authService.cerrarSesion();
+
         if (!mounted) return;
+
         setState(() {
           _estado = _EstadoSesion.sinSesion;
+          _mostrarLogin = false;
         });
+
         return;
       }
-      // 401 u otro: el token ya no sirve, se cierra la sesión.
-      setState(() => _mensaje = MensajesAuth.errorSesion);
+
+ 
+      setState(() {
+        _mensaje = MensajesAuth.errorSesion;
+      });
+
       await _authService.cerrarSesion();
+
       if (!mounted) return;
+
       setState(() {
         _estado = _EstadoSesion.sinSesion;
+        _mostrarLogin = false;
       });
     } catch (_) {
-      // Error de red: no se cierra la sesión, solo se ofrece reintentar.
+      // Error de red: no se cierra la sesión.
       if (!mounted) return;
+
       setState(() {
         _estado = _EstadoSesion.errorRed;
       });
     }
   }
 
+  // Abrir Login desde el apartado Perfil.
+  void _abrirLogin() {
+    setState(() {
+      _mostrarLogin = true;
+    });
+  }
+
+  // Regresar al Home desde Login.
+  void _regresarHome() {
+    setState(() {
+      _mostrarLogin = false;
+      _mensaje = null;
+    });
+  }
+
   void _reintentar() {
     final usuario = _authService.usuarioActual;
+
     if (usuario != null) {
       _alCambiarSesion(usuario);
     } else {
-      setState(() => _estado = _EstadoSesion.sinSesion);
+      setState(() {
+        _estado = _EstadoSesion.sinSesion;
+        _mostrarLogin = false;
+      });
     }
   }
 
@@ -133,21 +194,48 @@ class _AuthGateState extends State<AuthGate> {
     switch (_estado) {
       case _EstadoSesion.verificando:
         return const _PantallaCarga();
+
       case _EstadoSesion.sinSesion:
-        return LoginPage(
-          mensajeInicial: _mensaje,
-          authService: _authService,
-          registroClienteService: widget.registroClienteService,
-        );
-      case _EstadoSesion.conSesion:
+        if (_mostrarLogin) {
+          return WillPopScope(
+            onWillPop: () async {
+              _regresarHome();
+              return false;
+            },
+            child: LoginPage(
+              mensajeInicial: _mensaje,
+              authService: _authService,
+              registroClienteService: widget.registroClienteService,
+              onRegresar: _regresarHome,
+            ),
+          );
+        }
+
         return HomePage(
+          // Key distinta por estado: al cerrar sesión se reinicia en Inicio
+          // (índice 0) en vez de conservar Perfil/Actividad sin contenido.
+          key: const ValueKey('home-sin-sesion'),
           onCerrarSesion: _cerrarSesion,
+          onSolicitarLogin: _abrirLogin,
           authService: _authService,
           perfilClienteService: widget.perfilClienteService,
           reservasService: widget.reservasService,
         );
+
+      case _EstadoSesion.conSesion:
+        return HomePage(
+          key: const ValueKey('home-con-sesion'),
+          onCerrarSesion: _cerrarSesion,
+          onSolicitarLogin: _abrirLogin,
+          authService: _authService,
+          perfilClienteService: widget.perfilClienteService,
+          reservasService: widget.reservasService,
+        );
+
       case _EstadoSesion.errorRed:
-        return _PantallaErrorRed(onReintentar: _reintentar);
+        return _PantallaErrorRed(
+          onReintentar: _reintentar,
+        );
     }
   }
 
@@ -155,6 +243,7 @@ class _AuthGateState extends State<AuthGate> {
     return _authService.cerrarSesion();
   }
 }
+
 
 class _PantallaCarga extends StatelessWidget {
   const _PantallaCarga();

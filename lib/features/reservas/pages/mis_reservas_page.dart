@@ -10,7 +10,6 @@ import '../data/reservas_service.dart';
 import '../fechas_reserva.dart';
 import '../mensajes.dart';
 
-/// Mis reservas (MVP-19): «Próximas» e «Historial» desde `GET /reservas/mias`.
 class MisReservasPage extends StatefulWidget {
   const MisReservasPage({super.key, this.authService, this.reservasService});
 
@@ -57,35 +56,116 @@ class _MisReservasPageState extends State<MisReservasPage>
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: const Text(MensajesReservas.tituloMisReservas),
-      bottom: TabBar(
-        controller: _controller,
-        tabs: const [
-          Tab(text: MensajesReservas.tabProximas),
-          Tab(text: MensajesReservas.tabHistorial),
-        ],
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+          
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 25, 20, 14),
+              child: Text(
+                MensajesReservas.tituloMisReservas,
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF111827),
+                  letterSpacing: -0.5,
+                ),
+              ),
+            ),
+
+          
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+              child: Row(
+                children: [
+                  _ChipPestana(
+                    texto: MensajesReservas.tabProximas,
+                    seleccionada: _indice == 0,
+                    onTap: () => _controller.animateTo(0),
+                  ),
+                  const SizedBox(width: 10),
+                  _ChipPestana(
+                    texto: MensajesReservas.tabHistorial,
+                    seleccionada: _indice == 1,
+                    onTap: () => _controller.animateTo(1),
+                  ),
+                ],
+              ),
+            ),
+
+            const Divider(height: 1, color: Color(0xFFF3F4F6)),
+
+            // Contenido de cada pestaña
+            Expanded(
+              child: TabBarView(
+                controller: _controller,
+                children: [
+                  _ListaReservas(
+                    vista: 'proximas',
+                    activa: _indice == 0,
+                    reservasService: _reservas,
+                    token: _token,
+                  ),
+                  _ListaReservas(
+                    vista: 'historial',
+                    activa: _indice == 1,
+                    reservasService: _reservas,
+                    token: _token,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-    body: TabBarView(
-      controller: _controller,
-      children: [
-        _ListaReservas(
-          vista: 'proximas',
-          activa: _indice == 0,
-          reservasService: _reservas,
-          token: _token,
+    );
+  }
+}
+
+class _ChipPestana extends StatelessWidget {
+  const _ChipPestana({
+    required this.texto,
+    required this.seleccionada,
+    required this.onTap,
+  });
+
+  final String texto;
+  final bool seleccionada;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(
+          color: seleccionada ? const Color(0xFF0F0F0F) : Colors.white,
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(
+            color: seleccionada
+                ? const Color(0xFF0F0F0F)
+                : const Color(0xFFD1D5DB),
+            width: 1,
+          ),
         ),
-        _ListaReservas(
-          vista: 'historial',
-          activa: _indice == 1,
-          reservasService: _reservas,
-          token: _token,
+        child: Text(
+          texto,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: seleccionada ? Colors.white : const Color(0xFF111827),
+          ),
         ),
-      ],
-    ),
-  );
+      ),
+    );
+  }
 }
 
 enum _EstadoLista { cargando, lista, error }
@@ -117,6 +197,7 @@ class _ListaReservasState extends State<_ListaReservas>
   String? _siguiente;
   Object? _error;
   _EstadoLista _estado = _EstadoLista.cargando;
+  bool _cargando = false;
   bool _cargandoMas = false;
   bool _cargado = false;
   int _version = 0;
@@ -135,16 +216,20 @@ class _ListaReservasState extends State<_ListaReservas>
         !anterior.activa &&
         !_cargado &&
         _error == null &&
+        !_cargando &&
         !_cargandoMas) {
       _cargar();
     }
   }
 
   Future<void> _cargar({bool siguientePagina = false}) async {
-    if (_cargandoMas || (siguientePagina && _siguiente == null)) return;
+    if (_cargando || _cargandoMas || (siguientePagina && _siguiente == null)) {
+      return;
+    }
     final version = ++_version;
     setState(() {
       _error = null;
+      _cargando = !siguientePagina;
       _cargandoMas = siguientePagina;
       if (!siguientePagina || _items.isEmpty) _estado = _EstadoLista.cargando;
     });
@@ -159,6 +244,7 @@ class _ListaReservasState extends State<_ListaReservas>
         if (!siguientePagina) _items.clear();
         _items.addAll(pagina.items);
         _siguiente = pagina.siguiente;
+        _cargando = false;
         _cargandoMas = false;
         _cargado = true;
         _estado = _EstadoLista.lista;
@@ -167,6 +253,7 @@ class _ListaReservasState extends State<_ListaReservas>
       if (!mounted || version != _version) return;
       setState(() {
         _error = error;
+        _cargando = false;
         _cargandoMas = false;
         if (!siguientePagina || _items.isEmpty) {
           _estado = _EstadoLista.error;
@@ -194,21 +281,19 @@ class _ListaReservasState extends State<_ListaReservas>
         );
       case _EstadoLista.lista:
         if (_items.isEmpty) {
-          return EstadoVacio(icono: Icons.event_note, mensaje: _mensajeVacio);
+          return EstadoVacio(
+            icono: Icons.calendar_today_outlined,
+            mensaje: _mensajeVacio,
+          );
         }
         final conPie = _siguiente != null || _error != null;
         return ListView.builder(
-          padding: const EdgeInsets.fromLTRB(
-            Espacios.l,
-            Espacios.s,
-            Espacios.l,
-            Espacios.xl,
-          ),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, Espacios.xl),
           itemCount: _items.length + (conPie ? 1 : 0),
           itemBuilder: (context, indice) {
             if (indice == _items.length) return _pie();
             return Padding(
-              padding: const EdgeInsets.only(bottom: Espacios.m),
+              padding: const EdgeInsets.only(bottom: 14),
               child: _TarjetaReserva(
                 reserva: _items[indice],
                 // El detalle puede cancelar la reserva: al volver se relee la API.
@@ -240,12 +325,19 @@ class _ListaReservasState extends State<_ListaReservas>
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: Espacios.m),
       child: Center(
-        child: TextButton(
+        child: OutlinedButton(
           onPressed: _cargandoMas ? null : () => _cargar(siguientePagina: true),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: const Color(0xFF111827),
+            side: const BorderSide(color: Color(0xFFD1D5DB)),
+            shape: const StadiumBorder(),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          ),
           child: Text(
             _cargandoMas
                 ? MensajesReservas.cargando
                 : MensajesReservas.cargarMas,
+            style: const TextStyle(fontWeight: FontWeight.w600),
           ),
         ),
       ),
@@ -261,58 +353,180 @@ class _TarjetaReserva extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tema = Theme.of(context);
     final fecha = formatearFechaLarga(fechaEnMexico(reserva.inicio));
     final hora = horaEnMexico(reserva.inicio);
-    return Card(
+
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: () async {
           await Navigator.of(context).pushNamed('/reservas/${reserva.id}');
           alVolver();
         },
-        borderRadius: Radios.tarjeta,
-        child: Padding(
-          padding: const EdgeInsets.all(Espacios.l),
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: const Color(0xFFE5E7EB),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Cabecera: Ícono de negocio + Nombre + Badge de estado
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Text(
-                      reserva.negocio,
-                      style: tema.textTheme.titleMedium,
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3E8FF),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.storefront_rounded,
+                      color: Color(0xFF7C3AED),
+                      size: 22,
                     ),
                   ),
-                  const SizedBox(width: Espacios.s),
-                  EtiquetaEstado(
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          reserva.negocio,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF111827),
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          reserva.servicio,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF4B5563),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  _BadgeEstadoReserva(
                     texto: _textoEstado(reserva.estado),
                     tono: _tonoEstado(reserva.estado),
                   ),
                 ],
               ),
-              const SizedBox(height: Espacios.s),
-              Text(reserva.servicio, style: tema.textTheme.bodyMedium),
-              const SizedBox(height: Espacios.xs),
-              Row(
-                children: [
-                  Icon(
-                    Icons.schedule_outlined,
-                    size: 16,
-                    color: tema.colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: Espacios.xs),
-                  Expanded(
-                    child: Text(
-                      '$fecha · $hora',
-                      style: tema.textTheme.bodySmall,
+
+              const SizedBox(height: 14),
+
+              // Bloque inferior gris claro con fecha y hora (estilo chip de ubicación/horario de la app)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF7F7F8),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.calendar_today_rounded,
+                      size: 15,
+                      color: Color(0xFF111827),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        fecha,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF111827),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(
+                      Icons.access_time_rounded,
+                      size: 15,
+                      color: Color(0xFF6B7280),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      hora,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111827),
+                        fontFeatures: [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BadgeEstadoReserva extends StatelessWidget {
+  const _BadgeEstadoReserva({
+    required this.texto,
+    required this.tono,
+  });
+
+  final String texto;
+  final TonoEstado tono;
+
+  @override
+  Widget build(BuildContext context) {
+    final (Color fondo, Color textoColor) = switch (tono) {
+      TonoEstado.exito => (const Color(0xFFDCFCE7), const Color(0xFF15803D)),
+      TonoEstado.aviso => (const Color(0xFFFEF3C7), const Color(0xFFB45309)),
+      TonoEstado.neutro => (const Color(0xFFF3F4F6), const Color(0xFF4B5563)),
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: fondo,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        texto,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: textoColor,
         ),
       ),
     );
