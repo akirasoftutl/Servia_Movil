@@ -112,6 +112,11 @@ class _DetalleReservaPageState extends State<DetalleReservaPage> {
     };
     String disponible(String valor) =>
         valor.trim().isEmpty ? MensajesReservas.datoNoDisponible : valor;
+    final tituloMotivo = switch (r.estado) {
+      'rechazada' => MensajesReservas.motivoRechazo,
+      'cancelada' => MensajesReservas.motivoCancelacion,
+      _ => null,
+    };
     return ListView(
       padding: Espacios.pantalla,
       children: [
@@ -159,6 +164,8 @@ class _DetalleReservaPageState extends State<DetalleReservaPage> {
                 : MensajesReservas.sinObservaciones,
           ),
         ]),
+        if (tituloMotivo != null && r.motivo?.trim().isNotEmpty == true)
+          _seccion(tituloMotivo, [Text(r.motivo!)]),
       ],
     );
   }

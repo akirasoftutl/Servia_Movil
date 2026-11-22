@@ -118,4 +118,49 @@ void main() {
     expect(find.text('Cargando tu reserva...'), findsNothing);
     expect(find.text('SRV-7KQ2MX'), findsOneWidget);
   });
+  for (final estado in ['rechazada', 'cancelada']) {
+    testWidgets('C2 muestra motivo y título para $estado', (tester) async {
+      await abrir(
+        tester,
+        datos: {...datosDetalle, 'estado': estado, 'motivo': 'Sin personal.'},
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          estado == 'rechazada'
+              ? 'Motivo del rechazo'
+              : 'Motivo de la cancelación',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Sin personal.'), findsOneWidget);
+    });
+  }
+
+  testWidgets('D3 vencida usa su etiqueta sin motivo', (tester) async {
+    await abrir(
+      tester,
+      datos: {
+        ...datosDetalle,
+        'estado': 'rechazada_vencimiento',
+        'motivo': null,
+      },
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Rechazada por vencimiento'), findsOneWidget);
+    expect(find.text('Motivo del rechazo'), findsNothing);
+    expect(find.text('Motivo de la cancelación'), findsNothing);
+  });
+
+  testWidgets('C2 cancelación sin motivo no inventa una sección', (
+    tester,
+  ) async {
+    await abrir(
+      tester,
+      datos: {...datosDetalle, 'estado': 'cancelada', 'motivo': null},
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Cancelada'), findsOneWidget);
+    expect(find.text('Motivo de la cancelación'), findsNothing);
+  });
 }

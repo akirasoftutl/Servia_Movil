@@ -74,6 +74,8 @@ class MensajesReservas {
   static const observacionesDetalle = 'Observaciones';
   static const sinObservaciones = 'Sin observaciones.';
   static const datoNoDisponible = 'No disponible';
+  static const motivoRechazo = 'Motivo del rechazo';
+  static const motivoCancelacion = 'Motivo de la cancelación';
   static const errorDetalle =
       'No se pudo cargar tu reserva. Inténtalo de nuevo.';
 
