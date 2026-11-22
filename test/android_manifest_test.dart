@@ -14,6 +14,21 @@ void main() {
     expect(permiso!.start, lessThan(contenido.indexOf('<application')));
   });
 
+  test('consulta aplicaciones externas que pueden abrir https', () {
+    final contenido = manifiesto.readAsStringSync();
+    final consultas = RegExp(r'<queries>([\s\S]*?)</queries>')
+        .firstMatch(contenido)!
+        .group(1)!;
+    expect(
+      consultas,
+      matches(
+        RegExp(
+          r'<intent>\s*<action android:name="android.intent.action.VIEW"\s*/>\s*<data android:scheme="https"\s*/>\s*</intent>',
+        ),
+      ),
+    );
+  });
+
   test('release no habilita tráfico sin cifrar ni configuración alternativa', () {
     final contenido = manifiesto.readAsStringSync();
     expect(contenido, isNot(contains('usesCleartextTraffic="true"')));

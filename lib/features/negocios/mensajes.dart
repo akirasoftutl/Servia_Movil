@@ -3,6 +3,12 @@ import '../../core/network/api_exception.dart';
 class MensajesNegocios {
   MensajesNegocios._();
 
+  static const ubicacion = 'Ubicación';
+  static const descripcionMapa = 'Mapa con la ubicación del negocio';
+  static const comoLlegar = 'Cómo llegar';
+  static const errorMapa = 'No se pudo cargar el mapa.';
+  static const errorAppMapas = 'No se pudo abrir la app de mapas.';
+
   static const cercaDeTi = 'Cerca de ti';
   static const errorCercanos = 'No se pudieron cargar los negocios cercanos.';
   static const sinCercanos = 'No hay negocios cerca de ti.';

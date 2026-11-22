@@ -1,5 +1,6 @@
 import 'fotos_negocio.dart';
 import 'lectura_json.dart';
+import 'ubicacion_negocio.dart';
 
 const diasSemana = <String, String>{
   'lunes': 'Lunes',
@@ -45,6 +46,7 @@ class Negocio {
   /// Texto armado por la API (`direccionTexto`). Si falta, cae a `direccion`
   /// solo cuando es texto (API anterior); un objeto o null se ignora.
   final String? direccionTexto;
+  final UbicacionNegocio? ubicacion;
   final String? telefono;
   final String? correoContacto;
   final FotosNegocio fotos;
@@ -57,6 +59,7 @@ class Negocio {
     this.descripcion,
     required this.categoriaId,
     this.direccionTexto,
+    this.ubicacion,
     this.telefono,
     this.correoContacto,
     this.fotos = const FotosNegocio(),
@@ -84,6 +87,7 @@ class Negocio {
       descripcion: leerTextoOpcional(json, 'descripcion'),
       categoriaId: leerTexto(json, 'categoriaId'),
       direccionTexto: _leerDireccionTexto(json),
+      ubicacion: UbicacionNegocio.leer(json['ubicacion']),
       telefono: telefono.isEmpty ? null : telefono,
       correoContacto: leerTextoOpcional(json, 'correoContacto'),
       fotos: FotosNegocio.fromJson(json['fotos']),

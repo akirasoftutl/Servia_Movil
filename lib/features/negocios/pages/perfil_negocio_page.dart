@@ -9,6 +9,7 @@ import '../formatos.dart';
 import '../mensajes.dart';
 import 'fotos_negocio.dart';
 import 'miniatura_negocio.dart';
+import 'mapa_negocio.dart';
 import 'seccion_servicios.dart';
 
 enum _EstadoPerfil { cargando, error, listo }
@@ -19,11 +20,15 @@ class PerfilNegocioPage extends StatefulWidget {
     required this.negocioId,
     this.negociosService,
     ProveedorImagenNegocio? proveedorFotos,
+    this.proveedorMapa = NetworkImage.new,
+    this.lanzadorRuta = abrirRutaNegocio,
   }) : proveedorFotos = proveedorFotos ?? NetworkImage.new;
 
   final String negocioId;
   final NegociosService? negociosService;
   final ProveedorImagenNegocio proveedorFotos;
+  final ProveedorImagenNegocio proveedorMapa;
+  final LanzadorRutaNegocio lanzadorRuta;
 
   @override
   State<PerfilNegocioPage> createState() => _PerfilNegocioPageState();
@@ -101,6 +106,8 @@ class _PerfilNegocioPageState extends State<PerfilNegocioPage> {
           categoria: _categoria!,
           service: _service,
           proveedorFotos: widget.proveedorFotos,
+          proveedorMapa: widget.proveedorMapa,
+          lanzadorRuta: widget.lanzadorRuta,
         );
     }
     return Scaffold(
@@ -116,11 +123,15 @@ class _ContenidoPerfil extends StatelessWidget {
     required this.categoria,
     required this.service,
     required this.proveedorFotos,
+    required this.proveedorMapa,
+    required this.lanzadorRuta,
   });
   final NegociosService service;
   final Negocio negocio;
   final String categoria;
   final ProveedorImagenNegocio proveedorFotos;
+  final ProveedorImagenNegocio proveedorMapa;
+  final LanzadorRutaNegocio lanzadorRuta;
 
   @override
   Widget build(BuildContext context) {
@@ -152,6 +163,15 @@ class _ContenidoPerfil extends StatelessWidget {
           _EncabezadoNegocio(negocio: negocio, categoria: categoria),
           const SizedBox(height: Espacios.xl),
           _ContactoNegocio(negocio: negocio),
+          if (negocio.ubicacion != null) ...[
+            const SizedBox(height: Espacios.xl),
+            MapaNegocio(
+              negocioId: negocio.id,
+              ubicacion: negocio.ubicacion!,
+              proveedor: proveedorMapa,
+              lanzador: lanzadorRuta,
+            ),
+          ],
           const SizedBox(height: Espacios.xl),
           _HorarioSemanal(horario: negocio.horario),
           const SizedBox(height: Espacios.xl),
