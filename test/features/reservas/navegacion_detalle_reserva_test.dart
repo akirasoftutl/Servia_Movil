@@ -79,6 +79,63 @@ void main() {
     expect(find.text('Mis reservas'), findsOneWidget);
   });
 
+  testWidgets('52 al volver del detalle tras cancelar ya no se ve Pendiente', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final sesion = SesionFalsa();
+    var datos = Map<String, dynamic>.of(datosDetalle);
+    final servicio = ReservasService(
+      api: ApiClient(
+        client: MockClient((r) async {
+          if (r.method == 'PATCH') {
+            expect(r.url.path, '/reservas/mias/r1/cancelar');
+            datos = {...datos, 'estado': 'cancelada', 'cancelable': false};
+            return http.Response(jsonEncode(datos), 200);
+          }
+          if (r.url.path == '/reservas/mias') {
+            return http.Response(
+              jsonEncode({
+                'items': [datos],
+                'siguiente': null,
+              }),
+              200,
+            );
+          }
+          return http.Response(jsonEncode(datos), 200);
+        }),
+      ),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: temaServia(),
+        home: MisReservasPage(authService: sesion, reservasService: servicio),
+        onGenerateRoute: (ajustes) => generarRutaReservas(
+          ajustes,
+          authService: sesion,
+          reservasService: servicio,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Pendiente'), findsOneWidget);
+    await tester.tap(find.text('Barbería Central'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Retirar solicitud'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sí, cancelar'));
+    await tester.pumpAndSettle();
+    expect(find.text('Cancelada'), findsOneWidget);
+    Navigator.of(tester.element(find.byType(DetalleReservaPage))).pop();
+    await tester.pumpAndSettle();
+    expect(find.byType(DetalleReservaPage), findsNothing);
+    expect(find.text('Pendiente'), findsNothing);
+    expect(find.text('Cancelada'), findsOneWidget);
+  });
+
   testWidgets('D4 ServiaApp registra la ruta de reservas con solo el id', (
     tester,
   ) async {
