@@ -117,7 +117,13 @@ class _DetalleReservaPageState extends State<DetalleReservaPage> {
                         child: const Text(MensajesReservas.volverAMisReservas),
                       ),
                     )
-                  : EstadoError(mensaje: MensajesReservas.errorDetalle)
+                  : EstadoError(
+                      mensaje: MensajesReservas.mensajeDeDetalle(error),
+                      onReintentar:
+                          MensajesReservas.sesionInvalidaDetalle(error)
+                          ? null
+                          : _cargar,
+                    )
             : _datos(_reserva!),
       ),
     );

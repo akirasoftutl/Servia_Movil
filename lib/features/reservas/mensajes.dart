@@ -80,6 +80,19 @@ class MensajesReservas {
       error is ApiException &&
       (error.statusCode == 400 || error.statusCode == 404);
 
+  static bool sesionInvalidaDetalle(Object error) =>
+      error is ApiException &&
+      (error.statusCode == 401 || error.statusCode == 403);
+
+  static String mensajeDeDetalle(Object error) {
+    if (sesionInvalidaDetalle(error)) return sesionVencidaConsulta;
+    if (error is ApiException) {
+      return error.statusCode >= 500 ? errorApi : errorDetalle;
+    }
+    if (error is FormatException) return errorDetalle;
+    return errorRed;
+  }
+
   static const motivoRechazo = 'Motivo del rechazo';
   static const motivoCancelacion = 'Motivo de la cancelación';
   static const errorDetalle =

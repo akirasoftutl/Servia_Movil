@@ -180,4 +180,63 @@ void main() {
       },
     );
   }
+  for (final codigo in [401, 403]) {
+    testWidgets('C4 y D2 $codigo muestra sesión vencida sin reintento', (
+      tester,
+    ) async {
+      await abrir(tester, codigo: codigo);
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Tu sesión ya no es válida. Inicia sesión de nuevo.'),
+        findsOneWidget,
+      );
+      expect(find.text('Reintentar'), findsNothing);
+      expect(find.text('SRV-7KQ2MX'), findsNothing);
+    });
+  }
+
+  testWidgets('C4 sin sesión no consulta datos', (tester) async {
+    var consultas = 0;
+    await abrir(
+      tester,
+      sesion: SesionFalsa(conSesion: false),
+      respuesta: (_) async {
+        consultas++;
+        return http.Response(jsonEncode(datosDetalle), 200);
+      },
+    );
+    await tester.pumpAndSettle();
+    expect(consultas, 0);
+    expect(
+      find.text('Tu sesión ya no es válida. Inicia sesión de nuevo.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('C4 red permite Reintentar y recupera el detalle', (
+    tester,
+  ) async {
+    var consultas = 0;
+    await abrir(
+      tester,
+      respuesta: (r) async {
+        expect(r.url.path, '/reservas/mias/r1');
+        expect(r.headers['Authorization'], 'Bearer token');
+        if (++consultas == 1) throw Exception('Sin conexión');
+        return http.Response(jsonEncode(datosDetalle), 200);
+      },
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.text(
+        'No se pudo conectar. Revisa tu conexión e inténtalo de nuevo.',
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Reintentar'));
+    await tester.pumpAndSettle();
+    expect(consultas, 2);
+    expect(find.text('SRV-7KQ2MX'), findsOneWidget);
+    expect(find.text('Reintentar'), findsNothing);
+  });
 }
