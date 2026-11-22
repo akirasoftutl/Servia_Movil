@@ -152,4 +152,56 @@ void main() {
       expect(find.text(MensajesReservas.limiteCancelacion), findsNothing);
     },
   );
+  testWidgets('52 C3 exige las tres condiciones y No volver no envía', (
+    tester,
+  ) async {
+    final e = Escenario();
+    await e.abrir(tester);
+    await tester.tap(find.text('Retirar solicitud'));
+    await tester.pumpAndSettle();
+    expect(find.text('Condiciones de cancelación'), findsOneWidget);
+    expect(
+      find.text(
+        'Puedes retirar una solicitud pendiente en cualquier momento antes de la cita.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'Una reserva confirmada solo se puede cancelar hasta 24 horas antes de la cita.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'Una vez cancelada, la reserva no se puede reactivar. Si después quieres el servicio, haz una nueva reserva.',
+      ),
+      findsOneWidget,
+    );
+    expect(e.envios, 0);
+    await tester.tap(find.text('No, volver'));
+    await tester.pumpAndSettle();
+    expect(e.envios, 0);
+    expect(find.text('Pendiente'), findsOneWidget);
+    expect(find.byType(AlertDialog), findsNothing);
+    await confirmar(tester, 'Retirar solicitud');
+    await tester.pumpAndSettle();
+    expect(e.envios, 1);
+  });
+
+  testWidgets('52 C3 cerrar el diálogo tampoco envía', (tester) async {
+    final e = Escenario();
+    await e.abrir(tester);
+    await tester.tap(find.text('Retirar solicitud'));
+    await tester.pumpAndSettle();
+    Navigator.of(tester.element(find.byType(AlertDialog))).pop();
+    await tester.pumpAndSettle();
+    expect(e.envios, 0);
+    expect(
+      tester
+          .widget<FilledButton>(find.byKey(const ValueKey('cancelar-reserva')))
+          .onPressed,
+      isNotNull,
+    );
+  });
 }
