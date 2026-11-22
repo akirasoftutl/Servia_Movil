@@ -502,27 +502,31 @@ class _EncabezadoExploracion extends StatelessWidget {
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: TextField(
-                    controller: controller,
-                    onChanged: onChanged,
-                    onSubmitted: (_) => onBuscar(),
-                    textInputAction: TextInputAction.search,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF111827),
-                    ),
-                    decoration: const InputDecoration(
-                      hintText: 'Explorar todos los servicios',
-                      hintStyle: TextStyle(
+                  // Área táctil de al menos 48 dp, también con texto escalado.
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 48),
+                    child: TextField(
+                      controller: controller,
+                      onChanged: onChanged,
+                      onSubmitted: (_) => onBuscar(),
+                      textInputAction: TextInputAction.search,
+                      style: const TextStyle(
                         fontSize: 14,
-                        color: Color(0xFF6B7280),
-                        fontWeight: FontWeight.w400,
+                        color: Color(0xFF111827),
                       ),
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      isDense: true,
-                      contentPadding: EdgeInsets.zero,
+                      decoration: const InputDecoration(
+                        hintText: 'Explorar todos los servicios',
+                        hintStyle: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF6B7280),
+                          fontWeight: FontWeight.w400,
+                        ),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                      ),
                     ),
                   ),
                 ),
@@ -543,8 +547,8 @@ class _EncabezadoExploracion extends StatelessWidget {
                   },
                 ),
                 const SizedBox(width: 4),
-                SizedBox(
-                  height: 46,
+                ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 48),
                   child: ElevatedButton(
                     onPressed: onBuscar,
                     style: ElevatedButton.styleFrom(
@@ -666,17 +670,19 @@ class _CuadriculaCategorias extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 9),
-              Text(
-                item.nombre,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 10,
-                  height: 1.25,
-                  fontWeight: seleccionada ? FontWeight.w600 : FontWeight.w400,
-                  color: const Color(0xFF111111),
+              const SizedBox(height: 6),
+              Flexible(
+                child: Text(
+                  item.nombre,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 10,
+                    height: 1.25,
+                    fontWeight: seleccionada ? FontWeight.w600 : FontWeight.w400,
+                    color: const Color(0xFF111111),
+                  ),
                 ),
               ),
             ],
@@ -834,11 +840,13 @@ class _TarjetaNegocioCarrusel extends StatelessWidget {
             const SizedBox(height: 2),
 
             // Categoría y estado de reservas
-            Text(
-              negocio.aceptaReservas ? '$categoria · Disponible' : categoria,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+            Flexible(
+              child: Text(
+                negocio.aceptaReservas ? '$categoria · Disponible' : categoria,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+              ),
             ),
           ],
         ),

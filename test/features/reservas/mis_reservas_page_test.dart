@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:servia/core/network/api_exception.dart';
 import 'package:servia/core/widgets/estados.dart';
-import 'package:servia/core/widgets/etiqueta_estado.dart';
 import 'package:servia/features/reservas/data/reserva_resumen.dart';
 import 'package:servia/features/reservas/pages/mis_reservas_page.dart';
 
@@ -96,7 +95,9 @@ void main() {
       ),
     );
     // 16:00 UTC son las 10:00 de México, aunque el teléfono esté en otra zona.
-    expect(find.text('martes 10 de noviembre de 2026 · 10:00'), findsOneWidget);
+    // El rediseño muestra la fecha y la hora en dos Text separados.
+    expect(find.text('martes 10 de noviembre de 2026'), findsOneWidget);
+    expect(find.text('10:00'), findsOneWidget);
   });
 
   testWidgets('cada estado usa su texto y su tono', (tester) async {
@@ -136,23 +137,28 @@ void main() {
     ]) {
       expect(find.text(texto), findsOneWidget);
     }
-    TonoEstado tonoDe(String texto) => tester
-        .widget<EtiquetaEstado>(
+    // El badge ya no usa EtiquetaEstado: el tono se expresa con el color de
+    // fondo del contenedor más cercano al texto, según _BadgeEstadoReserva.
+    Color fondoDe(String texto) => (tester.widget<Container>(
           find.ancestor(
             of: find.text(texto),
-            matching: find.byType(EtiquetaEstado),
-          ),
-        )
-        .tono;
-    expect(tonoDe('Pendiente'), TonoEstado.aviso);
-    expect(tonoDe('Confirmada'), TonoEstado.exito);
+            matching: find.byWidgetPredicate(
+              (w) =>
+                  w is Container &&
+                  w.decoration is BoxDecoration &&
+                  (w.decoration as BoxDecoration).color != null,
+            ),
+          ).first,
+        ).decoration as BoxDecoration).color!;
+    expect(fondoDe('Pendiente'), const Color(0xFFFEF3C7)); // aviso
+    expect(fondoDe('Confirmada'), const Color(0xFFDCFCE7)); // éxito
     for (final neutro in [
       'Rechazada',
       'Rechazada por vencimiento',
       'Cancelada',
       'Completada',
     ]) {
-      expect(tonoDe(neutro), TonoEstado.neutro);
+      expect(fondoDe(neutro), const Color(0xFFF3F4F6));
     }
   });
 

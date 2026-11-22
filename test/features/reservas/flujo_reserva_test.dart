@@ -92,7 +92,7 @@ Future<void> elegirHora(WidgetTester tester) async {
 Future<void> iniciarSesion(WidgetTester tester) async {
   await tester.enterText(find.byType(TextField).at(0), 'ana@test.com');
   await tester.enterText(find.byType(TextField).at(1), '12345678');
-  await tester.tap(find.text('Iniciar sesión'));
+  await tester.tap(find.text('Continuar'));
   await avanzar(tester);
 }
 
@@ -188,7 +188,13 @@ void main() {
     final e = Escenario();
     await abrirDetalle(tester, e);
     await elegirHora(tester);
-    await tester.tap(find.text('Cancelar'));
+    // El login ya no tiene «Cancelar»: se cierra con la X superior.
+    await tester.tap(
+      find.descendant(
+        of: find.byType(LoginPage),
+        matching: find.byIcon(Icons.close),
+      ),
+    );
     await avanzar(tester);
     expect(find.byType(ResumenReservaPage), findsNothing);
     expect(find.byType(DetalleServicioPage), findsOneWidget);

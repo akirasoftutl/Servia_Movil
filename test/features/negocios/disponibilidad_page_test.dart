@@ -176,7 +176,7 @@ void main() {
         expect(find.text(texto), findsOneWidget);
       }
       expect(find.text('Ocupado'), findsOneWidget);
-      expect(find.text('Disponible'), findsNWidgets(2));
+      expect(find.text('Elegir'), findsNWidgets(2));
       await tester.tap(find.text('11:00'));
       await tester.pumpAndSettle();
       expect(volvio, isFalse);

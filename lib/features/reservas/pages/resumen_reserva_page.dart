@@ -431,37 +431,39 @@ class _ResumenReservaPageState extends State<ResumenReservaPage> {
                 top: false,
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
-                  child: Row(
+                  // Con textos grandes el botón pasa a su propia línea en vez
+                  // de comprimir el precio hasta hacerlo crecer en altura.
+                  child: Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              formatearPrecio(widget.servicio.precio),
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF111827),
-                                letterSpacing: -0.3,
-                                fontFeatures: [FontFeature.tabularFigures()],
-                              ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            formatearPrecio(widget.servicio.precio),
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF111827),
+                              letterSpacing: -0.3,
+                              fontFeatures: [FontFeature.tabularFigures()],
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              formatearDuracion(widget.servicio.duracionMin),
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w400,
-                                color: Color(0xFF6B7280),
-                              ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            formatearDuracion(widget.servicio.duracionMin),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w400,
+                              color: Color(0xFF6B7280),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                      SizedBox(
-                        height: 52,
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(minHeight: 52),
                         child: ElevatedButton(
                           onPressed: _puedeEnviar ? _enviar : null,
                           style: ElevatedButton.styleFrom(

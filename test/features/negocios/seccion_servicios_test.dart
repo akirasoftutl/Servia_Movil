@@ -19,7 +19,8 @@ void main() {
         final servicio = ServiciosServiceFalso();
         await abrirPerfil(tester, servicio);
         await verServicios(tester);
-        expect(find.byType(ListTile), findsNWidgets(2));
+        // Las filas son ahora tarjetas; cada una expone su acción de reserva.
+        expect(find.text(MensajesNegocios.reservar), findsNWidgets(2));
         for (final texto in [
           'Z Corte',
           'A Masaje',
@@ -34,7 +35,7 @@ void main() {
           tester.getTopLeft(find.text('Z Corte')).dy,
           lessThan(tester.getTopLeft(find.text('A Masaje')).dy),
         );
-        expect(find.text('Reservar'), findsNothing);
+        expect(find.text(MensajesNegocios.reservar), findsNWidgets(2));
       },
     );
     testWidgets('lista vacía tiene mensaje y mantiene el perfil', (
@@ -43,7 +44,7 @@ void main() {
       await abrirPerfil(tester, ServiciosServiceFalso()..servicios = []);
       expect(find.text(MensajesNegocios.sinServicios), findsOneWidget);
       expect(find.text('Salón Aurora'), findsOneWidget);
-      expect(find.byType(ListTile), findsNothing);
+      expect(find.text('Z Corte'), findsNothing);
     });
     testWidgets(
       'error de servicios conserva perfil y reintenta solo la sección',
@@ -56,7 +57,7 @@ void main() {
           find.text('Calle Luna 12, Col. Centro, 37000, León, Guanajuato'),
           findsOneWidget,
         );
-        expect(find.text('Domingo'), findsOneWidget);
+        expect(find.text('domingo'), findsOneWidget);
         expect(find.text(MensajesNegocios.errorRed), findsOneWidget);
         expect(find.textContaining('privado'), findsNothing);
         await tester.ensureVisible(find.text('Reintentar'));

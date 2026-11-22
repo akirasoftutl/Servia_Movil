@@ -18,6 +18,12 @@ import 'package:servia/features/reservas/pages/resumen_reserva_page.dart';
 
 class UsuarioFalso extends Fake implements User {
   @override
+  String? get displayName => 'Ana Pérez';
+
+  @override
+  String? get email => 'ana@test.com';
+
+  @override
   Future<String?> getIdToken([bool forceRefresh = false]) async => 'token';
 }
 

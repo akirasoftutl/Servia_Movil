@@ -102,7 +102,7 @@ void main() {
 
       await tester.enterText(find.byType(TextField).at(0), 'cliente@test.com');
       await tester.enterText(find.byType(TextField).at(1), 'contraseña-mala');
-      await tester.tap(find.text('Iniciar sesión'));
+      await tester.tap(find.text('Continuar'));
       await tester.pumpAndSettle();
 
       expect(find.text(MensajesAuth.credencialesInvalidas), findsOneWidget);
@@ -117,7 +117,7 @@ void main() {
 
       await tester.enterText(find.byType(TextField).at(0), 'cliente@test.com');
       await tester.enterText(find.byType(TextField).at(1), 'contraseña-mala');
-      await tester.tap(find.text('Iniciar sesión'));
+      await tester.tap(find.text('Continuar'));
       await tester.pumpAndSettle();
 
       expect(
@@ -135,7 +135,7 @@ void main() {
         MaterialApp(home: LoginPage(authService: AuthServiceFalso())),
       );
 
-      await tester.tap(find.text('Iniciar sesión'));
+      await tester.tap(find.text('Continuar'));
       await tester.pumpAndSettle();
 
       expect(find.text(MensajesAuth.camposVacios), findsOneWidget);

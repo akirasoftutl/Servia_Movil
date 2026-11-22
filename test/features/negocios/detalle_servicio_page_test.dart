@@ -10,6 +10,7 @@ import 'package:servia/features/negocios/data/negocios_service.dart';
 import 'package:servia/features/negocios/data/servicio.dart';
 import 'package:servia/features/negocios/mensajes.dart';
 import 'package:servia/features/negocios/pages/detalle_servicio_page.dart';
+import 'package:servia/features/negocios/pages/disponibilidad_page.dart';
 
 import 'datos_prueba.dart';
 import 'fakes.dart';
@@ -54,20 +55,23 @@ void main() {
             'Z Corte',
             'Lavado y corte de cabello',
             r'$150.50',
-            '1 h 30 min',
           ]) {
             expect(find.text(texto), findsOneWidget);
           }
+          // El diseño muestra la duración en la insignia y en el detalle.
+          expect(find.text('1 h 30 min'), findsAtLeastNWidgets(1));
           expect(find.text('Reservar'), acepta ? findsOneWidget : findsNothing);
           if (acepta) {
             await tester.tap(find.text('Reservar'));
             await tester.pumpAndSettle();
-            expect(find.text('Disponibilidad del servicio'), findsOneWidget);
-            await tester.tap(find.byType(BackButton));
+            expect(find.byType(DisponibilidadPage), findsOneWidget);
+            // La hoja de disponibilidad se cierra con la X superior derecha.
+            await tester.tap(find.byIcon(Icons.close).last);
             await tester.pumpAndSettle();
             expect(servicio.consultasDetalle, 1);
           }
-          await tester.pageBack();
+          // El detalle también se cierra con su X (ya no hay BackButton).
+          await tester.tap(find.byIcon(Icons.close).last);
           await tester.pumpAndSettle();
           expect(find.byType(DetalleServicioPage), findsNothing);
           expect(find.text('Salón Aurora'), findsOneWidget);

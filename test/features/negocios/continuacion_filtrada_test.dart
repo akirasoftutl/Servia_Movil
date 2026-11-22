@@ -8,17 +8,17 @@ import 'package:servia/features/negocios/mensajes.dart';
 import 'package:servia/features/negocios/pages/lista_negocios_page.dart';
 
 import 'fakes.dart';
+import 'utilidades_prueba.dart';
 
 Future<void> filtrar(WidgetTester tester, bool texto, bool categoria) async {
+  // La cuadrícula de categorías solo existe mientras hay resultados: elegir
+  // primero la categoría y después escribir mantiene ambos filtros vivos.
+  if (categoria) {
+    await elegirCategoria(tester, 'Cabello y barba');
+  }
   if (texto) {
     await tester.enterText(find.byType(TextField), 'corte');
     await tester.pump(const Duration(milliseconds: 400));
-    await tester.pumpAndSettle();
-  }
-  if (categoria) {
-    await tester.tap(find.byType(DropdownButton<String>));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Cabello y barba').last);
     await tester.pumpAndSettle();
   }
 }
@@ -34,12 +34,17 @@ void main() {
     ) async {
       final pendiente = Completer<PaginaNegocios>();
       var recuperar = false;
-      final fake = ListaServiceFalso()
-        ..responder = (cursor) async {
-          final numero = cursor == null ? 1 : int.parse(cursor);
-          if (numero <= 5) return pagina([], '${numero + 1}');
-          return recuperar ? pagina([resumen('recuperado')]) : pendiente.future;
-        };
+      final fake = ListaServiceFalso();
+      fake.responder = (cursor) async {
+        final filtro = fake.filtros.last;
+        if (filtro.q == null && filtro.categoriaId == null) {
+          // Resultado inicial: hace falta para que exista la cuadrícula.
+          return pagina([resumen('inicial')]);
+        }
+        final numero = cursor == null ? 1 : int.parse(cursor);
+        if (numero <= 5) return pagina([], '${numero + 1}');
+        return recuperar ? pagina([resumen('recuperado')]) : pendiente.future;
+      };
       await tester.pumpWidget(
         MaterialApp(home: ListaNegociosPage(negociosService: fake)),
       );
@@ -76,7 +81,7 @@ void main() {
           categoriaId: categoria ? 'cabello' : null,
         )),
       );
-      expect(find.text('Negocio recuperado'), findsOneWidget);
+      expect(find.text('Negocio recuperado'), findsWidgets);
     });
   }
 
@@ -84,12 +89,16 @@ void main() {
     tester,
   ) async {
     var recuperar = false;
-    final fake = ListaServiceFalso()
-      ..responder = (cursor) async {
-        if (cursor == null) return pagina([], 'igual');
-        if (recuperar) return pagina([resumen('recuperado')]);
-        return pagina([resumen('duplicado')], 'igual');
-      };
+    final fake = ListaServiceFalso();
+    fake.responder = (cursor) async {
+      final filtro = fake.filtros.last;
+      if (filtro.q == null && filtro.categoriaId == null) {
+        return pagina([resumen('inicial')]);
+      }
+      if (cursor == null) return pagina([], 'igual');
+      if (recuperar) return pagina([resumen('recuperado')]);
+      return pagina([], 'igual');
+    };
     await tester.pumpWidget(
       MaterialApp(home: ListaNegociosPage(negociosService: fake)),
     );

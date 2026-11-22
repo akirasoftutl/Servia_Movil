@@ -59,7 +59,7 @@ void main() {
       expect(find.text('30 min'), findsOneWidget);
       expect(
         tester.getTopLeft(find.text('Servicios')).dy,
-        greaterThan(tester.getTopLeft(find.text('Domingo')).dy),
+        greaterThan(tester.getTopLeft(find.text('domingo')).dy),
       );
     },
   );

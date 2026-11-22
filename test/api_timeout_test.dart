@@ -18,12 +18,23 @@ import 'package:servia/features/auth/pages/register_page.dart';
 
 class UsuarioFalso extends Fake implements User {
   @override
+  String? get displayName => 'Ana Pérez';
+
+  @override
+  String? get email => 'ana@test.com';
+
+  @override
   Future<String?> getIdToken([bool forceRefresh = false]) async => 'token';
 }
 
 class SesionFalsa extends AuthService {
+  final usuario = UsuarioFalso();
+
   @override
-  Stream<User?> get cambiosDeSesion => Stream.value(UsuarioFalso());
+  User? get usuarioActual => usuario;
+
+  @override
+  Stream<User?> get cambiosDeSesion => Stream.value(usuario);
 }
 
 class PerfilSinRespuesta extends PerfilService {
@@ -149,7 +160,7 @@ void main() {
     );
     await tester.enterText(find.byType(TextField).at(0), 'ana@test.com');
     await tester.enterText(find.byType(TextField).at(1), '12345678');
-    await tester.tap(find.text('Iniciar sesión'));
+    await tester.tap(find.text('Continuar'));
     await tester.pumpAndSettle();
     expect(find.text(MensajesAuth.errorRed), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsNothing);

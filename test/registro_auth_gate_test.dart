@@ -13,8 +13,17 @@ import 'package:servia/features/auth/pages/auth_gate.dart';
 import 'package:servia/features/auth/pages/login_page.dart';
 import 'package:servia/features/auth/pages/register_page.dart';
 import 'package:servia/features/home/pages/home_page.dart';
+import 'package:servia/features/perfil/pages/mi_perfil_page.dart';
+
+import 'features/perfil/fakes_perfil.dart';
 
 class UsuarioFalso extends Fake implements User {
+  @override
+  String? get displayName => 'Ana Pérez';
+
+  @override
+  String? get email => 'ana@test.com';
+
   @override
   Future<String?> getIdToken([bool forceRefresh = false]) async =>
       'token-cliente';
@@ -112,10 +121,16 @@ Future<void> abrirRegistro(
         authService: sesion,
         perfilService: perfil,
         registroClienteService: registro,
+        perfilClienteService: PerfilClienteFalso(<String>[]),
       ),
     ),
   );
   await tester.pumpAndSettle();
+  // Sin sesión AuthGate muestra el inicio: el login se abre desde «Perfil».
+  expect(find.byType(HomePage), findsOneWidget);
+  await tester.tap(find.text('Perfil'));
+  await tester.pumpAndSettle();
+  expect(find.byType(LoginPage), findsOneWidget);
   await tester.tap(find.text('Regístrate'));
   await tester.pumpAndSettle();
   expect(find.byType(RegisterPage), findsOneWidget);
@@ -157,14 +172,33 @@ void main() {
       );
       expect(perfil.consultas, 1);
       expect(registro.registros, 1);
-      await tester.tap(find.byTooltip('Cerrar sesión'));
+
+      // Con sesión, «Perfil» abre MiPerfilPage; cerrar sesión es una fila
+      // al final de su lista y devuelve al inicio como invitado.
+      await tester.tap(find.text('Perfil'));
+      await tester.pumpAndSettle();
+      expect(find.byType(MiPerfilPage), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('Cerrar sesión'),
+        200,
+        scrollable: find.descendant(
+          of: find.byType(MiPerfilPage),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      await tester.tap(find.text('Cerrar sesión'));
+      await tester.pumpAndSettle();
+      expect(find.byType(HomePage), findsOneWidget);
+      expect(sesion.cierres, 1);
+
+      // Sin sesión hay que abrir el login de nuevo desde «Perfil».
+      await tester.tap(find.text('Perfil'));
       await tester.pumpAndSettle();
       expect(find.byType(LoginPage), findsOneWidget);
       expect(find.byType(HomePage), findsNothing);
-      expect(sesion.cierres, 1);
       await tester.enterText(find.byType(TextField).at(0), 'ana@test.com');
       await tester.enterText(find.byType(TextField).at(1), '12345678');
-      await tester.tap(find.text('Iniciar sesión'));
+      await tester.tap(find.text('Continuar'));
       await tester.pumpAndSettle();
       expect(find.byType(HomePage), findsOneWidget);
       expect(
@@ -195,7 +229,11 @@ void main() {
     expect(find.text('Ese correo ya tiene una cuenta'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(
-      tester.widget<ElevatedButton>(find.byType(ElevatedButton)).onPressed,
+      tester
+          .widget<ElevatedButton>(
+            find.widgetWithText(ElevatedButton, 'Crear cuenta'),
+          )
+          .onPressed,
       isNotNull,
     );
     expect(perfil.consultas, 0);
@@ -228,7 +266,12 @@ void main() {
         );
         await abrirRegistro(tester, sesion, perfil, RegistroFalso());
         await registrar(tester);
-        expect(find.byType(HomePage), findsNothing);
+        // Tras el rechazo AuthGate vuelve al inicio como invitado; el motivo
+        // se ve al abrir el login desde la pestaña «Perfil».
+        expect(find.byType(HomePage), findsOneWidget);
+        expect(find.byType(MiPerfilPage), findsNothing);
+        await tester.tap(find.text('Perfil'));
+        await tester.pumpAndSettle();
         expect(find.byType(LoginPage), findsOneWidget);
         expect(
           find.text(

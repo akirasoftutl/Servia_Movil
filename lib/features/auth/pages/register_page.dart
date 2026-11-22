@@ -325,8 +325,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     const SizedBox(height: 28),
 
                     // Botón principal estilo píldora negra
-                    SizedBox(
-                      height: 54,
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 54),
                       child: ElevatedButton(
                         onPressed: _cargando ? null : _registrar,
                         style: ElevatedButton.styleFrom(
@@ -355,8 +355,9 @@ class _RegisterPageState extends State<RegisterPage> {
                     const SizedBox(height: 20),
 
                     // Enlace discreto para volver al inicio de sesión
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         const Text(
                           '¿Ya tienes cuenta?',

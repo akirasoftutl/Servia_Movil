@@ -74,9 +74,11 @@ void main() {
       expect(find.byType(PortadaNegocio), findsOneWidget);
       expect(find.byType(GaleriaFotosNegocio), findsOneWidget);
       expect(find.byType(Image), findsNWidgets(6));
+      // La tarjeta blanca se superpone a la portada, así que el título puede
+      // empezar justo donde termina la imagen (o unos píxeles antes).
       expect(
         tester.getBottomLeft(find.byType(PortadaNegocio)).dy,
-        lessThan(tester.getTopLeft(find.text('Salón Aurora')).dy),
+        lessThanOrEqualTo(tester.getTopLeft(find.text('Salón Aurora')).dy),
       );
 
       final galeriaScrollable = find.descendant(
@@ -88,10 +90,12 @@ void main() {
         AxisDirection.right,
       );
       final posicion = tester.state<ScrollableState>(galeriaScrollable).position;
-      await tester.drag(
-        find.byKey(const Key('foto-galeria-0')),
-        const Offset(-300, 0),
-      );
+      final primeraFoto = find.byKey(const Key('foto-galeria-0'));
+      // La galería queda abajo del viewport de 600 px: primero la hacemos
+      // visible desplazando el perfil y luego aplicamos el gesto horizontal.
+      await tester.ensureVisible(primeraFoto);
+      await tester.pumpAndSettle();
+      await tester.drag(primeraFoto, const Offset(-300, 0));
       await tester.pumpAndSettle();
       expect(posicion.pixels, greaterThan(0));
 

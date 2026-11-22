@@ -9,6 +9,7 @@ import 'package:servia/features/negocios/mensajes.dart';
 import 'package:servia/features/negocios/pages/lista_negocios_page.dart';
 
 import 'fakes.dart';
+import 'utilidades_prueba.dart';
 
 Future<void> abrir(WidgetTester tester, ListaServiceFalso fake) async {
   await tester.pumpWidget(
@@ -24,10 +25,7 @@ Future<void> escribir(WidgetTester tester, String texto) async {
 }
 
 Future<void> categoria(WidgetTester tester, String nombre) async {
-  await tester.tap(find.byType(DropdownButton<String>));
-  await tester.pumpAndSettle();
-  await tester.tap(find.text(nombre).last);
-  await tester.pumpAndSettle();
+  await elegirCategoria(tester, nombre);
 }
 
 void main() {
@@ -45,7 +43,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(fake.llamadas, [null, null]);
       expect(fake.filtros.last.q, 'Café');
-      expect(tester.widget<TextField>(find.byType(TextField)).maxLength, 50);
+      final campo = tester.widget<TextField>(find.byType(TextField));
+      expect(campo.decoration?.hintText, 'Explorar todos los servicios');
+      expect(campo.textInputAction, TextInputAction.search);
       await escribir(tester, ' a ');
       expect(fake.filtros.last.q, null);
       expect(find.text(MensajesNegocios.listaVacia), findsOneWidget);
@@ -91,16 +91,35 @@ void main() {
         Categoria(id: 'x', nombre: 'Oculta', orden: 0, activo: false),
         Categoria(id: 'a', nombre: 'Primera', orden: 1, activo: true),
       ];
+    fake.responder = (_) async {
+      final filtro = fake.filtros.last;
+      if (filtro.q == null && filtro.categoriaId == null) {
+        return pagina([resumen('inicial')]);
+      }
+      return pagina([]);
+    };
     await abrir(tester, fake);
-    final selector = tester.widget<DropdownButton<String>>(
-      find.byType(DropdownButton<String>),
+    final opciones = find.descendant(
+      of: find.byType(GridView),
+      matching: find.byType(Text),
     );
-    expect(selector.items!.map((c) => c.value), ['', 'a', 'b']);
+    expect(
+      tester.widgetList<Text>(opciones).map((texto) => texto.data).toList(),
+      ['Todo', 'Primera', 'Segunda'],
+    );
+    expect(find.text('Oculta'), findsNothing);
     await categoria(tester, 'Segunda');
     expect(fake.llamadas.last, null);
     expect(fake.filtros.last.categoriaId, 'b');
     expect(find.text(MensajesNegocios.sinResultados), findsOneWidget);
-    await categoria(tester, MensajesNegocios.todas);
+    // Sin resultados la cuadrícula desaparece: refrescamos con un item para
+    // volver a tener el botón «Todo» y comprobar que limpia la categoría.
+    fake.responder = (_) async => pagina([resumen('con-categoria')]);
+    await escribir(tester, 'x');
+    await limpiarBusqueda(tester);
+    expect(find.byType(GridView), findsOneWidget);
+    fake.responder = (_) async => pagina([]);
+    await categoria(tester, 'Todo');
     expect(fake.filtros.last.categoriaId, null);
     expect(find.text(MensajesNegocios.listaVacia), findsOneWidget);
   });
@@ -109,7 +128,7 @@ void main() {
   ) async {
     final fake = ListaServiceFalso()..errorCategorias = Exception();
     await abrir(tester, fake);
-    expect(find.byType(DropdownButton<String>), findsNothing);
+    expect(find.byType(GridView), findsNothing);
     await escribir(tester, 'uñas');
     expect(fake.filtros.last.q, 'uñas');
     expect(find.text(MensajesNegocios.sinResultados), findsOneWidget);
@@ -122,20 +141,20 @@ void main() {
             ? pagina(List.generate(15, (i) => resumen('n$i')), 'dos')
             : pagina([resumen('fin')]);
       await abrir(tester, fake);
-      await escribir(tester, 'uñas');
+      // La cuadrícula de categorías desaparece cuando hay texto de búsqueda.
       await categoria(tester, 'Cabello y barba');
+      await escribir(tester, 'uñas');
       expect(fake.llamadas.last, null);
       expect(fake.filtros.last, (q: 'uñas', categoriaId: 'cabello'));
-      await tester.drag(find.byType(ListView), const Offset(0, -2500));
+      await tester.drag(listaVertical(), const Offset(0, -2500));
       await tester.pumpAndSettle();
       expect(fake.llamadas.last, 'dos');
       expect(fake.filtros.last, (q: 'uñas', categoriaId: 'cabello'));
       expect(find.text('Negocio fin'), findsOneWidget);
-      await tester.tap(find.byTooltip(MensajesNegocios.limpiar));
-      await tester.pumpAndSettle();
+      await limpiarBusqueda(tester);
       expect(fake.llamadas.last, null);
       expect(fake.filtros.last, (q: null, categoriaId: 'cabello'));
-      await categoria(tester, MensajesNegocios.todas);
+      await categoria(tester, 'Todo');
       expect(fake.filtros.last, (q: null, categoriaId: null));
       expect(fake.llamadas.last, null);
     },
@@ -151,8 +170,7 @@ void main() {
     expect(fake.llamadas.last, null);
     expect(find.text(MensajesNegocios.sinResultados), findsOneWidget);
     expect(find.text(MensajesNegocios.listaVacia), findsNothing);
-    await tester.tap(find.byTooltip(MensajesNegocios.limpiar));
-    await tester.pumpAndSettle();
+    await limpiarBusqueda(tester);
     expect(find.text(MensajesNegocios.listaVacia), findsOneWidget);
   });
   testWidgets(
@@ -175,6 +193,11 @@ void main() {
   testWidgets('un cuatrocientos al paginar conserva lista sin reintentar', (
     tester,
   ) async {
+    // Con un viewport alto la portada no llena la pantalla y la lista sigue
+    // completando sola la página corta, como antes del rediseño.
+    tester.view.physicalSize = const Size(800, 3000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     final fake = ListaServiceFalso()
       ..responder = (cursor) async {
         if (cursor == null) return pagina([resumen('a')], 'dos');
@@ -182,13 +205,13 @@ void main() {
       };
     await abrir(tester, fake);
     expect(fake.llamadas, [null, 'dos']);
-    expect(find.text('Negocio a'), findsOneWidget);
+    expect(find.text('Negocio a'), findsWidgets);
     expect(find.text(MensajesNegocios.busquedaInvalida), findsOneWidget);
     expect(find.text(MensajesNegocios.reintentar), findsNothing);
     fake.responder = (_) async => pagina([resumen('corregida')]);
     await categoria(tester, 'Cabello y barba');
     expect(fake.llamadas.last, null);
-    expect(find.text('Negocio corregida'), findsOneWidget);
+    expect(find.text('Negocio corregida'), findsWidgets);
   });
   testWidgets('libera espera y descarta petición al desmontar', (tester) async {
     final fake = ListaServiceFalso();

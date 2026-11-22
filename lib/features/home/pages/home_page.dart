@@ -253,8 +253,8 @@ class _ItemBarra extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SizedBox(height: 28, child: Center(child: icono)),
-            const SizedBox(height: 4),
+            SizedBox(height: 24, child: Center(child: icono)),
+            const SizedBox(height: 2),
             Text(
               etiqueta,
               maxLines: 1,

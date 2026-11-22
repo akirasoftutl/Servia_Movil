@@ -15,6 +15,12 @@ class UsuarioPerfilFalso extends Fake implements User {
   void Function()? alRenovar;
 
   @override
+  String? get displayName => 'Ana Pérez';
+
+  @override
+  String? get email => 'ana@test.com';
+
+  @override
   Future<String?> getIdToken([bool forceRefresh = false]) async {
     eventos.add(forceRefresh ? 'token-nuevo' : 'token');
     if (forceRefresh) {

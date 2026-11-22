@@ -374,37 +374,40 @@ class _ContenidoServicio extends StatelessWidget {
             top: false,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
-              child: Row(
+              // El precio y el botón comparten línea mientras haya espacio;
+              // con texto muy grande el botón baja en lugar de estrangular
+              // al precio y provocar un desbordamiento vertical.
+              child: Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          formatearPrecio(servicio.precio),
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF111827),
-                            letterSpacing: -0.3,
-                          ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        formatearPrecio(servicio.precio),
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF111827),
+                          letterSpacing: -0.3,
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          formatearDuracion(servicio.duracionMin),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            color: Color(0xFF6B7280),
-                          ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        formatearDuracion(servicio.duracionMin),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFF6B7280),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                   if (aceptaReservas)
-                    SizedBox(
-                      height: 52,
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 52),
                       child: ElevatedButton(
                         onPressed: onConsultar,
                         style: ElevatedButton.styleFrom(

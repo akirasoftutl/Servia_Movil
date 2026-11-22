@@ -365,8 +365,8 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 24),
 
                   // Botón principal estilo píldora negra
-                  SizedBox(
-                    height: 54,
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 54),
                     child: ElevatedButton(
                       onPressed: _cargando ? null : _iniciarSesion,
                       style: ElevatedButton.styleFrom(
@@ -421,8 +421,8 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 28),
 
-                  SizedBox(
-                    height: 54,
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 54),
                     child: OutlinedButton(
                       onPressed: _cargando ? null : _iniciarSesionConGoogle,
                       style: OutlinedButton.styleFrom(
@@ -458,8 +458,9 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 24),
 
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       const Text(
                         '¿No tienes cuenta?',
