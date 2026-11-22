@@ -29,3 +29,11 @@ int leerEntero(Map<String, dynamic> json, String campo) {
   if (valor is! int) throw FormatException('Campo inválido: $campo.');
   return valor;
 }
+
+double leerNumero(Map<String, dynamic> json, String campo) {
+  final valor = json[campo];
+  if (valor is! num || !valor.isFinite) {
+    throw FormatException('Campo inválido: $campo.');
+  }
+  return valor.toDouble();
+}

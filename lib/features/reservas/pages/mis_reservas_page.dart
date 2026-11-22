@@ -294,7 +294,13 @@ class _ListaReservasState extends State<_ListaReservas>
             if (indice == _items.length) return _pie();
             return Padding(
               padding: const EdgeInsets.only(bottom: 14),
-              child: _TarjetaReserva(reserva: _items[indice]),
+              child: _TarjetaReserva(
+                reserva: _items[indice],
+                // El detalle puede cancelar la reserva: al volver se relee la API.
+                alVolver: () {
+                  if (mounted) _cargar();
+                },
+              ),
             );
           },
         );
@@ -340,9 +346,10 @@ class _ListaReservasState extends State<_ListaReservas>
 }
 
 class _TarjetaReserva extends StatelessWidget {
-  const _TarjetaReserva({required this.reserva});
+  const _TarjetaReserva({required this.reserva, required this.alVolver});
 
   final ReservaResumen reserva;
+  final VoidCallback alVolver;
 
   @override
   Widget build(BuildContext context) {
@@ -353,7 +360,10 @@ class _TarjetaReserva extends StatelessWidget {
       color: Colors.white,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
-        onTap: () => Navigator.of(context).pushNamed('/reservas/${reserva.id}'),
+        onTap: () async {
+          await Navigator.of(context).pushNamed('/reservas/${reserva.id}');
+          alVolver();
+        },
         borderRadius: BorderRadius.circular(18),
         child: Container(
           padding: const EdgeInsets.all(18),
