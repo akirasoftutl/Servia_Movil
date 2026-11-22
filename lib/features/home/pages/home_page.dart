@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../auth/data/auth_service.dart';
 import '../../negocios/data/negocios_service.dart';
+import '../../negocios/data/ubicacion_cliente.dart';
 import '../../negocios/pages/lista_negocios_page.dart';
+import '../../negocios/pages/negocios_cercanos.dart';
 import '../../perfil/data/perfil_cliente_service.dart';
 import '../../perfil/pages/mi_perfil_page.dart';
 import '../../reservas/data/reservas_service.dart';
@@ -14,6 +16,7 @@ class HomePage extends StatefulWidget {
     super.key,
     required this.onCerrarSesion,
     this.negociosService,
+    this.proveedorUbicacion,
     this.authService,
     this.perfilClienteService,
     this.reservasService,
@@ -21,6 +24,7 @@ class HomePage extends StatefulWidget {
   });
 
   final NegociosService? negociosService;
+  final ProveedorUbicacionCliente? proveedorUbicacion;
   final AuthService? authService;
   final PerfilClienteService? perfilClienteService;
   final ReservasService? reservasService;
@@ -74,9 +78,17 @@ class _HomePageState extends State<HomePage> {
     final inicial = _obtenerInicialUsuario();
 
     final pantallas = <Widget>[
-      ListaNegocios(
+      Column(
         key: _clavesPantallas[0],
-        negociosService: widget.negociosService,
+        children: [
+          NegociosCercanos(
+            service: widget.negociosService,
+            proveedorUbicacion: widget.proveedorUbicacion,
+          ),
+          Expanded(
+            child: ListaNegocios(negociosService: widget.negociosService),
+          ),
+        ],
       ),
 
       ListaNegocios(

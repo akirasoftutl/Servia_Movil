@@ -5,6 +5,7 @@ import 'core/firebase/firebase_options.dart';
 import 'core/theme/tema_servia.dart';
 import 'features/auth/pages/auth_gate.dart';
 import 'features/negocios/rutas_negocios.dart';
+import 'features/reservas/rutas_reservas.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,7 +25,8 @@ class ServiaApp extends StatelessWidget {
       title: 'Servia',
       theme: temaServia(),
       home: const AuthGate(),
-      onGenerateRoute: generarRutaNegocios,
+      onGenerateRoute: (ajustes) =>
+          generarRutaReservas(ajustes) ?? generarRutaNegocios(ajustes),
       onUnknownRoute: generarRutaNoDisponible,
     );
   }

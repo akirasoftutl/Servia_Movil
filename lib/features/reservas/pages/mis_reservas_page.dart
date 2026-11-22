@@ -353,8 +353,7 @@ class _TarjetaReserva extends StatelessWidget {
       color: Colors.white,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
-        // MVP-20: al existir el detalle, navegar con `reserva.id` desde aquí.
-        onTap: null,
+        onTap: () => Navigator.of(context).pushNamed('/reservas/${reserva.id}'),
         borderRadius: BorderRadius.circular(18),
         child: Container(
           padding: const EdgeInsets.all(18),
