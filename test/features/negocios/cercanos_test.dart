@@ -3,16 +3,19 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:servia/core/network/api_client.dart';
+import 'package:servia/core/theme/tokens.dart';
 import 'package:servia/features/home/pages/home_page.dart';
 import 'package:servia/features/negocios/data/negocios_service.dart';
 import 'package:servia/features/negocios/data/ubicacion_cliente.dart';
 import 'package:servia/features/negocios/mensajes.dart';
 import 'package:servia/features/negocios/pages/tarjeta_negocio.dart';
+import 'package:servia/features/negocios/pages/negocios_cercanos.dart';
 
 class UbicacionFalsa extends GeolocatorPlatform {
   bool gps = true;
@@ -98,6 +101,126 @@ Future<void> inicio(
 }
 
 void main() {
+  for (final falla in [false, true]) {
+    testWidgets('mensajes de cercanos alineados con el título: error=$falla', (
+      tester,
+    ) async {
+      await inicio(
+        tester,
+        UbicacionFalsa(),
+        servicio(
+          cercanos: (_) async =>
+              http.Response(falla ? '{}' : '[]', falla ? 503 : 200),
+        ),
+      );
+      final titulo = tester.getTopLeft(find.text(MensajesNegocios.cercaDeTi));
+      final mensaje = tester.getTopLeft(
+        find.text(
+          falla ? MensajesNegocios.errorCercanos : MensajesNegocios.sinCercanos,
+        ),
+      );
+      expect(
+        titulo.dx - tester.getTopLeft(find.byType(NegociosCercanos)).dx,
+        Espacios.l,
+      );
+      expect(mensaje.dx, titulo.dx);
+      final padding = tester.widget<Padding>(
+        find
+            .ancestor(
+              of: find.text(
+                falla
+                    ? MensajesNegocios.errorCercanos
+                    : MensajesNegocios.sinCercanos,
+              ),
+              matching: find.byType(Padding),
+            )
+            .first,
+      );
+      expect(
+        padding.padding,
+        const EdgeInsets.symmetric(horizontal: Espacios.l),
+      );
+    });
+  }
+
+  for (final acepta in [false, true]) {
+    testWidgets('tarjeta completa a escala 2.0: acepta reservas=$acepta', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(320, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: const TextScaler.linear(2)),
+            child: child!,
+          ),
+          home: Scaffold(
+            body: SizedBox(
+              width: 320,
+              child: Column(
+                children: [
+                  NegociosCercanos(
+                    proveedorUbicacion: () async => (lat: 21.1, lng: -101.7),
+                    service: servicio(
+                      cercanos: (_) async => http.Response(
+                        jsonEncode([
+                          {
+                            ...cercano(1, 19.9),
+                            'nombre': 'Peluquería del centro histórico',
+                            'aceptaReservas': acepta,
+                          },
+                          cercano(2, 20),
+                        ]),
+                        200,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      final tarjeta = find.byType(TarjetaNegocio).first;
+      expect(tester.getSize(tarjeta).width, 300);
+      final limites = tester.getRect(
+        find.descendant(of: tarjeta, matching: find.byType(Card)),
+      );
+      final textos = find.descendant(of: tarjeta, matching: find.byType(Text));
+      expect(textos, findsNWidgets(4));
+      for (final texto in textos.evaluate()) {
+        final rect = tester.getRect(find.byWidget(texto.widget));
+        expect(rect.left, greaterThanOrEqualTo(limites.left));
+        expect(rect.right, lessThanOrEqualTo(limites.right));
+        expect(rect.top, greaterThanOrEqualTo(limites.top));
+        expect(rect.bottom, lessThanOrEqualTo(limites.bottom));
+      }
+      for (final mensaje in [
+        'a 19.9 km',
+        acepta
+            ? MensajesNegocios.aceptaReservas
+            : MensajesNegocios.noAceptaReservas,
+      ]) {
+        final parrafo = tester.renderObject<RenderParagraph>(
+          find.descendant(of: tarjeta, matching: find.text(mensaje)),
+        );
+        expect(parrafo.didExceedMaxLines, isFalse);
+      }
+      final fila = find
+          .ancestor(of: tarjeta, matching: find.byType(Scrollable))
+          .first;
+      expect(limites.bottom, lessThanOrEqualTo(tester.getRect(fila).bottom));
+      await tester.drag(fila, const Offset(-300, 0));
+      await tester.pumpAndSettle();
+      expect(find.text('Negocio 2').hitTestable(), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets('concedido: radio, orden, cinco tarjetas, distancia y perfil', (
     tester,
   ) async {

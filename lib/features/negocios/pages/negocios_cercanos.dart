@@ -87,22 +87,32 @@ class _NegociosCercanosState extends State<NegociosCercanos> {
         if (_cargando)
           const Center(child: CircularProgressIndicator())
         else if (_error) ...[
-          const Text(MensajesNegocios.errorCercanos),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: Espacios.l),
+            child: Text(MensajesNegocios.errorCercanos),
+          ),
           TextButton(
             onPressed: _cargar,
             child: const Text(MensajesNegocios.reintentar),
           ),
         ] else if (_negocios.isEmpty)
-          const Text(MensajesNegocios.sinCercanos)
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: Espacios.l),
+            child: Text(MensajesNegocios.sinCercanos),
+          )
         else
-          SizedBox(
-            height: 190,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 for (final cercano in _negocios)
-                  SizedBox(
-                    width: 300,
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      minWidth: 300,
+                      maxWidth: 300,
+                      minHeight: 190,
+                    ),
                     child: TarjetaNegocio(
                       negocio: cercano.negocio,
                       categoria: MensajesNegocios.distancia(
