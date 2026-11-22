@@ -3,6 +3,7 @@ import 'dart:convert';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_exception.dart';
 import '../../negocios/data/lectura_json.dart';
+import 'detalle_reserva.dart';
 import 'reserva_creada.dart';
 import 'reserva_resumen.dart';
 
@@ -77,5 +78,17 @@ class ReservasService {
       );
     }
     return PaginaReservas.fromJson(leerObjeto(jsonDecode(respuesta.body)));
+  }
+
+  /// RN-45: solo se consulta el recurso propio del cliente autenticado.
+  Future<DetalleReserva> obtenerMia(String token, String id) async {
+    final respuesta = await _api.get(
+      '/reservas/mias/${Uri.encodeComponent(id)}',
+      token: token,
+    );
+    if (respuesta.statusCode != 200) {
+      throw ApiException(respuesta.statusCode, 'No se pudo cargar tu reserva.');
+    }
+    return DetalleReserva.fromJson(leerObjeto(jsonDecode(respuesta.body)));
   }
 }

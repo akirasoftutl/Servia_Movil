@@ -67,6 +67,37 @@ class MensajesReservas {
   static const estadoCancelada = 'Cancelada';
   static const estadoCompletada = 'Completada';
 
+  // Detalle de reserva (MVP-20).
+  static const tituloDetalle = 'Detalle de la reserva';
+  static const cargandoDetalle = 'Cargando tu reserva...';
+  static const fechaYHora = 'Fecha y hora';
+  static const observacionesDetalle = 'Observaciones';
+  static const sinObservaciones = 'Sin observaciones.';
+  static const datoNoDisponible = 'No disponible';
+  static const reservaNoEncontrada = 'No encontramos esta reserva.';
+  static const volverAMisReservas = 'Volver a mis reservas';
+  static bool detalleNoEncontrado(Object error) =>
+      error is ApiException &&
+      (error.statusCode == 400 || error.statusCode == 404);
+
+  static bool sesionInvalidaDetalle(Object error) =>
+      error is ApiException &&
+      (error.statusCode == 401 || error.statusCode == 403);
+
+  static String mensajeDeDetalle(Object error) {
+    if (sesionInvalidaDetalle(error)) return sesionVencidaConsulta;
+    if (error is ApiException) {
+      return error.statusCode >= 500 ? errorApi : errorDetalle;
+    }
+    if (error is FormatException) return errorDetalle;
+    return errorRed;
+  }
+
+  static const motivoRechazo = 'Motivo del rechazo';
+  static const motivoCancelacion = 'Motivo de la cancelación';
+  static const errorDetalle =
+      'No se pudo cargar tu reserva. Inténtalo de nuevo.';
+
   /// Mensaje de [error] al enviar la solicitud. El 409 lo atiende el flujo.
   static String mensajeDeEnvio(Object error) {
     if (error is TimeoutException) return errorRed;

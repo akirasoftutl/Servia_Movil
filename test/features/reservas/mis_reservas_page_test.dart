@@ -14,6 +14,10 @@ Future<void> abrir(WidgetTester tester, ReservasFalso reservas) async {
   await tester.pumpWidget(
     MaterialApp(
       home: MisReservasPage(authService: sesion, reservasService: reservas),
+      onGenerateRoute: (ajustes) => MaterialPageRoute<void>(
+        settings: ajustes,
+        builder: (_) => Scaffold(body: Text('Detalle ${ajustes.name}')),
+      ),
     ),
   );
   await tester.pumpAndSettle();
@@ -236,9 +240,7 @@ void main() {
     expect(find.text('Cargar más'), findsNothing);
   });
 
-  testWidgets('tocar una tarjeta no navega mientras no exista el detalle', (
-    tester,
-  ) async {
+  testWidgets('tocar una tarjeta abre el detalle por su id', (tester) async {
     await abrir(
       tester,
       ReservasFalso(
@@ -249,6 +251,6 @@ void main() {
     );
     await tester.tap(find.text('Corte de cabello'));
     await tester.pumpAndSettle();
-    expect(find.byType(MisReservasPage), findsOneWidget);
+    expect(find.text('Detalle /reservas/r1'), findsOneWidget);
   });
 }
