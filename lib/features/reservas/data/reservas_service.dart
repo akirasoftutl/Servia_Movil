@@ -3,6 +3,7 @@ import 'dart:convert';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_exception.dart';
 import '../../negocios/data/lectura_json.dart';
+import '../mensajes.dart';
 import 'detalle_reserva.dart';
 import 'reserva_creada.dart';
 import 'reserva_resumen.dart';
@@ -99,7 +100,7 @@ class ReservasService {
       token: token,
     );
     if (respuesta.statusCode == 200) return;
-    var mensaje = 'No se pudo cancelar tu reserva. Inténtalo de nuevo.';
+    var mensaje = MensajesReservas.errorCancelacion;
     if (respuesta.statusCode == 409) {
       try {
         final datos = jsonDecode(respuesta.body);

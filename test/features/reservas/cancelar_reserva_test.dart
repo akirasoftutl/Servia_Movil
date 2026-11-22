@@ -204,4 +204,109 @@ void main() {
       isNotNull,
     );
   });
+  testWidgets('52 C4 éxito avisa y recarga el estado desde la API', (
+    tester,
+  ) async {
+    final e = Escenario(estado: 'confirmada');
+    await e.abrir(tester);
+    await confirmar(tester, 'Cancelar reserva');
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Tu reserva fue cancelada. El horario quedó libre.'),
+      findsOneWidget,
+    );
+    expect(e.solicitudes.map((r) => r.method), ['GET', 'PATCH', 'GET']);
+    expect(find.text('Cancelada'), findsOneWidget);
+    expect(find.byKey(const ValueKey('cancelar-reserva')), findsNothing);
+  });
+
+  testWidgets('52 C4 409 muestra el mensaje de la API y recarga', (
+    tester,
+  ) async {
+    final e = Escenario(codigo: 409);
+    await e.abrir(tester);
+    await confirmar(tester, 'Retirar solicitud');
+    await tester.pumpAndSettle();
+    expect(find.text('La reserva ya fue cancelada.'), findsOneWidget);
+    expect(e.lecturas, 2);
+    expect(find.text('Cancelada'), findsOneWidget);
+    expect(
+      find.text('Tu reserva fue cancelada. El horario quedó libre.'),
+      findsNothing,
+    );
+  });
+
+  for (final codigo in [401, 404]) {
+    testWidgets('52 C4 error $codigo da el mensaje claro sin anunciar éxito', (
+      tester,
+    ) async {
+      final e = Escenario(codigo: codigo);
+      await e.abrir(tester);
+      await confirmar(tester, 'Retirar solicitud');
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          codigo == 401
+              ? 'Tu sesión ya no es válida. Inicia sesión de nuevo.'
+              : 'Esta reserva ya no está disponible.',
+        ),
+        findsOneWidget,
+      );
+      expect(e.lecturas, 1);
+      expect(
+        find.text('Tu reserva fue cancelada. El horario quedó libre.'),
+        findsNothing,
+      );
+      expect(find.text('Pendiente'), findsOneWidget);
+    });
+  }
+
+  testWidgets('52 C4 sin conexión conserva el estado e informa', (
+    tester,
+  ) async {
+    final e = Escenario(sinRed: true);
+    await e.abrir(tester);
+    await confirmar(tester, 'Retirar solicitud');
+    await tester.pumpAndSettle();
+    expect(
+      find.text(
+        'No se pudo conectar. Revisa tu conexión e inténtalo de nuevo.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Pendiente'), findsOneWidget);
+    expect(e.envios, 1);
+  });
+
+  testWidgets('52 C4 durante el envío deshabilita y evita duplicados', (
+    tester,
+  ) async {
+    final espera = Completer<void>();
+    final e = Escenario(espera: espera);
+    await e.abrir(tester);
+    await confirmar(tester, 'Retirar solicitud');
+    await tester.pump(const Duration(milliseconds: 500));
+    final boton = find.byKey(const ValueKey('cancelar-reserva'));
+    expect(tester.widget<FilledButton>(boton).onPressed, isNull);
+    await tester.tap(boton);
+    await tester.pump();
+    expect(e.envios, 1);
+    espera.complete();
+    await tester.pumpAndSettle();
+    expect(e.envios, 1);
+    expect(find.text('Cancelada'), findsOneWidget);
+  });
+
+  testWidgets('52 C4 sin sesión al confirmar no manda PATCH', (tester) async {
+    final e = Escenario();
+    await e.abrir(tester);
+    e.sesion.usuario = null;
+    await confirmar(tester, 'Retirar solicitud');
+    await tester.pumpAndSettle();
+    expect(e.envios, 0);
+    expect(
+      find.text('Tu sesión ya no es válida. Inicia sesión de nuevo.'),
+      findsOneWidget,
+    );
+  });
 }
