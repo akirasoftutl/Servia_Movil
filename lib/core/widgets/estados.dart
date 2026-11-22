@@ -126,10 +126,18 @@ class EstadoError extends StatelessWidget {
       accion = compacto
           ? OutlinedButton(
               onPressed: onReintentar,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: ColoresServia.morado,
+                side: const BorderSide(color: ColoresServia.morado),
+              ),
               child: Text(textoReintentar),
             )
           : ElevatedButton(
               onPressed: onReintentar,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: ColoresServia.morado,
+                foregroundColor: Colors.white,
+              ),
               child: Text(textoReintentar),
             );
     }

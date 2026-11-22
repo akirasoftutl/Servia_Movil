@@ -201,10 +201,9 @@ ThemeData temaServia() {
       shape: const RoundedRectangleBorder(borderRadius: Radios.campo),
       elevation: 2,
     ),
-    // Primario y no marca: el naranja de marca queda en 2.92:1 sobre el fondo
-    // y un indicador necesita al menos 3:1.
+    // Morado para el indicador de carga.
     progressIndicatorTheme: const ProgressIndicatorThemeData(
-      color: ColoresServia.primario,
+      color: ColoresServia.morado,
       circularTrackColor: Colors.transparent,
     ),
     dividerTheme: DividerThemeData(

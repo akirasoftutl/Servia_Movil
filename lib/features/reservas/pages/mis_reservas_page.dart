@@ -197,6 +197,7 @@ class _ListaReservasState extends State<_ListaReservas>
   String? _siguiente;
   Object? _error;
   _EstadoLista _estado = _EstadoLista.cargando;
+  bool _cargando = false;
   bool _cargandoMas = false;
   bool _cargado = false;
   int _version = 0;
@@ -211,16 +212,24 @@ class _ListaReservasState extends State<_ListaReservas>
   @override
   void didUpdateWidget(covariant _ListaReservas anterior) {
     super.didUpdateWidget(anterior);
-    if (widget.activa && !anterior.activa) {
+    if (widget.activa &&
+        !anterior.activa &&
+        !_cargado &&
+        _error == null &&
+        !_cargando &&
+        !_cargandoMas) {
       _cargar();
     }
   }
 
   Future<void> _cargar({bool siguientePagina = false}) async {
-    if (_cargandoMas || (siguientePagina && _siguiente == null)) return;
+    if (_cargando || _cargandoMas || (siguientePagina && _siguiente == null)) {
+      return;
+    }
     final version = ++_version;
     setState(() {
       _error = null;
+      _cargando = !siguientePagina;
       _cargandoMas = siguientePagina;
       if (!siguientePagina || _items.isEmpty) _estado = _EstadoLista.cargando;
     });
@@ -235,6 +244,7 @@ class _ListaReservasState extends State<_ListaReservas>
         if (!siguientePagina) _items.clear();
         _items.addAll(pagina.items);
         _siguiente = pagina.siguiente;
+        _cargando = false;
         _cargandoMas = false;
         _cargado = true;
         _estado = _EstadoLista.lista;
@@ -243,6 +253,7 @@ class _ListaReservasState extends State<_ListaReservas>
       if (!mounted || version != _version) return;
       setState(() {
         _error = error;
+        _cargando = false;
         _cargandoMas = false;
         if (!siguientePagina || _items.isEmpty) {
           _estado = _EstadoLista.error;
