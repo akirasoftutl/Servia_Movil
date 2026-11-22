@@ -3,6 +3,11 @@ import '../../core/network/api_exception.dart';
 class MensajesNegocios {
   MensajesNegocios._();
 
+  static const cercaDeTi = 'Cerca de ti';
+  static const errorCercanos = 'No se pudieron cargar los negocios cercanos.';
+  static const sinCercanos = 'No hay negocios cerca de ti.';
+  static String distancia(double km) => 'a ${km.toStringAsFixed(1)} km';
+
   static const errorRed =
       'No se pudo conectar. Revisa tu conexión e inténtalo de nuevo.';
   static const noDisponible = 'Este negocio no está disponible.';
