@@ -7,6 +7,7 @@ import '../mensajes.dart';
 import 'categoria.dart';
 import 'lectura_json.dart';
 import 'negocio.dart';
+import 'negocio_cercano.dart';
 import 'negocio_resumen.dart';
 import 'servicio.dart';
 
@@ -18,6 +19,28 @@ class NegociosService {
   final ApiClient _api;
 
   NegociosService({ApiClient? api}) : _api = api ?? ApiClient();
+
+  Future<List<NegocioCercano>> obtenerCercanos({
+    required double lat,
+    required double lng,
+  }) async {
+    final ruta = Uri(
+      path: '/negocios/cercanos',
+      queryParameters: {'lat': '$lat', 'lng': '$lng', 'radioKm': '20'},
+    );
+    final datos = await _consultar(ruta.toString());
+    if (datos is! List) {
+      throw const FormatException('Lista de cercanos inválida.');
+    }
+    // RN-08, RN-10 y RN-11: la API entrega solo negocios visibles.
+    final negocios =
+        datos
+            .map((dato) => NegocioCercano.fromJson(leerObjeto(dato)))
+            .where((negocio) => negocio.distanciaKm <= 20)
+            .toList()
+          ..sort((a, b) => a.distanciaKm.compareTo(b.distanciaKm));
+    return List.unmodifiable(negocios.take(5));
+  }
 
   Future<PaginaNegocios> listarNegocios({
     String? cursor,
