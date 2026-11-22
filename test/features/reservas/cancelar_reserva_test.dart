@@ -116,4 +116,40 @@ void main() {
     expect(find.text(MensajesReservas.limiteCancelacion), findsNothing);
     expect(e.envios, 0);
   });
+  testWidgets('52 C2 Confirmada cancelable permite cancelar según la API', (
+    tester,
+  ) async {
+    final e = Escenario(estado: 'confirmada');
+    await e.abrir(tester);
+    expect(find.text('Cancelar reserva'), findsOneWidget);
+    expect(find.text('Retirar solicitud'), findsNothing);
+    await confirmar(tester, 'Cancelar reserva');
+    await tester.pumpAndSettle();
+    expect(e.envios, 1);
+    expect(find.text('Cancelada'), findsOneWidget);
+  });
+
+  testWidgets('52 C2 Confirmada fuera del límite explica sin botón', (
+    tester,
+  ) async {
+    final e = Escenario(estado: 'confirmada', cancelable: false);
+    await e.abrir(tester);
+    expect(find.text('Cancelar reserva'), findsNothing);
+    expect(find.text(MensajesReservas.limiteCancelacion), findsOneWidget);
+    expect(e.envios, 0);
+  });
+
+  testWidgets(
+    '52 C2 cita pasada sin permiso no muestra explicación ni acción',
+    (tester) async {
+      final e = Escenario(
+        estado: 'confirmada',
+        cancelable: false,
+        inicio: '2026-10-31T23:59:00Z',
+      );
+      await e.abrir(tester);
+      expect(find.text('Cancelar reserva'), findsNothing);
+      expect(find.text(MensajesReservas.limiteCancelacion), findsNothing);
+    },
+  );
 }

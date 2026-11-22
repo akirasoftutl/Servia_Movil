@@ -203,10 +203,18 @@ class _DetalleReservaPageState extends State<DetalleReservaPage> {
     };
     String disponible(String valor) =>
         valor.trim().isEmpty ? MensajesReservas.datoNoDisponible : valor;
-    // RN-49: el permiso se toma de la API; no se calcula el vencimiento aquí.
-    final accion = r.estado == 'pendiente' && r.cancelable
-        ? MensajesReservas.retirarSolicitud
-        : null;
+    // RN-49/50, D4: el permiso viene de la API, sin recalcular las 24 horas.
+    final accion = !r.cancelable
+        ? null
+        : switch (r.estado) {
+            'pendiente' => MensajesReservas.retirarSolicitud,
+            'confirmada' => MensajesReservas.cancelarReserva,
+            _ => null,
+          };
+    final fueraDePlazo =
+        r.estado == 'confirmada' &&
+        !r.cancelable &&
+        r.inicio.isAfter((widget.ahora ?? DateTime.now)());
     final tituloMotivo = switch (r.estado) {
       'rechazada' => MensajesReservas.motivoRechazo,
       'cancelada' => MensajesReservas.motivoCancelacion,
@@ -261,6 +269,7 @@ class _DetalleReservaPageState extends State<DetalleReservaPage> {
         ]),
         if (tituloMotivo != null && r.motivo?.trim().isNotEmpty == true)
           _seccion(tituloMotivo, [Text(r.motivo!)]),
+        if (fueraDePlazo) const Text(MensajesReservas.limiteCancelacion),
         if (accion != null)
           FilledButton(
             key: const ValueKey('cancelar-reserva'),
