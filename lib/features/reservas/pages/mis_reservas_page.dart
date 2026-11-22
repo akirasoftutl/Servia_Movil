@@ -259,8 +259,7 @@ class _TarjetaReserva extends StatelessWidget {
     final hora = horaEnMexico(reserva.inicio);
     return Card(
       child: InkWell(
-        // MVP-20: al existir el detalle, navegar con `reserva.id` desde aquí.
-        onTap: null,
+        onTap: () => Navigator.of(context).pushNamed('/reservas/${reserva.id}'),
         borderRadius: Radios.tarjeta,
         child: Padding(
           padding: const EdgeInsets.all(Espacios.l),

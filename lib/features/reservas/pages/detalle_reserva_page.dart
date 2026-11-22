@@ -11,6 +11,7 @@ import '../data/detalle_reserva.dart';
 import '../data/reservas_service.dart';
 import '../fechas_reserva.dart';
 import '../mensajes.dart';
+import 'mis_reservas_page.dart';
 
 /// MVP-20, RN-45: consulta el detalle propio usando únicamente su id.
 class DetalleReservaPage extends StatefulWidget {
@@ -84,6 +85,20 @@ class _DetalleReservaPageState extends State<DetalleReservaPage> {
     }
   }
 
+  void _volverAMisReservas() {
+    final navegador = Navigator.of(context);
+    if (navegador.canPop()) {
+      navegador.pop();
+    } else {
+      navegador.pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) =>
+              MisReservasPage(authService: _auth, reservasService: _reservas),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final error = _error;
@@ -93,7 +108,16 @@ class _DetalleReservaPageState extends State<DetalleReservaPage> {
         child: _cargando
             ? const EstadoCargando(mensaje: MensajesReservas.cargandoDetalle)
             : error != null
-            ? EstadoError(mensaje: MensajesReservas.errorDetalle)
+            ? MensajesReservas.detalleNoEncontrado(error)
+                  ? EstadoVacio(
+                      icono: Icons.event_busy_outlined,
+                      mensaje: MensajesReservas.reservaNoEncontrada,
+                      accion: FilledButton(
+                        onPressed: _volverAMisReservas,
+                        child: const Text(MensajesReservas.volverAMisReservas),
+                      ),
+                    )
+                  : EstadoError(mensaje: MensajesReservas.errorDetalle)
             : _datos(_reserva!),
       ),
     );

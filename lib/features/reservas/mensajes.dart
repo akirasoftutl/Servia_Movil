@@ -74,6 +74,12 @@ class MensajesReservas {
   static const observacionesDetalle = 'Observaciones';
   static const sinObservaciones = 'Sin observaciones.';
   static const datoNoDisponible = 'No disponible';
+  static const reservaNoEncontrada = 'No encontramos esta reserva.';
+  static const volverAMisReservas = 'Volver a mis reservas';
+  static bool detalleNoEncontrado(Object error) =>
+      error is ApiException &&
+      (error.statusCode == 400 || error.statusCode == 404);
+
   static const motivoRechazo = 'Motivo del rechazo';
   static const motivoCancelacion = 'Motivo de la cancelación';
   static const errorDetalle =

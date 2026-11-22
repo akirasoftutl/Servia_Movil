@@ -163,4 +163,21 @@ void main() {
     expect(find.text('Cancelada'), findsOneWidget);
     expect(find.text('Motivo de la cancelación'), findsNothing);
   });
+  for (final codigo in [400, 404]) {
+    testWidgets(
+      'C3 y D1 $codigo oculta datos y permite volver a mis reservas',
+      (tester) async {
+        await abrir(tester, codigo: codigo);
+        await tester.pumpAndSettle();
+        expect(find.text('No encontramos esta reserva.'), findsOneWidget);
+        expect(find.text('SRV-7KQ2MX'), findsNothing);
+        expect(find.text('Reintentar'), findsNothing);
+        await tester.tap(find.text('Volver a mis reservas'));
+        // La ruta directa sin pantalla anterior vuelve a la lista.
+        await tester.pumpAndSettle();
+        expect(find.text('Mis reservas'), findsOneWidget);
+        expect(find.byType(DetalleReservaPage), findsNothing);
+      },
+    );
+  }
 }

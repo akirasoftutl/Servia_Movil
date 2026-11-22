@@ -40,7 +40,10 @@ void main() {
     final contexto = tester.element(find.byType(SizedBox).first);
     final app = const ServiaApp().build(contexto) as MaterialApp;
     expect(app.home, isA<AuthGate>());
-    expect(app.onGenerateRoute, generarRutaNegocios);
+    final ruta = app.onGenerateRoute!(
+      const RouteSettings(name: '/negocios/abc123'),
+    ) as MaterialPageRoute;
+    expect((ruta.builder(contexto) as PerfilNegocioPage).negocioId, 'abc123');
     expect(app.onUnknownRoute, generarRutaNoDisponible);
   });
   testWidgets('ruta desconocida muestra un mensaje genérico y permite volver', (
