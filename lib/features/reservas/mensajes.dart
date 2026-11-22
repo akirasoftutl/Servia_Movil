@@ -67,6 +67,16 @@ class MensajesReservas {
   static const estadoCancelada = 'Cancelada';
   static const estadoCompletada = 'Completada';
 
+  // Detalle de reserva (MVP-20).
+  static const tituloDetalle = 'Detalle de la reserva';
+  static const cargandoDetalle = 'Cargando tu reserva...';
+  static const fechaYHora = 'Fecha y hora';
+  static const observacionesDetalle = 'Observaciones';
+  static const sinObservaciones = 'Sin observaciones.';
+  static const datoNoDisponible = 'No disponible';
+  static const errorDetalle =
+      'No se pudo cargar tu reserva. Inténtalo de nuevo.';
+
   /// Mensaje de [error] al enviar la solicitud. El 409 lo atiende el flujo.
   static String mensajeDeEnvio(Object error) {
     if (error is TimeoutException) return errorRed;
