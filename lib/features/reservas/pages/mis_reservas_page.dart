@@ -209,7 +209,13 @@ class _ListaReservasState extends State<_ListaReservas>
             if (indice == _items.length) return _pie();
             return Padding(
               padding: const EdgeInsets.only(bottom: Espacios.m),
-              child: _TarjetaReserva(reserva: _items[indice]),
+              child: _TarjetaReserva(
+                reserva: _items[indice],
+                // El detalle puede cancelar la reserva: al volver se relee la API.
+                alVolver: () {
+                  if (mounted) _cargar();
+                },
+              ),
             );
           },
         );
@@ -248,9 +254,10 @@ class _ListaReservasState extends State<_ListaReservas>
 }
 
 class _TarjetaReserva extends StatelessWidget {
-  const _TarjetaReserva({required this.reserva});
+  const _TarjetaReserva({required this.reserva, required this.alVolver});
 
   final ReservaResumen reserva;
+  final VoidCallback alVolver;
 
   @override
   Widget build(BuildContext context) {
@@ -259,7 +266,10 @@ class _TarjetaReserva extends StatelessWidget {
     final hora = horaEnMexico(reserva.inicio);
     return Card(
       child: InkWell(
-        onTap: () => Navigator.of(context).pushNamed('/reservas/${reserva.id}'),
+        onTap: () async {
+          await Navigator.of(context).pushNamed('/reservas/${reserva.id}');
+          alVolver();
+        },
         borderRadius: Radios.tarjeta,
         child: Padding(
           padding: const EdgeInsets.all(Espacios.l),

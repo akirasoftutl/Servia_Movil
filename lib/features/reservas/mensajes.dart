@@ -67,6 +67,38 @@ class MensajesReservas {
   static const estadoCancelada = 'Cancelada';
   static const estadoCompletada = 'Completada';
 
+  // Cancelación del cliente (MVP-21, D4).
+  static const retirarSolicitud = 'Retirar solicitud';
+  static const cancelarReserva = 'Cancelar reserva';
+  static const cancelando = 'Cancelando...';
+  static const limiteCancelacion =
+      'Ya no puedes cancelar esta reserva: las reservas confirmadas solo se cancelan hasta 24 horas antes de la cita.';
+  static const condicionesCancelacion = 'Condiciones de cancelación';
+  static const condicionesPendiente =
+      'Puedes retirar una solicitud pendiente en cualquier momento antes de la cita.';
+  static const condicionesConfirmada =
+      'Una reserva confirmada solo se puede cancelar hasta 24 horas antes de la cita.';
+  static const condicionesIrreversible =
+      'Una vez cancelada, la reserva no se puede reactivar. Si después quieres el servicio, haz una nueva reserva.';
+  static const siCancelar = 'Sí, cancelar';
+  static const noVolver = 'No, volver';
+  static const cancelacionExitosa =
+      'Tu reserva fue cancelada. El horario quedó libre.';
+  static const reservaYaNoDisponible = 'Esta reserva ya no está disponible.';
+  static const errorCancelacion =
+      'No se pudo cancelar tu reserva. Inténtalo de nuevo.';
+
+  static String mensajeDeCancelacion(Object error) {
+    if (sesionInvalidaDetalle(error)) return sesionVencidaConsulta;
+    if (error is ApiException) {
+      if (error.statusCode == 409) return error.mensaje;
+      if (error.statusCode == 404) return reservaYaNoDisponible;
+      return error.statusCode >= 500 ? errorApi : errorCancelacion;
+    }
+    if (error is FormatException) return errorCancelacion;
+    return errorRed;
+  }
+
   // Detalle de reserva (MVP-20).
   static const tituloDetalle = 'Detalle de la reserva';
   static const cargandoDetalle = 'Cargando tu reserva...';
