@@ -20,10 +20,12 @@ class DetalleReservaPage extends StatefulWidget {
     required this.id,
     this.authService,
     this.reservasService,
+    this.ahora,
   });
   final String id;
   final AuthService? authService;
   final ReservasService? reservasService;
+  final DateTime Function()? ahora;
 
   @override
   State<DetalleReservaPage> createState() => _DetalleReservaPageState();
@@ -36,6 +38,8 @@ class _DetalleReservaPageState extends State<DetalleReservaPage> {
   Object? _error;
   bool _cargando = true;
   int _version = 0;
+  bool _enviando = false;
+  bool _dialogoAbierto = false;
 
   @override
   void initState() {
@@ -82,6 +86,63 @@ class _DetalleReservaPageState extends State<DetalleReservaPage> {
         _error = error;
         _cargando = false;
       });
+    }
+  }
+
+  Future<void> _cancelar() async {
+    if (_enviando || _dialogoAbierto) return;
+    final id = widget.id;
+    final version = _version;
+    setState(() => _dialogoAbierto = true);
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (contexto) => AlertDialog(
+        title: const Text(MensajesReservas.condicionesCancelacion),
+        content: const SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(MensajesReservas.condicionesPendiente),
+              SizedBox(height: Espacios.m),
+              Text(MensajesReservas.condicionesConfirmada),
+              SizedBox(height: Espacios.m),
+              Text(MensajesReservas.condicionesIrreversible),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(contexto, false),
+            child: const Text(MensajesReservas.noVolver),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(contexto, true),
+            child: const Text(MensajesReservas.siCancelar),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    setState(() => _dialogoAbierto = false);
+    if (confirmado != true || id != widget.id || version != _version) return;
+    setState(() => _enviando = true);
+    try {
+      final token = await _token();
+      await _reservas.cancelar(token, id);
+      if (!mounted || id != widget.id || version != _version) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(MensajesReservas.cancelacionExitosa)),
+      );
+      await _cargar();
+    } catch (error) {
+      if (!mounted || id != widget.id || version != _version) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(MensajesReservas.mensajeDeCancelacion(error))),
+      );
+      if (error is ApiException && error.statusCode == 409) await _cargar();
+    } finally {
+      if (mounted) setState(() => _enviando = false);
     }
   }
 
@@ -142,6 +203,10 @@ class _DetalleReservaPageState extends State<DetalleReservaPage> {
     };
     String disponible(String valor) =>
         valor.trim().isEmpty ? MensajesReservas.datoNoDisponible : valor;
+    // RN-49: el permiso se toma de la API; no se calcula el vencimiento aquí.
+    final accion = r.estado == 'pendiente' && r.cancelable
+        ? MensajesReservas.retirarSolicitud
+        : null;
     final tituloMotivo = switch (r.estado) {
       'rechazada' => MensajesReservas.motivoRechazo,
       'cancelada' => MensajesReservas.motivoCancelacion,
@@ -196,6 +261,12 @@ class _DetalleReservaPageState extends State<DetalleReservaPage> {
         ]),
         if (tituloMotivo != null && r.motivo?.trim().isNotEmpty == true)
           _seccion(tituloMotivo, [Text(r.motivo!)]),
+        if (accion != null)
+          FilledButton(
+            key: const ValueKey('cancelar-reserva'),
+            onPressed: _enviando || _dialogoAbierto ? null : _cancelar,
+            child: Text(_enviando ? MensajesReservas.cancelando : accion),
+          ),
       ],
     );
   }

@@ -91,4 +91,27 @@ class ReservasService {
     }
     return DetalleReserva.fromJson(leerObjeto(jsonDecode(respuesta.body)));
   }
+
+  /// RN-44/45/49/50: el backend autoriza y libera el horario (RN-41).
+  Future<void> cancelar(String token, String id) async {
+    final respuesta = await _api.patch(
+      '/reservas/mias/${Uri.encodeComponent(id)}/cancelar',
+      token: token,
+    );
+    if (respuesta.statusCode == 200) return;
+    var mensaje = 'No se pudo cancelar tu reserva. Inténtalo de nuevo.';
+    if (respuesta.statusCode == 409) {
+      try {
+        final datos = jsonDecode(respuesta.body);
+        if (datos is Map<String, dynamic> &&
+            datos['message'] is String &&
+            (datos['message'] as String).trim().isNotEmpty) {
+          mensaje = datos['message'] as String;
+        }
+      } on FormatException {
+        // Conserva un mensaje claro si el servidor no devuelve JSON.
+      }
+    }
+    throw ApiException(respuesta.statusCode, mensaje);
+  }
 }
