@@ -46,36 +46,66 @@ class MapaNegocio extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(
+      const Divider(height: 1, color: _divisor),
+      const SizedBox(height: Espacios.xl),
+      const Text(
         MensajesNegocios.ubicacion,
-        style: Theme.of(context).textTheme.titleLarge,
-      ),
-      const SizedBox(height: Espacios.m),
-      Semantics(
-        label: MensajesNegocios.descripcionMapa,
-        child: Image(
-          image: proveedor(
-            '${ApiClient.baseUrl}/negocios/${Uri.encodeComponent(negocioId)}/mapa',
-          ),
-          excludeFromSemantics: true,
-          width: double.infinity,
-          height: 200,
-          fit: BoxFit.cover,
-          frameBuilder: (_, child, frame, sincrono) => frame != null || sincrono
-              ? child
-              : const SizedBox(
-                  height: 200,
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-          errorBuilder: (_, _, _) => const Text(MensajesNegocios.errorMapa),
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          color: _texto,
+          letterSpacing: -0.3,
         ),
       ),
-      const SizedBox(height: Espacios.s),
-      FilledButton.icon(
-        onPressed: () => _comoLlegar(context),
-        icon: const Icon(Icons.directions_outlined),
-        label: const Text(MensajesNegocios.comoLlegar),
+      const SizedBox(height: 14),
+      Semantics(
+        label: MensajesNegocios.descripcionMapa,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(_radio),
+          child: Image(
+            image: proveedor(
+              '${ApiClient.baseUrl}/negocios/${Uri.encodeComponent(negocioId)}/mapa',
+            ),
+            excludeFromSemantics: true,
+            width: double.infinity,
+            height: 200,
+            fit: BoxFit.cover,
+            frameBuilder: (_, child, frame, sincrono) =>
+                frame != null || sincrono
+                ? child
+                : const SizedBox(
+                    height: 200,
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+            errorBuilder: (_, _, _) => const Text(MensajesNegocios.errorMapa),
+          ),
+        ),
+      ),
+      const SizedBox(height: Espacios.m),
+      SizedBox(
+        width: double.infinity,
+        height: 54,
+        child: FilledButton.icon(
+          onPressed: () => _comoLlegar(context),
+          style: _estiloBotonPrincipal,
+          icon: const Icon(Icons.directions_outlined),
+          label: const Text(MensajesNegocios.comoLlegar),
+        ),
       ),
     ],
   );
 }
+
+// Literales del rediseño (bloques del perfil y botón principal en píldora
+// negra de `confirmacion_reserva_page.dart`), sin agregarlos al tema.
+const _divisor = Color(0xFFE5E7EB);
+const _texto = Color(0xFF111827);
+const _radio = 16.0;
+
+/// Botón principal en píldora negra como los del rediseño.
+final _estiloBotonPrincipal = FilledButton.styleFrom(
+  backgroundColor: const Color(0xFF0F0F0F),
+  foregroundColor: Colors.white,
+  shape: const StadiumBorder(),
+  textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+);

@@ -94,6 +94,47 @@ Future<void> confirmar(WidgetTester tester, String accion) async {
 }
 
 void main() {
+  testWidgets('botón de cancelar en píldora negra como los del rediseño', (
+    tester,
+  ) async {
+    final e = Escenario(estado: 'confirmada');
+    await e.abrir(tester);
+    final boton = find.byKey(const ValueKey('cancelar-reserva'));
+    final estilo = tester.widget<FilledButton>(boton).style!;
+    expect(estilo.backgroundColor!.resolve({}), const Color(0xFF0F0F0F));
+    expect(estilo.shape!.resolve({}), const StadiumBorder());
+    expect(tester.getSize(boton).height, 54);
+    expect(find.text('Cancelar reserva'), findsOneWidget);
+  });
+
+  testWidgets(
+    'diálogo con «Sí, cancelar» en píldora negra y «No, volver» secundario',
+    (tester) async {
+      final e = Escenario();
+      await e.abrir(tester);
+      await tester.tap(find.text('Retirar solicitud'));
+      await tester.pumpAndSettle();
+      final dialogo = find.byType(AlertDialog);
+      expect(tester.widget<AlertDialog>(dialogo).backgroundColor, Colors.white);
+      final si = find.ancestor(
+        of: find.text('Sí, cancelar'),
+        matching: find.byType(FilledButton),
+      );
+      final estiloSi = tester.widget<FilledButton>(si).style!;
+      expect(estiloSi.backgroundColor!.resolve({}), const Color(0xFF0F0F0F));
+      expect(estiloSi.shape!.resolve({}), const StadiumBorder());
+      final no = find.ancestor(
+        of: find.text('No, volver'),
+        matching: find.byType(OutlinedButton),
+      );
+      expect(
+        tester.widget<OutlinedButton>(no).style!.shape!.resolve({}),
+        const StadiumBorder(),
+      );
+      expect(e.envios, 0);
+    },
+  );
+
   testWidgets('52 C1 retira una Pendiente con el permiso de la API', (
     tester,
   ) async {

@@ -9,11 +9,12 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:servia/core/network/api_client.dart';
-import 'package:servia/core/theme/tokens.dart';
+import 'package:servia/core/widgets/estados.dart';
 import 'package:servia/features/home/pages/home_page.dart';
 import 'package:servia/features/negocios/data/negocios_service.dart';
 import 'package:servia/features/negocios/data/ubicacion_cliente.dart';
 import 'package:servia/features/negocios/mensajes.dart';
+import 'package:servia/features/negocios/pages/lista_negocios_page.dart';
 import 'package:servia/features/negocios/pages/tarjeta_negocio.dart';
 import 'package:servia/features/negocios/pages/negocios_cercanos.dart';
 
@@ -122,9 +123,10 @@ void main() {
           falla ? MensajesNegocios.errorCercanos : MensajesNegocios.sinCercanos,
         ),
       );
+      // Mismo margen lateral (20) que las secciones de la lista.
       expect(
         titulo.dx - tester.getTopLeft(find.byType(NegociosCercanos)).dx,
-        Espacios.l,
+        20,
       );
       expect(mensaje.dx, titulo.dx);
       final padding = tester.widget<Padding>(
@@ -139,12 +141,43 @@ void main() {
             )
             .first,
       );
-      expect(
-        padding.padding,
-        const EdgeInsets.symmetric(horizontal: Espacios.l),
-      );
+      expect(padding.padding, const EdgeInsets.symmetric(horizontal: 20));
     });
   }
+
+  testWidgets(
+    '«Cerca de ti» queda bajo la barra de estado sobre fondo blanco',
+    (tester) async {
+      const barra = 40.0;
+      tester.view.padding = FakeViewPadding(
+        top: barra * tester.view.devicePixelRatio,
+      );
+      addTearDown(tester.view.resetPadding);
+      await inicio(
+        tester,
+        UbicacionFalsa(),
+        servicio(cercanos: (_) async => http.Response('[]', 200)),
+      );
+      expect(
+        tester.getTopLeft(find.text(MensajesNegocios.cercaDeTi)).dy,
+        greaterThanOrEqualTo(barra),
+      );
+      // La lista ya no suma otro hueco de la barra debajo de la sección.
+      expect(
+        MediaQuery.paddingOf(tester.element(find.byType(ListaNegocios))).top,
+        0,
+      );
+      expect(
+        find.ancestor(
+          of: find.byType(NegociosCercanos),
+          matching: find.byWidgetPredicate(
+            (w) => w is ColoredBox && w.color == Colors.white,
+          ),
+        ),
+        findsOneWidget,
+      );
+    },
+  );
 
   for (final acepta in [false, true]) {
     testWidgets('tarjeta completa a escala 2.0: acepta reservas=$acepta', (
@@ -191,10 +224,10 @@ void main() {
       final tarjeta = find.byType(TarjetaNegocio).first;
       expect(tester.getSize(tarjeta).width, 300);
       final limites = tester.getRect(
-        find.descendant(of: tarjeta, matching: find.byType(Card)),
+        find.descendant(of: tarjeta, matching: find.byType(DecoratedBox)).first,
       );
       final textos = find.descendant(of: tarjeta, matching: find.byType(Text));
-      expect(textos, findsNWidgets(4));
+      expect(textos, findsNWidgets(3));
       for (final texto in textos.evaluate()) {
         final rect = tester.getRect(find.byWidget(texto.widget));
         expect(rect.left, greaterThanOrEqualTo(limites.left));
@@ -223,6 +256,56 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('tarjeta como la de la lista: portada, borde gris y radio 16', (
+    tester,
+  ) async {
+    const portada = 'https://ejemplo.test/portada.jpg';
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              NegociosCercanos(
+                proveedorUbicacion: () async => (lat: 21.1, lng: -101.7),
+                service: servicio(
+                  cercanos: (_) async => http.Response(
+                    jsonEncode([
+                      {...cercano(1, 1.2), 'imagenUrl': portada},
+                      cercano(2, 3),
+                    ]),
+                    200,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final tarjetas = find.byType(TarjetaNegocio);
+    final imagen = tester.widget<Image>(
+      find.descendant(of: tarjetas.first, matching: find.byType(Image)),
+    );
+    expect((imagen.image as NetworkImage).url, portada);
+    expect(
+      find.descendant(
+        of: tarjetas.at(1),
+        matching: find.byIcon(Icons.storefront_outlined),
+      ),
+      findsOneWidget,
+    );
+    final caja = tester.widget<DecoratedBox>(
+      find
+          .descendant(of: tarjetas.first, matching: find.byType(DecoratedBox))
+          .first,
+    );
+    final decoracion = caja.decoration as BoxDecoration;
+    expect(decoracion.border, Border.all(color: const Color(0xFFE5E7EB)));
+    expect(decoracion.borderRadius, BorderRadius.circular(16));
+    expect(find.text('a 1.2 km'), findsOneWidget);
+  });
 
   testWidgets('concedido: radio, orden, cinco tarjetas, distancia y perfil', (
     tester,
@@ -352,6 +435,14 @@ void main() {
     await tester.pump();
     expect(find.text(MensajesNegocios.cercaDeTi), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    final cargando = find.descendant(
+      of: find.byType(NegociosCercanos),
+      matching: find.byType(EstadoCargando),
+    );
+    expect(tester.widget<EstadoCargando>(cargando).compacto, isTrue);
+    final titulo = tester.widget<Text>(find.text(MensajesNegocios.cercaDeTi));
+    expect(titulo.style?.fontSize, 20);
+    expect(titulo.style?.color, const Color(0xFF111827));
     pendiente.complete(http.Response('[]', 200));
     await tester.pumpAndSettle();
     expect(find.text(MensajesNegocios.sinCercanos), findsOneWidget);
