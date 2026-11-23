@@ -78,17 +78,23 @@ class _HomePageState extends State<HomePage> {
     final inicial = _obtenerInicialUsuario();
 
     final pantallas = <Widget>[
-      Column(
+      ColoredBox(
         key: _clavesPantallas[0],
-        children: [
-          NegociosCercanos(
-            service: widget.negociosService,
-            proveedorUbicacion: widget.proveedorUbicacion,
+        color: Colors.white,
+        child: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              NegociosCercanos(
+                service: widget.negociosService,
+                proveedorUbicacion: widget.proveedorUbicacion,
+              ),
+              Expanded(
+                child: ListaNegocios(negociosService: widget.negociosService),
+              ),
+            ],
           ),
-          Expanded(
-            child: ListaNegocios(negociosService: widget.negociosService),
-          ),
-        ],
+        ),
       ),
 
       ListaNegocios(
