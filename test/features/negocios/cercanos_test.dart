@@ -9,7 +9,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:servia/core/network/api_client.dart';
-import 'package:servia/core/theme/tokens.dart';
+import 'package:servia/core/widgets/estados.dart';
 import 'package:servia/features/home/pages/home_page.dart';
 import 'package:servia/features/negocios/data/negocios_service.dart';
 import 'package:servia/features/negocios/data/ubicacion_cliente.dart';
@@ -123,9 +123,10 @@ void main() {
           falla ? MensajesNegocios.errorCercanos : MensajesNegocios.sinCercanos,
         ),
       );
+      // Mismo margen lateral (20) que las secciones de la lista.
       expect(
         titulo.dx - tester.getTopLeft(find.byType(NegociosCercanos)).dx,
-        Espacios.l,
+        20,
       );
       expect(mensaje.dx, titulo.dx);
       final padding = tester.widget<Padding>(
@@ -140,10 +141,7 @@ void main() {
             )
             .first,
       );
-      expect(
-        padding.padding,
-        const EdgeInsets.symmetric(horizontal: Espacios.l),
-      );
+      expect(padding.padding, const EdgeInsets.symmetric(horizontal: 20));
     });
   }
 
@@ -437,6 +435,14 @@ void main() {
     await tester.pump();
     expect(find.text(MensajesNegocios.cercaDeTi), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    final cargando = find.descendant(
+      of: find.byType(NegociosCercanos),
+      matching: find.byType(EstadoCargando),
+    );
+    expect(tester.widget<EstadoCargando>(cargando).compacto, isTrue);
+    final titulo = tester.widget<Text>(find.text(MensajesNegocios.cercaDeTi));
+    expect(titulo.style?.fontSize, 20);
+    expect(titulo.style?.color, const Color(0xFF111827));
     pendiente.complete(http.Response('[]', 200));
     await tester.pumpAndSettle();
     expect(find.text(MensajesNegocios.sinCercanos), findsOneWidget);

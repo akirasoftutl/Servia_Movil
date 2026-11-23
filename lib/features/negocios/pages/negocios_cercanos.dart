@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/tokens.dart';
+import '../../../core/widgets/estados.dart';
 import '../data/negocio_cercano.dart';
 import '../data/negocios_service.dart';
 import '../data/ubicacion_cliente.dart';
@@ -10,6 +11,9 @@ import 'tarjeta_negocio.dart';
 // Márgenes literales de la lista del rediseño (`lista_negocios_page.dart`).
 const _margen = 20.0;
 const _separacion = 14.0;
+const _texto = Color(0xFF111827);
+const _bordeBoton = Color(0xFFD1D5DB);
+const _estiloMensaje = TextStyle(fontSize: 14, color: Color(0xFF6B7280));
 
 class NegociosCercanos extends StatefulWidget {
   const NegociosCercanos({super.key, this.service, this.proveedorUbicacion});
@@ -81,30 +85,50 @@ class _NegociosCercanosState extends State<NegociosCercanos> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: Espacios.l),
+        const Padding(
+          padding: EdgeInsets.fromLTRB(_margen, Espacios.l, _margen, 0),
           child: Text(
             MensajesNegocios.cercaDeTi,
-            style: Theme.of(context).textTheme.titleLarge,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: _texto,
+              letterSpacing: -0.3,
+            ),
           ),
         ),
         if (_cargando)
-          const Center(child: CircularProgressIndicator())
+          const EstadoCargando(compacto: true)
         else if (_error) ...[
+          const SizedBox(height: Espacios.s),
           const Padding(
-            padding: EdgeInsets.symmetric(horizontal: Espacios.l),
-            child: Text(MensajesNegocios.errorCercanos),
+            padding: EdgeInsets.symmetric(horizontal: _margen),
+            child: Text(MensajesNegocios.errorCercanos, style: _estiloMensaje),
           ),
-          TextButton(
-            onPressed: _cargar,
-            child: const Text(MensajesNegocios.reintentar),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(_margen, Espacios.s, _margen, 0),
+            child: OutlinedButton(
+              onPressed: _cargar,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: _texto,
+                side: const BorderSide(color: _bordeBoton),
+                shape: const StadiumBorder(),
+              ),
+              child: const Text(
+                MensajesNegocios.reintentar,
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
           ),
-        ] else if (_negocios.isEmpty)
+          const SizedBox(height: Espacios.s),
+        ] else if (_negocios.isEmpty) ...[
+          const SizedBox(height: Espacios.s),
           const Padding(
-            padding: EdgeInsets.symmetric(horizontal: Espacios.l),
-            child: Text(MensajesNegocios.sinCercanos),
-          )
-        else
+            padding: EdgeInsets.symmetric(horizontal: _margen),
+            child: Text(MensajesNegocios.sinCercanos, style: _estiloMensaje),
+          ),
+          const SizedBox(height: Espacios.s),
+        ] else
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.fromLTRB(_margen, 12, _margen, 8),
