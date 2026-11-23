@@ -7,6 +7,10 @@ import '../data/ubicacion_cliente.dart';
 import '../mensajes.dart';
 import 'tarjeta_negocio.dart';
 
+// Márgenes literales de la lista del rediseño (`lista_negocios_page.dart`).
+const _margen = 20.0;
+const _separacion = 14.0;
+
 class NegociosCercanos extends StatefulWidget {
   const NegociosCercanos({super.key, this.service, this.proveedorUbicacion});
   final NegociosService? service;
@@ -103,16 +107,14 @@ class _NegociosCercanosState extends State<NegociosCercanos> {
         else
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.fromLTRB(_margen, 12, _margen, 8),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                for (final cercano in _negocios)
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      minWidth: 300,
-                      maxWidth: 300,
-                      minHeight: 190,
-                    ),
+                for (final (indice, cercano) in _negocios.indexed) ...[
+                  if (indice > 0) const SizedBox(width: _separacion),
+                  SizedBox(
+                    width: 300,
                     child: TarjetaNegocio(
                       negocio: cercano.negocio,
                       categoria: MensajesNegocios.distancia(
@@ -120,6 +122,7 @@ class _NegociosCercanosState extends State<NegociosCercanos> {
                       ),
                     ),
                   ),
+                ],
               ],
             ),
           ),

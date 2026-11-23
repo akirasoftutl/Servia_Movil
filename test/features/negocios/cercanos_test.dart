@@ -226,10 +226,10 @@ void main() {
       final tarjeta = find.byType(TarjetaNegocio).first;
       expect(tester.getSize(tarjeta).width, 300);
       final limites = tester.getRect(
-        find.descendant(of: tarjeta, matching: find.byType(Card)),
+        find.descendant(of: tarjeta, matching: find.byType(DecoratedBox)).first,
       );
       final textos = find.descendant(of: tarjeta, matching: find.byType(Text));
-      expect(textos, findsNWidgets(4));
+      expect(textos, findsNWidgets(3));
       for (final texto in textos.evaluate()) {
         final rect = tester.getRect(find.byWidget(texto.widget));
         expect(rect.left, greaterThanOrEqualTo(limites.left));
@@ -258,6 +258,56 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('tarjeta como la de la lista: portada, borde gris y radio 16', (
+    tester,
+  ) async {
+    const portada = 'https://ejemplo.test/portada.jpg';
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              NegociosCercanos(
+                proveedorUbicacion: () async => (lat: 21.1, lng: -101.7),
+                service: servicio(
+                  cercanos: (_) async => http.Response(
+                    jsonEncode([
+                      {...cercano(1, 1.2), 'imagenUrl': portada},
+                      cercano(2, 3),
+                    ]),
+                    200,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final tarjetas = find.byType(TarjetaNegocio);
+    final imagen = tester.widget<Image>(
+      find.descendant(of: tarjetas.first, matching: find.byType(Image)),
+    );
+    expect((imagen.image as NetworkImage).url, portada);
+    expect(
+      find.descendant(
+        of: tarjetas.at(1),
+        matching: find.byIcon(Icons.storefront_outlined),
+      ),
+      findsOneWidget,
+    );
+    final caja = tester.widget<DecoratedBox>(
+      find
+          .descendant(of: tarjetas.first, matching: find.byType(DecoratedBox))
+          .first,
+    );
+    final decoracion = caja.decoration as BoxDecoration;
+    expect(decoracion.border, Border.all(color: const Color(0xFFE5E7EB)));
+    expect(decoracion.borderRadius, BorderRadius.circular(16));
+    expect(find.text('a 1.2 km'), findsOneWidget);
+  });
 
   testWidgets('concedido: radio, orden, cinco tarjetas, distancia y perfil', (
     tester,
