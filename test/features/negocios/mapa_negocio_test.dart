@@ -243,6 +243,29 @@ void main() {
     },
   );
 
+  testWidgets('bloque como los del perfil: divisor, radio 16 y píldora negra', (
+    tester,
+  ) async {
+    await perfil(tester);
+    final mapa = find.byType(MapaNegocio);
+    expect(
+      find.descendant(of: mapa, matching: find.byType(Divider)),
+      findsOneWidget,
+    );
+    final recorte = tester.widget<ClipRRect>(
+      find.ancestor(of: find.byType(Image), matching: find.byType(ClipRRect)),
+    );
+    expect(recorte.borderRadius, BorderRadius.circular(16));
+    final boton = find.ancestor(
+      of: find.text(MensajesNegocios.comoLlegar),
+      matching: find.byWidgetPredicate((w) => w is ButtonStyleButton),
+    );
+    final estilo = tester.widget<ButtonStyleButton>(boton).style!;
+    expect(estilo.backgroundColor!.resolve({}), const Color(0xFF0F0F0F));
+    expect(estilo.shape!.resolve({}), const StadiumBorder());
+    expect(tester.getSize(boton).width, tester.getSize(mapa).width);
+  });
+
   test(
     'sin SDK ni llave de mapas: imagen de API y dependencia url_launcher',
     () {
