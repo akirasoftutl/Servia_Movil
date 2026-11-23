@@ -7,7 +7,7 @@ import '../mensajes.dart';
 import 'messaging_client.dart';
 import 'notificaciones_service.dart';
 
-///Coordina FCM con la API de avisos.
+/// Coordina FCM con la API de avisos.
 ///
 /// * Pide permiso y registra el token cuando se confirma una sesión de cliente.
 /// * Reenvía el token en `onTokenRefresh`.
@@ -43,6 +43,7 @@ class ServicioPush {
   bool _permisoConcedido = false;
   bool _registrado = false;
   String? _tokenApi;
+  Future<String?> Function()? _proveedorToken;
   String? _tokenFcm;
   RemoteMessage? _pendiente;
 
@@ -79,10 +80,19 @@ class ServicioPush {
 
   /// Pide permiso (Android 13+), obtiene el token y lo envía a la API.
   /// Si el usuario lo niega no hace nada: la lista de avisos sigue disponible.
-  Future<void> registrar(String token, {bool forzar = false}) async {
+  ///
+  /// [proveedorToken] devuelve un ID token de Firebase vigente (los tokens
+  /// caducan en ~1 h). Se pide en cada llamada posterior a la API (abrir un
+  /// push, «Ver», token FCM renovado) en lugar de reutilizar [token].
+  Future<void> registrar(
+    String token, {
+    bool forzar = false,
+    Future<String?> Function()? proveedorToken,
+  }) async {
     if (_registrando) return;
     _registrando = true;
     _tokenApi = token;
+    _proveedorToken = proveedorToken ?? _proveedorToken;
     try {
       if (_registrado && !forzar) return;
 
@@ -125,6 +135,26 @@ class ServicioPush {
     } finally {
       _limpiarSesion();
     }
+  }
+
+  /// Token de la API vigente: pide uno fresco al proveedor y, si no hay o
+  /// falla, usa el último conocido.
+  Future<String?> _tokenFresco() async {
+    final proveedor = _proveedorToken;
+    if (proveedor != null) {
+      try {
+        final token = await proveedor();
+        if (token != null && token.isNotEmpty) return token;
+      } catch (_) {
+        // Se intenta con el último token conocido.
+      }
+    }
+    return _tokenApi;
+  }
+
+  Future<void> _abrirConTokenFresco(RemoteMessage mensaje) async {
+    final token = await _tokenFresco();
+    if (token != null) await abrir(mensaje, token);
   }
 
   void sincronizarNoLeidas(int cantidad) {
@@ -182,8 +212,7 @@ class ServicioPush {
         action: SnackBarAction(
           label: MensajesNotificaciones.ver,
           onPressed: () {
-            final token = _tokenApi;
-            if (token != null) unawaited(abrir(mensaje, token));
+            if (_tokenApi != null) unawaited(_abrirConTokenFresco(mensaje));
           },
         ),
       ),
@@ -191,9 +220,8 @@ class ServicioPush {
   }
 
   void _alAbrirDesdePush(RemoteMessage mensaje) {
-    final token = _tokenApi;
-    if (token != null) {
-      unawaited(abrir(mensaje, token));
+    if (_tokenApi != null) {
+      unawaited(_abrirConTokenFresco(mensaje));
     } else {
       _pendiente = mensaje;
     }
@@ -202,9 +230,10 @@ class ServicioPush {
   Future<void> _alRenovarToken(String tokenFcm) async {
     if (!_permisoConcedido || tokenFcm.isEmpty) return;
     _tokenFcm = tokenFcm;
-    final token = _tokenApi;
-    if (token == null) return;
+    if (_tokenApi == null) return;
     try {
+      final token = await _tokenFresco();
+      if (token == null) return;
       await _notificaciones.registrarToken(token, tokenFcm);
     } catch (_) {
       _registrado = false;
@@ -225,6 +254,7 @@ class ServicioPush {
   void _limpiarSesion() {
     _tokenFcm = null;
     _tokenApi = null;
+    _proveedorToken = null;
     _registrado = false;
     _permisoConcedido = false;
     _pendiente = null;

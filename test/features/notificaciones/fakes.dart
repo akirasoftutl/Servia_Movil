@@ -34,6 +34,7 @@ class NotificacionesFalso extends NotificacionesService {
   final List<Map<String, String>> registros;
   final List<Map<String, String>> bajas;
   final List<String> marcadas;
+  final List<String> tokensMarcadas = [];
 
   @override
   Future<PaginaAvisos> listar(String token, {String? cursor}) async {
@@ -58,6 +59,7 @@ class NotificacionesFalso extends NotificacionesService {
   @override
   Future<void> marcarLeida(String token, String id) async {
     marcadas.add(id);
+    tokensMarcadas.add(token);
   }
 }
 

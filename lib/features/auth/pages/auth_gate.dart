@@ -261,7 +261,10 @@ class _AuthGateState extends State<AuthGate> {
 
   Future<void> _registrarPush(String token) async {
     try {
-      await _push.registrar(token);
+      await _push.registrar(
+        token,
+        proveedorToken: () async => _authService.usuarioActual?.getIdToken(),
+      );
       await _push.procesarMensajePendiente(token);
     } catch (_) {
       // Los avisos de la lista no dependen del permiso de notificaciones.

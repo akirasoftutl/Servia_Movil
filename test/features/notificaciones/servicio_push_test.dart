@@ -145,5 +145,71 @@ void main() {
 
       expect(push.noLeidas.value, 0);
     });
+
+    group('token de la API vigente (los ID tokens caducan en ~1 h)', () {
+      var contador = 0;
+      Future<String?> proveedor() async => 'fresco-${++contador}';
+
+      setUp(() => contador = 0);
+
+      test('al abrir un push pide un token fresco, no el capturado', () async {
+        final mensajeria = MessagingFalso();
+        final avisos = NotificacionesFalso();
+        final push = ServicioPush(
+          messaging: mensajeria,
+          notificaciones: avisos,
+        );
+        addTearDown(push.dispose);
+        push.configurar();
+        await push.registrar('token-viejo', proveedorToken: proveedor);
+
+        mensajeria.aperturas.add(
+          mensajePrueba(notificacionId: 'a7', reservaId: 'r9'),
+        );
+        await pumpEventQueue();
+
+        expect(avisos.tokensMarcadas, ['fresco-1']);
+      });
+
+      test('al renovarse el token FCM se registra con un token fresco', () async {
+        final mensajeria = MessagingFalso();
+        final avisos = NotificacionesFalso();
+        final push = ServicioPush(
+          messaging: mensajeria,
+          notificaciones: avisos,
+        );
+        addTearDown(push.dispose);
+        push.configurar();
+        await push.registrar('token-viejo', proveedorToken: proveedor);
+
+        mensajeria.refrescos.add('nuevo-token');
+        await pumpEventQueue();
+
+        expect(avisos.registros.last, {
+          'token': 'fresco-1',
+          'tokenFcm': 'nuevo-token',
+        });
+      });
+
+      test('si el proveedor falla usa el último token conocido', () async {
+        final mensajeria = MessagingFalso();
+        final avisos = NotificacionesFalso();
+        final push = ServicioPush(
+          messaging: mensajeria,
+          notificaciones: avisos,
+        );
+        addTearDown(push.dispose);
+        push.configurar();
+        await push.registrar(
+          'token-viejo',
+          proveedorToken: () async => throw StateError('sin red'),
+        );
+
+        mensajeria.aperturas.add(mensajePrueba(notificacionId: 'a7'));
+        await pumpEventQueue();
+
+        expect(avisos.tokensMarcadas, ['token-viejo']);
+      });
+    });
   });
 }
