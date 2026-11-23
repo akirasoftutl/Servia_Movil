@@ -5,6 +5,8 @@ import 'core/firebase/firebase_options.dart';
 import 'core/theme/tema_servia.dart';
 import 'features/auth/pages/auth_gate.dart';
 import 'features/negocios/rutas_negocios.dart';
+import 'features/notificaciones/data/servicio_push.dart';
+import 'features/notificaciones/rutas_notificaciones.dart';
 import 'features/reservas/rutas_reservas.dart';
 
 void main() async {
@@ -12,21 +14,35 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const ServiaApp());
+
+  final push = ServicioPush.instancia;
+  push.configurar();
+  // Si la app se abrió tocando una notificación, se guarda hasta que AuthGate
+  // confirme la sesión y pueda marcar el aviso como leído.
+  await push.cargarMensajeInicial();
+
+  runApp(ServiaApp(push: push));
 }
 
 class ServiaApp extends StatelessWidget {
-  const ServiaApp({super.key});
+  const ServiaApp({super.key, this.push});
+
+  /// Compartido por el navegador, la campana y el manejo de mensajes FCM.
+  final ServicioPush? push;
 
   @override
   Widget build(BuildContext context) {
+    final push = this.push ?? ServicioPush.instancia;
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Servia',
       theme: temaServia(),
-      home: const AuthGate(),
+      navigatorKey: push.navigatorKey,
+      home: AuthGate(push: push),
       onGenerateRoute: (ajustes) =>
-          generarRutaReservas(ajustes) ?? generarRutaNegocios(ajustes),
+          generarRutaReservas(ajustes) ??
+          generarRutaNotificaciones(ajustes, push: push) ??
+          generarRutaNegocios(ajustes),
       onUnknownRoute: generarRutaNoDisponible,
     );
   }

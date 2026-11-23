@@ -1,6 +1,14 @@
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../notificaciones/data/servicio_push.dart';
+
 class AuthService {
+  AuthService({this._push});
+
+  /// Coordinador de FCM inyectado por `AuthGate` en la app real. Si el usuario
+  /// negó el permiso, [ServicioPush.desactivar] no hace nada.
+  final ServicioPush? _push;
+
   FirebaseAuth get _auth => FirebaseAuth.instance;
 
   Stream<User?> get cambiosDeSesion => _auth.authStateChanges();
@@ -43,5 +51,19 @@ class AuthService {
     await usuario.updatePassword(contrasenaNueva);
   }
 
-  Future<void> cerrarSesion() => _auth.signOut();
+  /// Da de baja el token FCM en la API antes de cerrar la sesión de Firebase:
+  /// ese teléfono deja de recibir push de esta cuenta (MVP-28).
+  Future<void> cerrarSesion() async {
+    final usuario = _auth.currentUser;
+    final push = _push;
+    if (usuario != null && push != null) {
+      try {
+        final token = await usuario.getIdToken();
+        if (token != null) await push.desactivar(token);
+      } catch (_) {
+        // Un fallo de red no debe impedir cerrar la sesión.
+      }
+    }
+    await _auth.signOut();
+  }
 }
