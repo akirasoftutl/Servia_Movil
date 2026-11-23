@@ -94,6 +94,19 @@ Future<void> confirmar(WidgetTester tester, String accion) async {
 }
 
 void main() {
+  testWidgets('botón de cancelar en píldora negra como los del rediseño', (
+    tester,
+  ) async {
+    final e = Escenario(estado: 'confirmada');
+    await e.abrir(tester);
+    final boton = find.byKey(const ValueKey('cancelar-reserva'));
+    final estilo = tester.widget<FilledButton>(boton).style!;
+    expect(estilo.backgroundColor!.resolve({}), const Color(0xFF0F0F0F));
+    expect(estilo.shape!.resolve({}), const StadiumBorder());
+    expect(tester.getSize(boton).height, 54);
+    expect(find.text('Cancelar reserva'), findsOneWidget);
+  });
+
   testWidgets('52 C1 retira una Pendiente con el permiso de la API', (
     tester,
   ) async {

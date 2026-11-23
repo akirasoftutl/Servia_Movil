@@ -7,7 +7,6 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:servia/core/network/api_client.dart';
 import 'package:servia/core/theme/tema_servia.dart';
-import 'package:servia/core/widgets/etiqueta_estado.dart';
 import 'package:servia/features/reservas/data/reservas_service.dart';
 import 'package:servia/features/reservas/pages/detalle_reserva_page.dart';
 
@@ -46,6 +45,75 @@ Future<void> abrir(
 }
 
 void main() {
+  testWidgets(
+    'estilo del rediseño: cabecera propia, tarjetas y chip de lista',
+    (tester) async {
+      await abrir(tester);
+      await tester.pumpAndSettle();
+      expect(find.byType(AppBar), findsNothing);
+      expect(
+        tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
+        Colors.white,
+      );
+      final titulo = tester.widget<Text>(find.text('Detalle de la reserva'));
+      expect(titulo.style?.fontSize, 20);
+      expect(titulo.style?.color, const Color(0xFF111827));
+      final tarjeta = tester.widget<Container>(
+        find
+            .ancestor(
+              of: find.text('Fecha y hora'),
+              matching: find.byType(Container),
+            )
+            .first,
+      );
+      final decoracion = tarjeta.decoration! as BoxDecoration;
+      expect(decoracion.border, Border.all(color: const Color(0xFFE5E7EB)));
+      expect(decoracion.borderRadius, BorderRadius.circular(18));
+      expect(decoracion.boxShadow, isNotEmpty);
+      // Pendiente con los mismos colores que `_BadgeEstadoReserva` de la lista.
+      final chip = tester.widget<Container>(
+        find.byKey(const ValueKey('estado-reserva')),
+      );
+      expect(
+        (chip.decoration! as BoxDecoration).color,
+        const Color(0xFFFEF3C7),
+      );
+      expect(
+        tester.widget<Text>(find.text('Pendiente')).style?.color,
+        const Color(0xFFB45309),
+      );
+    },
+  );
+
+  testWidgets('la flecha de la cabecera regresa a la pantalla anterior', (
+    tester,
+  ) async {
+    await abrir(tester);
+    await tester.pumpAndSettle();
+    // Como pantalla inicial no hay a dónde volver: no se muestra la flecha.
+    expect(find.byIcon(Icons.arrow_back_rounded), findsNothing);
+    final detalle = tester.widget<DetalleReservaPage>(
+      find.byType(DetalleReservaPage),
+    );
+    Navigator.of(tester.element(find.byType(DetalleReservaPage))).push(
+      MaterialPageRoute<void>(
+        builder: (_) => DetalleReservaPage(
+          id: 'r2',
+          authService: detalle.authService,
+          reservasService: detalle.reservasService,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(DetalleReservaPage), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.arrow_back_rounded));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<DetalleReservaPage>(find.byType(DetalleReservaPage)).id,
+      'r1',
+    );
+  });
+
   testWidgets('C1 muestra la reserva completa y la fecha de México', (
     tester,
   ) async {
@@ -53,7 +121,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(SelectableText), findsOneWidget);
     expect(find.text('SRV-7KQ2MX'), findsOneWidget);
-    expect(find.byType(EtiquetaEstado), findsOneWidget);
+    expect(find.byKey(const ValueKey('estado-reserva')), findsOneWidget);
     for (final texto in [
       'Pendiente',
       'Fecha y hora',

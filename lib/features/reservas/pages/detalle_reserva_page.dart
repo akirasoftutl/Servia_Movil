@@ -164,31 +164,76 @@ class _DetalleReservaPageState extends State<DetalleReservaPage> {
   Widget build(BuildContext context) {
     final error = _error;
     return Scaffold(
-      appBar: AppBar(title: const Text(MensajesReservas.tituloDetalle)),
+      backgroundColor: Colors.white,
       body: SafeArea(
-        child: _cargando
-            ? const EstadoCargando(mensaje: MensajesReservas.cargandoDetalle)
-            : error != null
-            ? MensajesReservas.detalleNoEncontrado(error)
-                  ? EstadoVacio(
-                      icono: Icons.event_busy_outlined,
-                      mensaje: MensajesReservas.reservaNoEncontrada,
-                      accion: FilledButton(
-                        onPressed: _volverAMisReservas,
-                        child: const Text(MensajesReservas.volverAMisReservas),
-                      ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _encabezado(),
+            const Divider(height: 1, color: _divisor),
+            Expanded(
+              child: _cargando
+                  ? const EstadoCargando(
+                      mensaje: MensajesReservas.cargandoDetalle,
                     )
-                  : EstadoError(
-                      mensaje: MensajesReservas.mensajeDeDetalle(error),
-                      onReintentar:
-                          MensajesReservas.sesionInvalidaDetalle(error)
-                          ? null
-                          : _cargar,
-                    )
-            : _datos(_reserva!),
+                  : error != null
+                  ? MensajesReservas.detalleNoEncontrado(error)
+                        ? EstadoVacio(
+                            icono: Icons.event_busy_outlined,
+                            mensaje: MensajesReservas.reservaNoEncontrada,
+                            accion: FilledButton(
+                              onPressed: _volverAMisReservas,
+                              style: _estiloBotonPrincipal,
+                              child: const Text(
+                                MensajesReservas.volverAMisReservas,
+                              ),
+                            ),
+                          )
+                        : EstadoError(
+                            mensaje: MensajesReservas.mensajeDeDetalle(error),
+                            onReintentar:
+                                MensajesReservas.sesionInvalidaDetalle(error)
+                                ? null
+                                : _cargar,
+                          )
+                  : _datos(_reserva!),
+            ),
+          ],
+        ),
       ),
     );
   }
+
+  /// Cabecera propia como la del resumen de reserva del rediseño.
+  Widget _encabezado() => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 10, 20, 8),
+    child: Row(
+      children: [
+        if (Navigator.canPop(context)) ...[
+          IconButton(
+            onPressed: () => Navigator.maybePop(context),
+            tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+            icon: const Icon(Icons.arrow_back_rounded, color: _texto, size: 24),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+          ),
+          const SizedBox(width: 4),
+        ] else
+          const SizedBox(width: 4, height: 40),
+        const Expanded(
+          child: Text(
+            MensajesReservas.tituloDetalle,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: _texto,
+              letterSpacing: -0.3,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 
   Widget _datos(DetalleReserva r) {
     final textos = Theme.of(context).textTheme;
@@ -221,14 +266,17 @@ class _DetalleReservaPageState extends State<DetalleReservaPage> {
       _ => null,
     };
     return ListView(
-      padding: Espacios.pantalla,
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, Espacios.xxl),
       children: [
         _seccion(MensajesReservas.folio, [
-          SelectableText(r.folio, style: textos.headlineMedium),
+          SelectableText(
+            r.folio,
+            style: textos.headlineMedium?.copyWith(color: _texto),
+          ),
           const SizedBox(height: Espacios.m),
           Align(
             alignment: Alignment.centerLeft,
-            child: EtiquetaEstado(
+            child: _InsigniaEstado(
               texto: estado,
               tono: switch (r.estado) {
                 'pendiente' => TonoEstado.aviso,
@@ -269,26 +317,57 @@ class _DetalleReservaPageState extends State<DetalleReservaPage> {
         ]),
         if (tituloMotivo != null && r.motivo?.trim().isNotEmpty == true)
           _seccion(tituloMotivo, [Text(r.motivo!)]),
-        if (fueraDePlazo) const Text(MensajesReservas.limiteCancelacion),
-        if (accion != null)
-          FilledButton(
-            key: const ValueKey('cancelar-reserva'),
-            onPressed: _enviando || _dialogoAbierto ? null : _cancelar,
-            child: Text(_enviando ? MensajesReservas.cancelando : accion),
+        if (fueraDePlazo)
+          const Text(
+            MensajesReservas.limiteCancelacion,
+            style: TextStyle(fontSize: 14, color: _textoSecundario),
           ),
+        if (accion != null) ...[
+          if (fueraDePlazo) const SizedBox(height: Espacios.l),
+          SizedBox(
+            height: 54,
+            child: FilledButton(
+              key: const ValueKey('cancelar-reserva'),
+              onPressed: _enviando || _dialogoAbierto ? null : _cancelar,
+              style: _estiloBotonPrincipal,
+              child: Text(_enviando ? MensajesReservas.cancelando : accion),
+            ),
+          ),
+        ],
       ],
     );
   }
 
+  /// Tarjeta blanca con borde gris y sombra leve, como las de Mis reservas.
   Widget _seccion(String titulo, List<Widget> datos) => Padding(
-    padding: const EdgeInsets.only(bottom: Espacios.l),
-    child: Card(
-      child: Padding(
-        padding: const EdgeInsets.all(Espacios.l),
+    padding: const EdgeInsets.only(bottom: 14),
+    child: Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _borde),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: DefaultTextStyle.merge(
+        style: const TextStyle(color: _texto),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(titulo, style: Theme.of(context).textTheme.titleSmall),
+            Text(
+              titulo,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: _textoSecundario,
+              ),
+            ),
             const SizedBox(height: Espacios.s),
             ...datos,
           ],
@@ -296,4 +375,53 @@ class _DetalleReservaPageState extends State<DetalleReservaPage> {
       ),
     ),
   );
+}
+
+// Literales del rediseño (`mis_reservas_page.dart`,
+// `resumen_reserva_page.dart`, `confirmacion_reserva_page.dart`), sin
+// agregarlos al tema.
+const _texto = Color(0xFF111827);
+const _textoSecundario = Color(0xFF6B7280);
+const _borde = Color(0xFFE5E7EB);
+const _divisor = Color(0xFFF3F4F6);
+
+/// Botón principal en píldora negra como los del rediseño.
+final _estiloBotonPrincipal = FilledButton.styleFrom(
+  backgroundColor: const Color(0xFF0F0F0F),
+  foregroundColor: Colors.white,
+  shape: const StadiumBorder(),
+  textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+);
+
+/// Mismo chip de estado que la lista de Mis reservas (`_BadgeEstadoReserva`).
+class _InsigniaEstado extends StatelessWidget {
+  const _InsigniaEstado({required this.texto, required this.tono});
+
+  final String texto;
+  final TonoEstado tono;
+
+  @override
+  Widget build(BuildContext context) {
+    final (Color fondo, Color color) = switch (tono) {
+      TonoEstado.exito => (const Color(0xFFDCFCE7), const Color(0xFF15803D)),
+      TonoEstado.aviso => (const Color(0xFFFEF3C7), const Color(0xFFB45309)),
+      TonoEstado.neutro => (const Color(0xFFF3F4F6), const Color(0xFF4B5563)),
+    };
+    return Container(
+      key: const ValueKey('estado-reserva'),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: fondo,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        texto,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
+      ),
+    );
+  }
 }
