@@ -8,6 +8,8 @@ import '../../../core/theme/tokens.dart';
 import '../../../core/widgets/estados.dart';
 import '../../../core/widgets/marca_servia.dart';
 import '../../home/pages/home_page.dart';
+import '../../notificaciones/data/notificaciones_service.dart';
+import '../../notificaciones/data/servicio_push.dart';
 import '../../reservas/data/reservas_service.dart';
 import '../data/auth_service.dart';
 import '../data/perfil_service.dart';
@@ -26,6 +28,8 @@ class AuthGate extends StatefulWidget {
     this.registroClienteService,
     this.perfilClienteService,
     this.reservasService,
+    this.notificacionesService,
+    this.push,
   });
 
   final AuthService? authService;
@@ -33,6 +37,8 @@ class AuthGate extends StatefulWidget {
   final RegistroClienteService? registroClienteService;
   final PerfilClienteService? perfilClienteService;
   final ReservasService? reservasService;
+  final NotificacionesService? notificacionesService;
+  final ServicioPush? push;
 
   @override
   State<AuthGate> createState() => _AuthGateState();
@@ -42,6 +48,7 @@ class AuthGate extends StatefulWidget {
 class _AuthGateState extends State<AuthGate> {
   late final AuthService _authService;
   late final PerfilService _perfilService;
+  late final ServicioPush _push;
 
   StreamSubscription<User?>? _suscripcion;
 
@@ -54,8 +61,14 @@ class _AuthGateState extends State<AuthGate> {
   void initState() {
     super.initState();
 
-    _authService = widget.authService ?? AuthService();
+    _push = widget.push ?? ServicioPush();
+    _authService = widget.authService ?? AuthService(push: _push);
     _perfilService = widget.perfilService ?? PerfilService();
+
+    // Los listeners viven mientras la app esté abierta; `getInitialMessage`
+    // se guarda hasta que sepamos que hay una sesión de cliente.
+    _push.configurar();
+    unawaited(_push.cargarMensajeInicial());
 
     // Sin sesión mostramos de inmediato el inicio con su barra inferior, sin
     // esperar a que el stream de Firebase emita el estado inicial.
@@ -101,7 +114,7 @@ class _AuthGateState extends State<AuthGate> {
           _mensaje = MensajesAuth.soloClientes;
         });
 
-        await _authService.cerrarSesion();
+        await _cerrarSesion();
 
         if (!mounted) return;
 
@@ -118,6 +131,9 @@ class _AuthGateState extends State<AuthGate> {
         _estado = _EstadoSesion.conSesion;
         _mostrarLogin = false;
       });
+
+      // Permiso y token FCM solo después de confirmar que es cliente.
+      unawaited(_registrarPush(token));
     } on ApiException catch (error) {
       if (!mounted) return;
 
@@ -126,7 +142,7 @@ class _AuthGateState extends State<AuthGate> {
           _mensaje = MensajesAuth.cuentaDesactivada;
         });
 
-        await _authService.cerrarSesion();
+        await _cerrarSesion();
 
         if (!mounted) return;
 
@@ -143,7 +159,7 @@ class _AuthGateState extends State<AuthGate> {
         _mensaje = MensajesAuth.errorSesion;
       });
 
-      await _authService.cerrarSesion();
+      await _cerrarSesion();
 
       if (!mounted) return;
 
@@ -220,6 +236,8 @@ class _AuthGateState extends State<AuthGate> {
           authService: _authService,
           perfilClienteService: widget.perfilClienteService,
           reservasService: widget.reservasService,
+          notificacionesService: widget.notificacionesService,
+          push: _push,
         );
 
       case _EstadoSesion.conSesion:
@@ -230,6 +248,8 @@ class _AuthGateState extends State<AuthGate> {
           authService: _authService,
           perfilClienteService: widget.perfilClienteService,
           reservasService: widget.reservasService,
+          notificacionesService: widget.notificacionesService,
+          push: _push,
         );
 
       case _EstadoSesion.errorRed:
@@ -239,9 +259,18 @@ class _AuthGateState extends State<AuthGate> {
     }
   }
 
-  Future<void> _cerrarSesion() {
-    return _authService.cerrarSesion();
+  Future<void> _registrarPush(String token) async {
+    try {
+      await _push.registrar(token);
+      await _push.procesarMensajePendiente(token);
+    } catch (_) {
+      // Los avisos de la lista no dependen del permiso de notificaciones.
+    }
   }
+
+  /// [AuthService.cerrarSesion] da de baja el token FCM antes de cerrar
+  /// Firebase, tanto aquí como desde la fila «Cerrar sesión» de Mi perfil.
+  Future<void> _cerrarSesion() => _authService.cerrarSesion();
 }
 
 

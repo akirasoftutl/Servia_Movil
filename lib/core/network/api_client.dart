@@ -52,4 +52,19 @@ class ApiClient {
     };
     return _client.patch(url, headers: headers, body: body).timeout(limite);
   }
+
+  /// Usado para dar de baja el token FCM al cerrar sesión (MVP-28).
+  Future<http.Response> delete(
+    String endpoint, {
+    String? token,
+    String? body,
+  }) {
+    final url = Uri.parse('$baseUrl$endpoint');
+    final headers = <String, String>{
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+    return _client.delete(url, headers: headers, body: body).timeout(limite);
+  }
 }
