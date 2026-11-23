@@ -97,27 +97,48 @@ class _DetalleReservaPageState extends State<DetalleReservaPage> {
     final confirmado = await showDialog<bool>(
       context: context,
       builder: (contexto) => AlertDialog(
-        title: const Text(MensajesReservas.condicionesCancelacion),
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          MensajesReservas.condicionesCancelacion,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: _texto,
+            letterSpacing: -0.3,
+          ),
+        ),
         content: const SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(MensajesReservas.condicionesPendiente),
-              SizedBox(height: Espacios.m),
-              Text(MensajesReservas.condicionesConfirmada),
-              SizedBox(height: Espacios.m),
-              Text(MensajesReservas.condicionesIrreversible),
-            ],
+          child: DefaultTextStyle(
+            style: TextStyle(fontSize: 14, height: 1.4, color: _textoCuerpo),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(MensajesReservas.condicionesPendiente),
+                SizedBox(height: Espacios.m),
+                Text(MensajesReservas.condicionesConfirmada),
+                SizedBox(height: Espacios.m),
+                Text(MensajesReservas.condicionesIrreversible),
+              ],
+            ),
           ),
         ),
         actions: [
-          TextButton(
+          OutlinedButton(
             onPressed: () => Navigator.pop(contexto, false),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: _texto,
+              side: const BorderSide(color: _bordeSecundario),
+              shape: const StadiumBorder(),
+              textStyle: const TextStyle(fontWeight: FontWeight.w600),
+            ),
             child: const Text(MensajesReservas.noVolver),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(contexto, true),
+            style: _estiloBotonPrincipal,
             child: const Text(MensajesReservas.siCancelar),
           ),
         ],
@@ -384,6 +405,8 @@ const _texto = Color(0xFF111827);
 const _textoSecundario = Color(0xFF6B7280);
 const _borde = Color(0xFFE5E7EB);
 const _divisor = Color(0xFFF3F4F6);
+const _textoCuerpo = Color(0xFF4B5563);
+const _bordeSecundario = Color(0xFFD1D5DB);
 
 /// Botón principal en píldora negra como los del rediseño.
 final _estiloBotonPrincipal = FilledButton.styleFrom(
