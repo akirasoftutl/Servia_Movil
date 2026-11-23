@@ -14,6 +14,7 @@ import 'package:servia/features/home/pages/home_page.dart';
 import 'package:servia/features/negocios/data/negocios_service.dart';
 import 'package:servia/features/negocios/data/ubicacion_cliente.dart';
 import 'package:servia/features/negocios/mensajes.dart';
+import 'package:servia/features/negocios/pages/lista_negocios_page.dart';
 import 'package:servia/features/negocios/pages/tarjeta_negocio.dart';
 import 'package:servia/features/negocios/pages/negocios_cercanos.dart';
 
@@ -145,6 +146,40 @@ void main() {
       );
     });
   }
+
+  testWidgets(
+    '«Cerca de ti» queda bajo la barra de estado sobre fondo blanco',
+    (tester) async {
+      const barra = 40.0;
+      tester.view.padding = FakeViewPadding(
+        top: barra * tester.view.devicePixelRatio,
+      );
+      addTearDown(tester.view.resetPadding);
+      await inicio(
+        tester,
+        UbicacionFalsa(),
+        servicio(cercanos: (_) async => http.Response('[]', 200)),
+      );
+      expect(
+        tester.getTopLeft(find.text(MensajesNegocios.cercaDeTi)).dy,
+        greaterThanOrEqualTo(barra),
+      );
+      // La lista ya no suma otro hueco de la barra debajo de la sección.
+      expect(
+        MediaQuery.paddingOf(tester.element(find.byType(ListaNegocios))).top,
+        0,
+      );
+      expect(
+        find.ancestor(
+          of: find.byType(NegociosCercanos),
+          matching: find.byWidgetPredicate(
+            (w) => w is ColoredBox && w.color == Colors.white,
+          ),
+        ),
+        findsOneWidget,
+      );
+    },
+  );
 
   for (final acepta in [false, true]) {
     testWidgets('tarjeta completa a escala 2.0: acepta reservas=$acepta', (
