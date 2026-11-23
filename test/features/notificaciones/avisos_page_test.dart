@@ -248,4 +248,47 @@ void main() {
     expect(find.text('Ruta /reservas/r1'), findsOneWidget);
     expect(push.noLeidas.value, 0);
   });
+
+  testWidgets('tocar un aviso ya leído no baja el globo ni vuelve a marcarlo', (
+    tester,
+  ) async {
+    final notificaciones = NotificacionesFalso(
+      paginas: {
+        null: PaginaAvisos(
+          items: [avisoPrueba(id: 'a1', leida: true, reservaId: 'r1')],
+          noLeidas: 3,
+          siguiente: null,
+        ),
+      },
+    );
+    final push = ServicioPush(
+      messaging: MessagingFalso(),
+      notificaciones: notificaciones,
+    );
+    addTearDown(push.dispose);
+    push.sincronizarNoLeidas(3);
+
+    final rutas = <String>[];
+    await tester.pumpWidget(
+      appCon(
+        notificaciones: notificaciones,
+        push: push,
+        onGenerateRoute: (ajustes) {
+          rutas.add(ajustes.name ?? '');
+          return MaterialPageRoute<void>(
+            settings: ajustes,
+            builder: (_) => Scaffold(body: Text('Ruta ${ajustes.name}')),
+          );
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Reserva confirmada'));
+    await tester.pumpAndSettle();
+
+    expect(push.noLeidas.value, 3);
+    expect(notificaciones.marcadas, isEmpty);
+    expect(rutas, contains('/reservas/r1'));
+  });
 }

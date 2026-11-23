@@ -124,13 +124,16 @@ class _AvisosPageState extends State<AvisosPage> {
     _marcando = true;
     final navegador = Navigator.of(context);
     try {
-      await _servicio.marcarLeida(await _token(), aviso.id);
-      if (!mounted) return;
-      final indice = _avisos.indexWhere((item) => item.id == aviso.id);
-      if (indice != -1) {
-        setState(() => _avisos[indice] = aviso.conLeida(true));
+      // Un aviso ya leído no se vuelve a marcar ni baja el globo.
+      if (!aviso.leida) {
+        await _servicio.marcarLeida(await _token(), aviso.id);
+        if (!mounted) return;
+        final indice = _avisos.indexWhere((item) => item.id == aviso.id);
+        if (indice != -1) {
+          setState(() => _avisos[indice] = aviso.conLeida(true));
+        }
+        _push.marcarLeidaLocal();
       }
-      _push.marcarLeidaLocal();
     } catch (_) {
       // Aun con error de red se abre el detalle: ya se intentó marcar la lectura.
     } finally {
