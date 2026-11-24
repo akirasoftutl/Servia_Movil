@@ -68,12 +68,12 @@ class MapaCercanosPage extends StatefulWidget {
     super.key,
     this.negociosService,
     this.proveedorUbicacion,
-    this.constructorMapa = _construirGoogleMap,
+    this.constructorMapa,
   });
 
   final NegociosService? negociosService;
   final ProveedorUbicacionCliente? proveedorUbicacion;
-  final ConstructorMapaCercanos constructorMapa;
+  final ConstructorMapaCercanos? constructorMapa;
 
   @override
   State<MapaCercanosPage> createState() => _MapaCercanosPageState();
@@ -229,9 +229,11 @@ class _MapaCercanosPageState extends State<MapaCercanosPage> {
       onSeleccionarPin: _alSeleccionarPin,
     );
 
+    final constructorMapa = widget.constructorMapa ?? _construirGoogleMap;
+
     return Stack(
       children: [
-        Positioned.fill(child: widget.constructorMapa(context, datosMapa)),
+        Positioned.fill(child: constructorMapa(context, datosMapa)),
         DraggableScrollableSheet(
           controller: _hojaController,
           initialChildSize: 0.36,
