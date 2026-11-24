@@ -459,9 +459,17 @@ class _VistaGoogleMapState extends State<_VistaGoogleMap> {
       );
     }
 
+    // Primero cargamos la variante visible actual de cada pin y en seguida
+    // precalculamos la variante alterna para que tocar un pin no parpadee.
     for (final pin in widget.datos.pines) {
       _solicitarIconoPin(
         _claveIcono(pin.etiqueta, pin.seleccionado, escala),
+        generacion,
+      );
+    }
+    for (final pin in widget.datos.pines) {
+      _solicitarIconoPin(
+        _claveIcono(pin.etiqueta, !pin.seleccionado, escala),
         generacion,
       );
     }
@@ -511,7 +519,9 @@ class _VistaGoogleMapState extends State<_VistaGoogleMap> {
     };
     if (escala == null) return marcadores;
     for (final pin in widget.datos.pines) {
-      final icono = _iconos[_claveIcono(pin.etiqueta, pin.seleccionado, escala)];
+      final icono =
+          _iconos[_claveIcono(pin.etiqueta, pin.seleccionado, escala)] ??
+          _iconos[_claveIcono(pin.etiqueta, !pin.seleccionado, escala)];
       if (icono == null) continue;
       marcadores.add(
         Marker(
