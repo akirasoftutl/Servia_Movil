@@ -10,6 +10,10 @@ void main() {
   testWidgets('inicio público muestra la lista y permite abrir el login', (
     tester,
   ) async {
+    // El selector de orden ocupa unos dp más en el encabezado: viewport más alto.
+    tester.view.physicalSize = const Size(800, 700);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     final fake = ListaServiceFalso()
       ..responder = (_) async => pagina([resumen('publico')]);
     await tester.pumpWidget(
@@ -40,6 +44,10 @@ void main() {
   testWidgets('inicio muestra lista y el perfil cierra la sesión', (
     tester,
   ) async {
+    // El selector de orden ocupa unos dp más en el encabezado: viewport más alto.
+    tester.view.physicalSize = const Size(800, 700);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     final sesion = SesionPerfilFalsa([]);
     await tester.pumpWidget(
       MaterialApp(

@@ -29,6 +29,10 @@ class MensajesNegocios {
   static const buscar = 'Buscar negocios o servicios';
   static const limpiar = 'Limpiar búsqueda';
   static const todas = 'Todas';
+  static const ordenarPor = 'Ordenar por';
+  static String ordenarPorOpcion(String etiqueta) => '$ordenarPor: $etiqueta';
+  static const ordenNombre = 'Nombre (A-Z)';
+  static const ordenRecientes = 'Más recientes';
   static const sinResultados = 'No encontramos negocios con esa búsqueda';
   static const busquedaInvalida =
       'Revisa la búsqueda y la categoría e inténtalo de nuevo.';
