@@ -225,7 +225,8 @@ class _ListaNegociosState extends State<ListaNegocios> {
     child: const Text(MensajesNegocios.cargarMas),
   );
 
-  String _nombreCategoria(String id) {
+  String? _nombreCategoria(String? id) {
+    if (id == null) return null;
     for (final categoria in _categorias) {
       if (categoria.id == id) return categoria.nombre;
     }
@@ -767,7 +768,7 @@ class _TarjetaNegocioCarrusel extends StatelessWidget {
   });
 
   final NegocioResumen negocio;
-  final String categoria;
+  final String? categoria;
   final String? imagenUrl;
   final String etiquetaSuperior;
   final VoidCallback onTap;
@@ -873,7 +874,10 @@ class _TarjetaNegocioCarrusel extends StatelessWidget {
             // Categoría y estado de reservas
             Flexible(
               child: Text(
-                negocio.aceptaReservas ? '$categoria · Disponible' : categoria,
+                [
+                  ?categoria,
+                  if (negocio.aceptaReservas) 'Disponible',
+                ].join(' · '),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
@@ -896,7 +900,7 @@ class _TarjetaNegocioHorizontal extends StatelessWidget {
   });
 
   final NegocioResumen negocio;
-  final String categoria;
+  final String? categoria;
   final String? imagenUrl;
   final VoidCallback onTap;
 
@@ -971,18 +975,20 @@ class _TarjetaNegocioHorizontal extends StatelessWidget {
                             color: Color(0xFF111827),
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            '· $categoria',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF6B7280),
+                        if (categoria != null) ...[
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              '· $categoria',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF6B7280),
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ],

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/tokens.dart';
 import '../../../core/widgets/estados.dart';
+import '../../favoritos/data/favoritos_controlador.dart';
+import '../../favoritos/pages/boton_favorito.dart';
 import '../data/negocio.dart';
 import '../data/negocios_service.dart';
 import '../formatos.dart';
@@ -21,6 +23,7 @@ class PerfilNegocioPage extends StatefulWidget {
     ProveedorImagenNegocio? proveedorFotos,
     this.proveedorMapa = NetworkImage.new,
     this.lanzadorRuta = abrirRutaNegocio,
+    this.favoritos,
   }) : proveedorFotos = proveedorFotos ?? NetworkImage.new;
 
   final String negocioId;
@@ -29,12 +32,16 @@ class PerfilNegocioPage extends StatefulWidget {
   final ProveedorImagenNegocio proveedorMapa;
   final LanzadorRutaNegocio lanzadorRuta;
 
+  /// Favoritos de la cuenta; por defecto, los de la app.
+  final FavoritosControlador? favoritos;
+
   @override
   State<PerfilNegocioPage> createState() => _PerfilNegocioPageState();
 }
 
 class _PerfilNegocioPageState extends State<PerfilNegocioPage> {
   late final NegociosService _service;
+  late final FavoritosControlador _favoritos;
   Negocio? _negocio;
   String? _categoria;
   Object? _error;
@@ -44,6 +51,9 @@ class _PerfilNegocioPageState extends State<PerfilNegocioPage> {
   void initState() {
     super.initState();
     _service = widget.negociosService ?? NegociosService();
+    _favoritos = widget.favoritos ?? FavoritosControlador.instancia;
+    // Para saber si el negocio ya es favorito (HU-C81).
+    _favoritos.cargar();
     _cargar();
   }
 
@@ -121,6 +131,7 @@ class _PerfilNegocioPageState extends State<PerfilNegocioPage> {
             negocio: _negocio!,
             categoria: _categoria!,
             service: _service,
+            favoritos: _favoritos,
             proveedorFotos: widget.proveedorFotos,
             proveedorMapa: widget.proveedorMapa,
             lanzadorRuta: widget.lanzadorRuta,
@@ -135,12 +146,14 @@ class _ContenidoPerfil extends StatelessWidget {
     required this.negocio,
     required this.categoria,
     required this.service,
+    required this.favoritos,
     required this.proveedorFotos,
     required this.proveedorMapa,
     required this.lanzadorRuta,
   });
 
   final NegociosService service;
+  final FavoritosControlador favoritos;
   final Negocio negocio;
   final String categoria;
   final ProveedorImagenNegocio proveedorFotos;
@@ -175,6 +188,15 @@ class _ContenidoPerfil extends StatelessWidget {
                     left: 16,
                     child: _BotonCircularAtras(
                       onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ),
+                  Positioned(
+                    top: MediaQuery.of(context).padding.top + Espacios.s,
+                    right: Espacios.l,
+                    child: BotonFavorito(
+                      negocio: resumenDeNegocio(negocio),
+                      controlador: favoritos,
+                      sobreFoto: true,
                     ),
                   ),
                   // Indicador "1/N" abajo a la derecha si hay varias fotos
@@ -216,6 +238,11 @@ class _ContenidoPerfil extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     MiniaturaNegocio(nombre: negocio.nombre, tamano: 42),
+                    const Spacer(),
+                    BotonFavorito(
+                      negocio: resumenDeNegocio(negocio),
+                      controlador: favoritos,
+                    ),
                   ],
                 ),
               ),

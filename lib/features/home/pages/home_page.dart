@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../auth/data/auth_service.dart';
+import '../../favoritos/mensajes.dart';
+import '../../ayuda/data/soporte_service.dart';
+import '../../ayuda/mensajes.dart';
+import '../../ayuda/pages/ayuda_page.dart';
 import '../../negocios/data/negocios_service.dart';
 import '../../negocios/data/ubicacion_cliente.dart';
 import '../../negocios/pages/lista_negocios_page.dart';
@@ -22,6 +26,7 @@ class HomePage extends StatefulWidget {
     this.proveedorUbicacion,
     this.authService,
     this.perfilClienteService,
+    this.soporteService,
     this.reservasService,
     this.notificacionesService,
     this.push,
@@ -32,6 +37,7 @@ class HomePage extends StatefulWidget {
   final ProveedorUbicacionCliente? proveedorUbicacion;
   final AuthService? authService;
   final PerfilClienteService? perfilClienteService;
+  final SoporteService? soporteService;
   final ReservasService? reservasService;
   final NotificacionesService? notificacionesService;
   final ServicioPush? push;
@@ -87,6 +93,17 @@ class _HomePageState extends State<HomePage> {
       }
       _indiceActual = nuevoIndice;
     });
+  }
+
+  void _abrirAyuda() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => AyudaPage(
+          authService: _auth,
+          soporteService: widget.soporteService,
+        ),
+      ),
+    );
   }
 
   String _obtenerInicialUsuario() {
@@ -179,12 +196,25 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       if (estaLogueado)
                         IconButton(
+                          tooltip: MensajesFavoritos.titulo,
+                          onPressed: () =>
+                              Navigator.of(context).pushNamed('/favoritos'),
+                          icon: const Icon(Icons.favorite_border),
+                        ),
+                      if (estaLogueado)
+                        IconButton(
                           tooltip: MensajesNotificaciones.campana,
                           onPressed: () => Navigator.of(context).pushNamed(
                             '/avisos',
                             arguments: _push,
                           ),
                           icon: _CampanaAvisos(push: _push),
+                        ),
+                      if (estaLogueado)
+                        IconButton(
+                          tooltip: MensajesAyuda.tooltipAyuda,
+                          onPressed: _abrirAyuda,
+                          icon: const Icon(Icons.help_outline),
                         ),
                       IconButton(
                         tooltip: MensajesNotificaciones.perfil,
@@ -336,7 +366,10 @@ class _CampanaAvisos extends StatelessWidget {
                 right: -8,
                 top: -6,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFDC2626),
                     borderRadius: BorderRadius.circular(10),

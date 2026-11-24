@@ -5,7 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:servia/features/auth/pages/login_page.dart';
+import 'package:servia/features/ayuda/pages/ayuda_page.dart';
+import 'package:servia/features/ayuda/pages/reportar_problema_page.dart';
 import 'package:servia/features/auth/pages/register_page.dart';
+import 'package:servia/features/favoritos/pages/favoritos_page.dart';
 import 'package:servia/features/home/pages/home_page.dart';
 import 'package:servia/features/negocios/data/disponibilidad.dart';
 import 'package:servia/features/negocios/data/disponibilidad_service.dart';
@@ -20,6 +23,10 @@ import 'package:servia/features/negocios/data/fotos_negocio.dart';
 import 'package:servia/features/negocios/data/servicio.dart';
 
 import '../features/negocios/datos_prueba.dart' show serviciosPrueba;
+import 'package:servia/core/network/api_exception.dart';
+
+import '../features/favoritos/fakes_favoritos.dart';
+import '../features/ayuda/fakes_ayuda.dart';
 import '../features/negocios/fakes.dart';
 import '../features/perfil/fakes_perfil.dart';
 import '../features/reservas/fakes.dart';
@@ -140,6 +147,14 @@ void main() {
           ),
           null,
         ),
+        'perfil del negocio con corazón': (
+          () => PerfilNegocioPage(
+            negocioId: 'abc123',
+            negociosService: ServiciosServiceFalso(),
+            favoritos: ApiFavoritosFalsa().controlador(SesionFavoritos('ana')),
+          ),
+          null,
+        ),
         'detalle del servicio': (
           () => DetalleServicioPage(
             negocioId: 'abc123',
@@ -205,12 +220,95 @@ void main() {
           ),
           null,
         ),
+        'Mis favoritos': (
+          () {
+            final api = ApiFavoritosFalsa();
+            api.de('ana').addAll([
+              negocioFavorito(
+                'b1',
+                nombre:
+                    'Estética Lupita: cortes, color y peinados para toda la familia',
+                aceptaReservas: false,
+              ),
+              negocioFavorito('b2', nombre: 'Salón Aurora'),
+            ]);
+            return FavoritosPage(
+              controlador: api.controlador(SesionFavoritos('ana')),
+              negociosService: NegociosServiceFalso(),
+            );
+          },
+          null,
+        ),
+        'Mis favoritos vacío': (
+          () => FavoritosPage(
+            controlador: ApiFavoritosFalsa().controlador(SesionFavoritos('ana')),
+            negociosService: NegociosServiceFalso(),
+          ),
+          null,
+        ),
         'Mi perfil': (
           () => MiPerfilPage(
             authService: SesionPerfilFalsa([]),
             perfilClienteService: PerfilClienteFalso([]),
           ),
           null,
+        ),
+        'Ayuda': (
+          () => AyudaPage(
+            authService: SesionFalsa(),
+            soporteService: SoporteFalso(),
+          ),
+          null,
+        ),
+        'Ayuda con una pregunta abierta': (
+          () => AyudaPage(
+            authService: SesionFalsa(),
+            soporteService: SoporteFalso(),
+          ),
+          (t) async {
+            await t.scrollUntilVisible(find.text('¿Puedo cancelar?'), 200);
+            await t.tap(find.text('¿Puedo cancelar?'));
+            await t.pumpAndSettle();
+          },
+        ),
+        'Reportar un problema con reportes': (
+          () => ReportarProblemaPage(
+            authService: SesionFalsa(),
+            soporteService: SoporteFalso(
+              existentes: [
+                reporte(
+                  'No me deja reservar con el negocio de cortes y peinados de mi colonia',
+                ),
+              ],
+            ),
+          ),
+          null,
+        ),
+        'Reportar un problema con error al enviar': (
+          () => ReportarProblemaPage(
+            authService: SesionFalsa(),
+            soporteService: SoporteFalso()
+              ..fallosAlListar.add(const ApiException(500, 'x'))
+              ..fallosAlEnviar.add(
+                const ApiException(
+                  429,
+                  'Enviaste demasiados reportes; inténtalo más tarde.',
+                ),
+              ),
+          ),
+          (t) async {
+            await t.enterText(
+              find.byKey(const Key('campo-asunto')),
+              'No me deja reservar con el negocio',
+            );
+            await t.enterText(
+              find.byKey(const Key('campo-descripcion')),
+              'Cada vez que intento reservar la pantalla se queda cargando.',
+            );
+            await t.ensureVisible(find.byKey(const Key('boton-enviar-reporte')));
+            await t.tap(find.byKey(const Key('boton-enviar-reporte')));
+            await t.pumpAndSettle();
+          },
         ),
         'Mi perfil en edición': (
           () => MiPerfilPage(
