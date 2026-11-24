@@ -69,11 +69,16 @@ void main() {
     expect(forma.borderRadius, Radios.campo);
 
     // La tarjeta de la cita es la del tema (radio y borde).
-    final tarjeta = tester.widget<Card>(
-      find.byKey(const ValueKey('tarjeta-cita-actual')),
+    final tarjeta = tester.widget<Material>(
+      find
+          .descendant(
+            of: find.byKey(const ValueKey('tarjeta-cita-actual')),
+            matching: find.byType(Material),
+          )
+          .first,
     );
-    expect(tarjeta.shape, tema.cardTheme.shape);
-    final borde = (tarjeta.shape! as RoundedRectangleBorder);
+    final borde = tarjeta.shape! as RoundedRectangleBorder;
+    expect(tarjeta.color, ColoresServia.superficie);
     expect(borde.borderRadius, Radios.tarjeta);
     expect(borde.side.color, ColoresServia.borde);
 
