@@ -26,10 +26,20 @@ class TarjetaNegocio extends StatelessWidget {
     super.key,
     required this.negocio,
     required this.categoria,
+    this.onTap,
     this.accion,
   });
   final NegocioResumen negocio;
-  final String categoria;
+
+  /// Sin categoría (la API la declara `string | null`) o vacía, no se muestra
+  /// la línea.
+  final String? categoria;
+
+  /// Por omisión abre `/negocios/{id}`; la portada de inicio abre el perfil
+  /// con el servicio que ya tiene.
+  final VoidCallback? onTap;
+
+  /// Acción opcional sobre la tarjeta (el corazón de «Mis favoritos»).
   final Widget? accion;
 
   @override
@@ -39,11 +49,13 @@ class TarjetaNegocio extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(_radio),
-        onTap: () {
-          if (esIdValido(negocio.id)) {
-            Navigator.pushNamed(context, '/negocios/${negocio.id}');
-          }
-        },
+        onTap:
+            onTap ??
+            () {
+              if (esIdValido(negocio.id)) {
+                Navigator.pushNamed(context, '/negocios/${negocio.id}');
+              }
+            },
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -87,7 +99,8 @@ class TarjetaNegocio extends StatelessWidget {
                               color: _texto,
                             ),
                           ),
-                          if (categoria.isNotEmpty) ...[
+                          if (categoria case final categoria?
+                              when categoria.isNotEmpty) ...[
                             const SizedBox(height: 6),
                             Row(
                               children: [
