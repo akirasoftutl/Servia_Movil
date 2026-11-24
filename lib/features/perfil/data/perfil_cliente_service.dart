@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_exception.dart';
 import '../mensajes.dart';
+import 'cuenta_con_reservas.dart';
 import 'foto_perfil.dart';
 import 'perfil_cliente.dart';
 
@@ -69,6 +70,33 @@ class PerfilClienteService {
     final respuesta = await _api.delete('/usuarios/yo/foto', token: token);
     if (respuesta.statusCode == 204) return;
     throw _errorDeFoto(respuesta, MensajesPerfil.fotoNoQuitada);
+  }
+
+  /// Elimina la cuenta del cliente (`DELETE /usuarios/yo`, 204 sin cuerpo).
+  /// Con reservas Pendientes o Confirmadas la API responde 409 y se lanza
+  /// [CuentaConReservasException]; un 503 no borró nada y se puede reintentar.
+  Future<void> eliminarCuenta(String token) async {
+    final respuesta = await _api.delete('/usuarios/yo', token: token);
+    if (respuesta.statusCode == 204) return;
+    final codigo = respuesta.statusCode;
+    if (codigo == 409) {
+      throw CuentaConReservasException.deCuerpo(
+        respuesta.body,
+        porDefecto: MensajesPerfil.eliminarConReservas,
+      );
+    }
+    final String mensaje;
+    if (codigo == 401) {
+      mensaje = MensajesPerfil.sesionInvalida;
+    } else if (codigo == 403) {
+      mensaje = MensajesPerfil.soloClientes;
+    } else if (codigo >= 500) {
+      mensaje =
+          _mensajeDeLaApi(respuesta.body) ?? MensajesPerfil.eliminarNoSePudo;
+    } else {
+      mensaje = MensajesPerfil.errorGeneral;
+    }
+    throw ApiException(codigo, mensaje);
   }
 
   /// 400, 413 y 503 traen un mensaje en español de la API; se conserva.
