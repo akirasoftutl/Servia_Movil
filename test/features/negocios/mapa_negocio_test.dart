@@ -267,11 +267,11 @@ void main() {
   });
 
   test(
-    'sin SDK ni llave de mapas: imagen de API y dependencia url_launcher',
+    'mapa del perfil usa imagen de API sin llave en el código y conserva url_launcher',
     () {
       final dependencias = File('pubspec.yaml').readAsStringSync();
       expect(dependencias, contains('url_launcher:'));
-      expect(dependencias, isNot(matches(r'google_maps|flutter_map|maps_sdk')));
+      expect(dependencias, isNot(matches(r'flutter_map|maps_sdk')));
       final mapa = File('lib/features/negocios/pages/mapa_negocio.dart')
           .readAsStringSync();
       expect(mapa, contains('ApiClient.baseUrl'));

@@ -43,4 +43,23 @@ void main() {
     expect(contenido, isNot(contains('usesCleartextTraffic="true"')));
     expect(contenido, isNot(contains('networkSecurityConfig')));
   });
+
+  test('declara la llave de Google Maps por placeholder sin commitear secretos', () {
+    final contenido = manifiesto.readAsStringSync();
+    expect(
+      contenido,
+      matches(
+        RegExp(
+          r'<meta-data\s+android:name="com\.google\.android\.geo\.API_KEY"\s+android:value="\$\{MAPS_API_KEY\}"\s*/>',
+        ),
+      ),
+    );
+    expect(contenido, isNot(contains('AIza')));
+
+    final gradle = File('android/app/build.gradle.kts').readAsStringSync();
+    expect(gradle, contains('manifestPlaceholders["MAPS_API_KEY"]'));
+    expect(gradle, contains('local.properties'));
+    expect(gradle, contains('System.getenv("MAPS_API_KEY")'));
+    expect(gradle, isNot(contains('AIza')));
+  });
 }
