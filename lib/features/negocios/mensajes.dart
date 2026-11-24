@@ -13,6 +13,7 @@ class MensajesNegocios {
   static const tuUbicacion = 'Tu ubicación';
   static const errorCercanos = 'No se pudieron cargar los negocios cercanos.';
   static const sinCercanos = 'No hay negocios cerca de ti.';
+  static const cercaDeTi = 'Cerca de ti';
   static String distancia(double km) => 'a ${km.toStringAsFixed(1)} km';
   static String distanciaCorta(double km) => '${km.toStringAsFixed(1)} km';
   static String descripcionPin(String nombre, double km) =>

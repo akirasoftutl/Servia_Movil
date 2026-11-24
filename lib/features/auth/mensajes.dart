@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../core/network/api_exception.dart';
+import 'data/auth_service.dart';
 
 class MensajesAuth {
   MensajesAuth._();
@@ -28,8 +30,36 @@ class MensajesAuth {
       'No se pudo cambiar la contraseña. Inténtalo de nuevo.';
   static const errorRecuperacion =
       'No se pudo enviar el correo. Inténtalo de nuevo.';
+  static const googleCancelado = 'Se canceló el acceso con Google.';
+  static const googleNoConfigurado =
+      'Google no está configurado en la app. Revisa la configuración de Firebase.';
+  static const googleSha =
+      'Google no pudo verificar esta app. Registra la huella SHA de Android en Firebase y vuelve a intentar.';
+  static const googleCorreoOcupado =
+      'Ese correo ya tiene una cuenta. Entra con el método que usaste al registrarte.';
 
   static String mensajeDeInicioSesion(Object error) {
+    if (error is InicioGoogleCancelado) {
+      return _esConfiguracionGoogle(error.descripcion)
+          ? googleSha
+          : googleCancelado;
+    }
+    if (error is InicioGoogleSinToken) return errorSesion;
+
+    if (error is GoogleSignInException) {
+      switch (error.code) {
+        case GoogleSignInExceptionCode.clientConfigurationError:
+        case GoogleSignInExceptionCode.providerConfigurationError:
+          return googleNoConfigurado;
+        case GoogleSignInExceptionCode.canceled:
+          return _esConfiguracionGoogle(error.description)
+              ? googleSha
+              : googleCancelado;
+        default:
+          return errorRed;
+      }
+    }
+
     if (error is FirebaseAuthException) {
       switch (error.code) {
         case 'wrong-password':
@@ -39,6 +69,8 @@ class MensajesAuth {
         case 'user-disabled':
         case 'operation-not-allowed':
           return credencialesInvalidas;
+        case 'account-exists-with-different-credential':
+          return googleCorreoOcupado;
         case 'network-request-failed':
           return errorRed;
         case 'too-many-requests':
@@ -46,6 +78,17 @@ class MensajesAuth {
       }
     }
     return errorRed;
+  }
+
+  /// Credential Manager devuelve `canceled` también cuando el SHA del APK no
+  /// está registrado; la descripción dice `Account reauth failed` o algo
+  /// parecido. Una cancelación real no trae ese texto.
+  static bool _esConfiguracionGoogle(String? descripcion) {
+    final texto = (descripcion ?? '').toLowerCase();
+    return texto.contains('reauth') ||
+        texto.contains('developer console') ||
+        texto.contains('not set up correctly') ||
+        texto.contains('configuration');
   }
 
   static String mensajeDeRecuperacion(Object error) {

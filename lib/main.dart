@@ -1,5 +1,8 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import 'core/firebase/firebase_options.dart';
 import 'core/theme/tema_servia.dart';
@@ -12,9 +15,25 @@ import 'features/reservas/rutas_reservas.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+
+  // En iOS el plist `GoogleService-Info.plist` ya trae las opciones; en
+  // Android seguimos usando el archivo Dart generado desde google-services.json.
+  if (defaultTargetPlatform == TargetPlatform.iOS) {
+    await Firebase.initializeApp();
+  } else {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
+
+  // google_sign_in 7 exige inicializar el singleton una sola vez. Si faltan
+  // credenciales nativas, el login con Google mostrará su mensaje y el acceso
+  // con correo sigue funcionando.
+  try {
+    await GoogleSignIn.instance.initialize();
+  } catch (_) {
+    // Configuración incompleta: se reporta al pulsar «Continuar con Google».
+  }
 
   final push = ServicioPush.instancia;
   push.configurar();

@@ -12,6 +12,7 @@ import '../../notificaciones/data/notificaciones_service.dart';
 import '../../notificaciones/data/servicio_push.dart';
 import '../../reservas/data/reservas_service.dart';
 import '../data/auth_service.dart';
+import '../data/perfil.dart';
 import '../data/perfil_service.dart';
 import '../../perfil/data/perfil_cliente_service.dart';
 import '../data/registro_cliente_service.dart';
@@ -43,7 +44,6 @@ class AuthGate extends StatefulWidget {
   @override
   State<AuthGate> createState() => _AuthGateState();
 }
-
 
 class _AuthGateState extends State<AuthGate> {
   late final AuthService _authService;
@@ -105,7 +105,7 @@ class _AuthGateState extends State<AuthGate> {
 
     try {
       final token = await usuario.getIdToken();
-      final perfil = await _perfilService.obtenerYo(token!);
+      final perfil = await _obtenerPerfil(usuario, token!);
 
       if (!mounted) return;
 
@@ -154,7 +154,6 @@ class _AuthGateState extends State<AuthGate> {
         return;
       }
 
- 
       setState(() {
         _mensaje = MensajesAuth.errorSesion;
       });
@@ -174,6 +173,25 @@ class _AuthGateState extends State<AuthGate> {
       setState(() {
         _estado = _EstadoSesion.errorRed;
       });
+    }
+  }
+
+  /// Un usuario nuevo de Google llega sin documento `usuarios/{uid}`. En ese
+  /// caso (401) la API crea el perfil de cliente con los datos del ID token y
+  /// repetimos la consulta con el token refrescado, que ya trae el claim.
+  Future<Perfil> _obtenerPerfil(User usuario, String token) async {
+    try {
+      return await _perfilService.obtenerYo(token);
+    } on ApiException catch (error) {
+      if (error.statusCode != 401) rethrow;
+      final esGoogle = usuario.providerData.any(
+        (proveedor) => proveedor.providerId == 'google.com',
+      );
+      if (!esGoogle) rethrow;
+
+      await _perfilService.asegurarPerfilGoogle(token);
+      final renovado = await usuario.getIdToken(true) ?? token;
+      return _perfilService.obtenerYo(renovado);
     }
   }
 
@@ -253,9 +271,7 @@ class _AuthGateState extends State<AuthGate> {
         );
 
       case _EstadoSesion.errorRed:
-        return _PantallaErrorRed(
-          onReintentar: _reintentar,
-        );
+        return _PantallaErrorRed(onReintentar: _reintentar);
     }
   }
 
@@ -275,7 +291,6 @@ class _AuthGateState extends State<AuthGate> {
   /// Firebase, tanto aquí como desde la fila «Cerrar sesión» de Mi perfil.
   Future<void> _cerrarSesion() => _authService.cerrarSesion();
 }
-
 
 class _PantallaCarga extends StatelessWidget {
   const _PantallaCarga();

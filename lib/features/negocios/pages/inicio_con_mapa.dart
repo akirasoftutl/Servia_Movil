@@ -30,8 +30,8 @@ const _altoTarjeta = 108.0;
 /// Alto aproximado de la búsqueda mientras no se ha medido.
 const _encabezadoEstimado = 130.0;
 
-/// Inicio con el mapa de negocios cercanos de fondo y el contenido del inicio
-/// (búsqueda, categorías, secciones) en una hoja que se desliza encima.
+/// Pestaña Buscar: mapa de negocios cercanos de fondo y la lista con su
+/// búsqueda, categorías y secciones en una hoja que se desliza encima.
 ///
 /// La posición del cliente vive solo en memoria mientras se muestra el mapa:
 /// no se guarda ni se registra. Sin permiso, sin posición o sin negocios con

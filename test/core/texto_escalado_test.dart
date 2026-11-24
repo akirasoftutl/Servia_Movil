@@ -107,7 +107,8 @@ class _CercanosMapaFalso extends NegociosServiceFalso {
     NegocioCercano(
       negocio: NegocioResumen(
         id: 'n1',
-        nombre: 'Estética Lupita: cortes, color y peinados para toda la familia',
+        nombre:
+            'Estética Lupita: cortes, color y peinados para toda la familia',
         categoriaId: 'cabello',
         aceptaReservas: true,
         ubicacion: UbicacionNegocio(lat: 21.125, lng: -101.681),
@@ -268,42 +269,44 @@ void main() {
           null,
         ),
         'inicio con mapa y hoja': (
-          () => Scaffold(body: InicioConMapa(
-            negociosService: _CercanosMapaFalso(),
-            proveedorUbicacion: () async => (lat: 21.12, lng: -101.68),
-            constructorMapa: (_, datos) => ColoredBox(
-              color: const Color(0xFFE5E7EB),
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Wrap(
-                    spacing: 8,
-                    children: [
-                      for (final pin in datos.pines)
-                        Semantics(
-                          button: true,
-                          label: pin.descripcionSemantica,
-                          child: InkWell(
-                            onTap: () => datos.onSeleccionarPin(pin.id),
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(
-                                minWidth: 48,
-                                minHeight: 48,
-                              ),
-                              child: Center(
-                                widthFactor: 1,
-                                child: Text(pin.etiqueta),
+          () => Scaffold(
+            body: InicioConMapa(
+              negociosService: _CercanosMapaFalso(),
+              proveedorUbicacion: () async => (lat: 21.12, lng: -101.68),
+              constructorMapa: (_, datos) => ColoredBox(
+                color: const Color(0xFFE5E7EB),
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Wrap(
+                      spacing: 8,
+                      children: [
+                        for (final pin in datos.pines)
+                          Semantics(
+                            button: true,
+                            label: pin.descripcionSemantica,
+                            child: InkWell(
+                              onTap: () => datos.onSeleccionarPin(pin.id),
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  minWidth: 48,
+                                  minHeight: 48,
+                                ),
+                                child: Center(
+                                  widthFactor: 1,
+                                  child: Text(pin.etiqueta),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          )),
+          ),
           (t) async {
             // La tarjeta flotante del pin tocado también debe caber.
             await t.tap(find.text('0.8 km'));
@@ -612,8 +615,9 @@ void main() {
         'Mi perfil con el diálogo de eliminar la cuenta': (
           () => _miPerfilConFoto(),
           (t) async {
-            final eliminar = find.text('Eliminar mi cuenta');
+            final eliminar = find.byKey(const Key('boton-eliminar-cuenta'));
             await t.scrollUntilVisible(eliminar, 300);
+            await t.ensureVisible(eliminar);
             await t.tap(eliminar);
             await t.pumpAndSettle();
           },
@@ -623,8 +627,7 @@ void main() {
             authService: SesionPerfilFalsa([]),
             perfilClienteService: PerfilClienteFalso([])
               ..errorAlEliminar = CuentaConReservasException(
-                mensaje:
-                    'No puedes eliminar tu cuenta porque tienes reservas pendientes o confirmadas: SRV-AAAAAA, SRV-BBBBBB. Cancélalas o espera a que terminen.',
+                mensaje: 'No puedes eliminar tu cuenta porque tienes reservas pendientes o confirmadas: SRV-AAAAAA, SRV-BBBBBB. Cancélalas o espera a que terminen.',
                 total: 2,
                 reservas: [
                   ReservaPorAtender(
@@ -643,8 +646,18 @@ void main() {
               ),
           ),
           (t) async {
-            final eliminar = find.text('Eliminar mi cuenta');
-            await t.scrollUntilVisible(eliminar, 300);
+            final eliminar = find.byKey(const Key('boton-eliminar-cuenta'));
+            // Con 2x el scrollUntilVisible se queda corto: ir al final de la
+            // lista deja «Eliminar mi cuenta» a la vista antes de tocarlo.
+            final control = t
+                .widget<Scrollable>(
+                  find
+                      .ancestor(of: eliminar, matching: find.byType(Scrollable))
+                      .first,
+                )
+                .controller!;
+            control.jumpTo(control.position.maxScrollExtent);
+            await t.pumpAndSettle();
             await t.tap(eliminar);
             await t.pumpAndSettle();
             await t.enterText(

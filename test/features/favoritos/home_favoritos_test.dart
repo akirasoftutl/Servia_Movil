@@ -48,6 +48,9 @@ void main() {
     tester,
   ) async {
     final rutas = await montarInicio(tester, conSesion: true);
+    // En el rediseño los accesos rápidos están en la pestaña «Perfil».
+    await tester.tap(find.text('Perfil'));
+    await tester.pumpAndSettle();
     expect(find.byIcon(Icons.favorite_border), findsOneWidget);
 
     await tester.tap(find.byTooltip(MensajesFavoritos.titulo));

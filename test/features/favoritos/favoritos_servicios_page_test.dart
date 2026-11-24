@@ -59,7 +59,8 @@ void main() {
     api.de('ana').add(negocioFavorito('b1', nombre: 'Spa Aurora'));
     await abrir(tester, negocios, servicios);
 
-    expect(find.byType(TabBar), findsOneWidget);
+    expect(find.text(MensajesFavoritos.tabNegocios), findsOneWidget);
+    expect(find.text(MensajesFavoritos.tabServicios), findsOneWidget);
     expect(find.text('Negocios'), findsOneWidget);
     expect(find.text('Servicios'), findsOneWidget);
     // Abre en Negocios, como antes.

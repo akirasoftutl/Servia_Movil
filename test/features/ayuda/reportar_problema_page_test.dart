@@ -30,6 +30,10 @@ Future<SesionFalsa> abrir(
   SesionFalsa? sesion,
 }) async {
   final auth = sesion ?? SesionFalsa();
+  // El formulario y «Mis reportes enviados» caben juntos en este viewport.
+  tester.view.physicalSize = const Size(800, 1400);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
   await tester.pumpWidget(
     MaterialApp(
       home: ReportarProblemaPage(authService: auth, soporteService: soporte),
@@ -219,7 +223,7 @@ void main() {
       await tester.ensureVisible(botonEnviar);
       await tester.tap(botonEnviar);
       await tester.pump();
-      expect(tester.widget<FilledButton>(botonEnviar).onPressed, isNull);
+      expect(tester.widget<ElevatedButton>(botonEnviar).onPressed, isNull);
       expect(find.text('Enviando...'), findsOneWidget);
       await tester.tap(botonEnviar, warnIfMissed: false);
       await tester.pump();
@@ -227,7 +231,7 @@ void main() {
 
       soporte.esperaEnvio!.complete();
       await tester.pumpAndSettle();
-      expect(tester.widget<FilledButton>(botonEnviar).onPressed, isNotNull);
+      expect(tester.widget<ElevatedButton>(botonEnviar).onPressed, isNotNull);
       expect(find.text(exito), findsOneWidget);
       expect(soporte.enviados.length, 1);
     });
@@ -366,7 +370,7 @@ void main() {
         tester.widget<TextFormField>(campoDescripcion).controller!.text,
         descripcionValida,
       );
-      expect(tester.widget<FilledButton>(botonEnviar).onPressed, isNotNull);
+      expect(tester.widget<ElevatedButton>(botonEnviar).onPressed, isNotNull);
       expect(auth.cierres, 0);
       await enviar(tester);
       expect(soporte.enviados.length, 2);
@@ -477,7 +481,7 @@ void main() {
       await tester.pumpAndSettle();
       await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
       await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
-      expect(find.byType(FilledButton), findsOneWidget);
+      expect(find.byType(ElevatedButton), findsOneWidget);
     });
   });
 }

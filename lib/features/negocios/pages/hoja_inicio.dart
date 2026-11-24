@@ -11,7 +11,7 @@ const _agarradera = Color(0xFFD1D5DB);
 const _velocidadDecisiva = 400.0;
 const _duracionAjuste = Duration(milliseconds: 260);
 
-/// Hoja del inicio que se desliza sobre el mapa, como en Uber.
+/// Hoja de la pestaña Buscar que se desliza sobre el mapa, como en Uber.
 ///
 /// [progreso] vale 1 con la hoja abierta (deja ver una franja del mapa) y 0
 /// colapsada (solo el asa y la búsqueda). Se arrastra desde el asa, desde la

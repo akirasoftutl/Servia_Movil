@@ -375,7 +375,7 @@ void main() {
     });
   });
 
-  testWidgets('HomePage muestra el mapa y ya no tiene «Ver mapa»', (
+  testWidgets('HomePage muestra el mapa en «Buscar» y no en «Inicio»', (
     tester,
   ) async {
     await _preparar(tester);
@@ -390,6 +390,9 @@ void main() {
         ),
       ),
     );
+    await tester.pumpAndSettle();
+    expect(_mapa, findsNothing);
+    await tester.tap(find.text('Buscar').last);
     await tester.pumpAndSettle();
     expect(_mapa, findsOneWidget);
     expect(_asa, findsOneWidget);

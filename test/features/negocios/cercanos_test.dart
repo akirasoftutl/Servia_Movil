@@ -79,8 +79,12 @@ NegociosService servicio({
 }) => NegociosService(
   api: ApiClient(
     client: MockClient((peticion) async {
-      if (peticion.url.path == '/negocios/cercanos') return cercanos(peticion);
-      if (peticion.url.path == '/categorias') return http.Response(cuerpoCercanos([]), 200);
+      if (peticion.url.path == '/negocios/cercanos') {
+        return cercanos(peticion);
+      }
+      if (peticion.url.path == '/categorias') {
+        return http.Response(cuerpoCercanos([]), 200);
+      }
       if (peticion.url.path == '/negocios') {
         return http.Response('{"items":[],"siguiente":null}', 200);
       }
@@ -111,6 +115,13 @@ Future<void> inicio(
   await tester.pumpAndSettle();
 }
 
+/// El mapa vive en «Buscar»; «Inicio» sigue siendo la portada de siempre.
+Future<void> abrirBuscar(WidgetTester tester) async {
+  // El último «Buscar» es el de la barra inferior; el otro es el campo de búsqueda.
+  await tester.tap(find.text('Buscar').last);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   testWidgets('concedido: radio, orden, cinco pines, distancia y perfil', (
     tester,
@@ -135,6 +146,7 @@ void main() {
       },
     );
     await inicio(tester, ubicacion, api);
+    await abrirBuscar(tester);
     expect(consultas.single.method, 'GET');
     expect(consultas.single.url.queryParameters, {
       'lat': '21.1',
@@ -219,6 +231,7 @@ void main() {
         },
       ),
     );
+    await abrirBuscar(tester);
     expect(find.text(MensajesNegocios.errorCercanos), findsOneWidget);
     await tester.tap(find.text(MensajesNegocios.reintentar));
     await tester.pumpAndSettle();
@@ -228,7 +241,9 @@ void main() {
     expect(ubicacion.posiciones, 2);
   });
 
-  testWidgets('muestra aviso de carga mientras responde la API', (tester) async {
+  testWidgets('muestra aviso de carga mientras responde la API', (
+    tester,
+  ) async {
     final pendiente = Completer<http.Response>();
     await tester.pumpWidget(
       MaterialApp(
@@ -241,6 +256,9 @@ void main() {
         ),
       ),
     );
+    await tester.pump();
+    await tester.tap(find.text('Buscar').last);
+    await tester.pump();
     await tester.pump();
     expect(find.text(MensajesNegocios.buscandoCercanos), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsWidgets);

@@ -6,6 +6,7 @@ import '../../negocios/data/negocios_service.dart';
 import '../../../core/network/api_exception.dart';
 import '../../reservas/mensajes.dart';
 import '../data/auth_service.dart';
+import '../data/perfil.dart';
 import '../data/perfil_service.dart';
 import '../data/registro_cliente_service.dart';
 import '../mensajes.dart';
@@ -109,8 +110,7 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      // TODO: Conecta aquí tu método de AuthService, por ejemplo:
-      // await _authService.iniciarSesionConGoogle();
+      await _authService.iniciarSesionConGoogle();
       if (!mounted) return;
       if (widget.regresarAlIniciar) {
         await _regresarALaReserva();
@@ -134,7 +134,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final token = await _authService.usuarioActual?.getIdToken();
       if (token == null) throw const ApiException(401, 'Sin sesión.');
-      final perfil = await _perfilService.obtenerYo(token);
+      final perfil = await _obtenerPerfil(token);
       if (!mounted) return;
       if (perfil.esCliente) {
         setState(() => _cargando = false);
@@ -160,6 +160,26 @@ class _LoginPageState extends State<LoginPage> {
       _cargando = false;
       _error = rechazo;
     });
+  }
+
+  /// Una cuenta nueva de Google no tiene perfil en la API todavía. Si `/auth/yo`
+  /// responde 401, se lo crea y se repite la consulta con el token refrescado
+  /// (el claim `tipo` recién asignado no venía en el token anterior).
+  Future<Perfil> _obtenerPerfil(String token) async {
+    try {
+      return await _perfilService.obtenerYo(token);
+    } on ApiException catch (error) {
+      if (error.statusCode != 401) rethrow;
+      final usuario = _authService.usuarioActual;
+      final esGoogle =
+          usuario?.providerData.any((p) => p.providerId == 'google.com') ??
+          false;
+      if (!esGoogle) rethrow;
+
+      await _perfilService.asegurarPerfilGoogle(token);
+      final renovado = await usuario?.getIdToken(true) ?? token;
+      return _perfilService.obtenerYo(renovado);
+    }
   }
 
   Future<void> _abrirRecuperacion() async {

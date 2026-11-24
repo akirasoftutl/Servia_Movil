@@ -31,12 +31,17 @@ class ListaNegocios extends StatefulWidget {
   const ListaNegocios({
     super.key,
     this.negociosService,
+    this.seccionFinal,
     this.enHoja = false,
     this.claveEncabezado,
   });
   final NegociosService? negociosService;
 
-  /// Dentro de la hoja deslizable del inicio: sin el hueco superior que deja
+  /// Sección opcional que se muestra al final de la portada, debajo de
+  /// «Lugares cercanos». La pestaña Inicio la usa para «Cerca de ti».
+  final Widget? seccionFinal;
+
+  /// Dentro de la hoja deslizable de «Buscar»: sin el hueco superior que deja
   /// sitio a los iconos flotantes, porque la hoja ya empieza bajo el mapa.
   final bool enHoja;
 
@@ -105,8 +110,8 @@ class _ListaNegociosState extends State<ListaNegocios> {
     _espera = Timer(_esperaBusqueda, _reiniciar);
   }
 
-  /// [destacados] es falso solo al cambiar el orden, que no los afecta. Con
-  /// una búsqueda o una categoría la sección está oculta: no se consulta.
+  /// Con una búsqueda o una categoría la sección de destacados está oculta:
+  /// no se consulta.
   void _reiniciar({bool destacados = true}) {
     _espera?.cancel();
     setState(() {
@@ -125,6 +130,14 @@ class _ListaNegociosState extends State<ListaNegocios> {
     }
   }
 
+  /// El cursor solo vale con el orden con el que se obtuvo: al cambiarlo se
+  /// reinicia la lista, y `_version` descarta lo que siga en vuelo.
+  void _elegirOrden(OrdenNegocios orden) {
+    if (orden == _orden) return;
+    setState(() => _orden = orden);
+    _reiniciar(destacados: false);
+  }
+
   void _limpiarBusqueda() {
     _texto.clear();
     _reiniciar();
@@ -133,14 +146,6 @@ class _ListaNegociosState extends State<ListaNegocios> {
   void _elegirCategoria(String? id) {
     setState(() => _categoriaId = id);
     _reiniciar();
-  }
-
-  /// El cursor solo vale con el orden con el que se obtuvo: al cambiarlo se
-  /// reinicia la lista, y `_version` descarta lo que siga en vuelo.
-  void _elegirOrden(OrdenNegocios orden) {
-    if (orden == _orden) return;
-    setState(() => _orden = orden);
-    _reiniciar(destacados: false);
   }
 
   void _alDesplazarse() {
@@ -475,6 +480,11 @@ class _ListaNegociosState extends State<ListaNegocios> {
                 ],
               ),
             ),
+
+            if (widget.seccionFinal != null) ...[
+              const SizedBox(height: Espacios.m),
+              widget.seccionFinal!,
+            ],
           ],
         );
     }
@@ -540,7 +550,7 @@ class _EncabezadoExploracion extends StatelessWidget {
               SelectorOrdenNegocios(orden: orden, onOrden: onOrden),
             ],
           ),
-          const SizedBox(height: Espacios.s),
+          const SizedBox(height: 20),
 
           // Barra de búsqueda tipo píldora flotante
           Container(
@@ -559,6 +569,7 @@ class _EncabezadoExploracion extends StatelessWidget {
               ],
             ),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const Icon(
                   Icons.search_rounded,
@@ -567,14 +578,14 @@ class _EncabezadoExploracion extends StatelessWidget {
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  // Área táctil de al menos 48 dp, también con texto escalado.
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(minHeight: 48),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
                     child: TextField(
                       controller: controller,
                       onChanged: onChanged,
                       onSubmitted: (_) => onBuscar(),
                       textInputAction: TextInputAction.search,
+                      textAlignVertical: TextAlignVertical.center,
                       style: const TextStyle(
                         fontSize: 14,
                         color: Color(0xFF111827),
@@ -589,8 +600,7 @@ class _EncabezadoExploracion extends StatelessWidget {
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.zero,
+                        isCollapsed: true,
                       ),
                     ),
                   ),

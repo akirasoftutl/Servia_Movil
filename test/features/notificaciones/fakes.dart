@@ -14,17 +14,19 @@ class NotificacionesFalso extends NotificacionesService {
     List<Map<String, String>>? registros,
     List<Map<String, String>>? bajas,
     List<String>? marcadas,
-  })  : paginas = paginas ?? {
-          null: PaginaAvisos(
-            items: const [],
-            noLeidas: noLeidas,
-            siguiente: null,
-          ),
-        },
-        erroresPorPagina = erroresPorPagina ?? const {},
-        registros = registros ?? [],
-        bajas = bajas ?? [],
-        marcadas = marcadas ?? [];
+  }) : paginas =
+           paginas ??
+           {
+             null: PaginaAvisos(
+               items: const [],
+               noLeidas: noLeidas,
+               siguiente: null,
+             ),
+           },
+       erroresPorPagina = erroresPorPagina ?? const {},
+       registros = registros ?? [],
+       bajas = bajas ?? [],
+       marcadas = marcadas ?? [];
 
   /// Clave: cursor de la petición (`null` para la primera página).
   final Map<String?, PaginaAvisos> paginas;

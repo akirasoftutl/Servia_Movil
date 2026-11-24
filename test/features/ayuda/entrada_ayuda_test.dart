@@ -27,6 +27,9 @@ void main() {
       addTearDown(tester.view.reset);
       await tester.pumpWidget(inicio(conSesion: true));
       await tester.pumpAndSettle();
+      // En el rediseño los accesos rápidos viven en la pestaña «Perfil».
+      await tester.tap(find.text('Perfil'));
+      await tester.pumpAndSettle();
       final icono = find.byTooltip('Ayuda');
       expect(icono, findsOneWidget);
       expect(
@@ -39,9 +42,11 @@ void main() {
       expect(find.byType(AyudaPage), findsOneWidget);
       expect(find.text('Preguntas frecuentes'), findsOneWidget);
 
-      await tester.pageBack();
+      await tester.tap(find.byIcon(Icons.arrow_back_rounded));
       await tester.pumpAndSettle();
       expect(find.byType(AyudaPage), findsNothing);
+      await tester.tap(find.text('Inicio'));
+      await tester.pumpAndSettle();
       expect(find.text('Negocio inicio'), findsOneWidget);
     },
   );
