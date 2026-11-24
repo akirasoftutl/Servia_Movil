@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/tokens.dart';
 import '../data/negocio_resumen.dart';
 import '../data/negocios_service.dart';
 import '../mensajes.dart';
@@ -17,14 +18,19 @@ const _portada = 108.0;
 
 /// Tarjeta de «Cerca de ti»: portada a la izquierda como la tarjeta
 /// horizontal de la lista, con la distancia en lugar de la categoría.
+///
+/// [accion] va a la derecha (el corazón de «Mis favoritos»). Sin [categoria]
+/// no se muestra su fila.
 class TarjetaNegocio extends StatelessWidget {
   const TarjetaNegocio({
     super.key,
     required this.negocio,
     required this.categoria,
+    this.accion,
   });
   final NegocioResumen negocio;
   final String categoria;
+  final Widget? accion;
 
   @override
   Widget build(BuildContext context) {
@@ -81,26 +87,28 @@ class TarjetaNegocio extends StatelessWidget {
                               color: _texto,
                             ),
                           ),
-                          const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.place_outlined,
-                                size: 15,
-                                color: _textoSecundario,
-                              ),
-                              const SizedBox(width: 3),
-                              Expanded(
-                                child: Text(
-                                  categoria,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: _textoSecundario,
+                          if (categoria.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.place_outlined,
+                                  size: 15,
+                                  color: _textoSecundario,
+                                ),
+                                const SizedBox(width: 3),
+                                Expanded(
+                                  child: Text(
+                                    categoria,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: _textoSecundario,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
+                          ],
                           const SizedBox(height: 6),
                           Text(
                             negocio.aceptaReservas
@@ -118,6 +126,14 @@ class TarjetaNegocio extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (accion != null)
+                    Align(
+                      alignment: Alignment.topCenter,
+                      child: Padding(
+                        padding: const EdgeInsets.all(Espacios.xs),
+                        child: accion,
+                      ),
+                    ),
                 ],
               ),
             ),
