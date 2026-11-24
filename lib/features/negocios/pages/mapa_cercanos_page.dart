@@ -338,6 +338,8 @@ class _ElementoListaMapa extends StatelessWidget {
   }
 }
 
+typedef _ClaveIconoPin = ({String etiqueta, bool seleccionado, double escala});
+
 /// Implementación real con el SDK de Google Maps (`google_maps_flutter`).
 class _VistaGoogleMap extends StatefulWidget {
   const _VistaGoogleMap({required this.datos});
@@ -349,28 +351,54 @@ class _VistaGoogleMap extends StatefulWidget {
 }
 
 class _VistaGoogleMapState extends State<_VistaGoogleMap> {
-  final Map<String, BitmapDescriptor> _iconos = {};
+  final Map<_ClaveIconoPin, BitmapDescriptor> _iconos = {};
+  final Map<_ClaveIconoPin, Future<BitmapDescriptor>> _enCurso = {};
   BitmapDescriptor? _iconoCliente;
+  Future<BitmapDescriptor>? _clienteEnCurso;
   GoogleMapController? _controller;
-  double? _pixelRatio;
+  double? _escala;
+  int _generacion = 0;
+  bool _desechado = false;
+  bool _actualizacionPendiente = false;
+
+  double _normalizarEscala(double ratio) =>
+      ratio.isFinite ? ratio.clamp(1.0, 4.0) : 1.0;
+
+  void _limpiarCacheIconos() {
+    _iconos.clear();
+    _enCurso.clear();
+    _iconoCliente = null;
+    _clienteEnCurso = null;
+  }
+
+  void _programarActualizacion() {
+    if (_desechado || _actualizacionPendiente) return;
+    _actualizacionPendiente = true;
+    scheduleMicrotask(() {
+      _actualizacionPendiente = false;
+      if (_desechado || !mounted) return;
+      setState(() {});
+    });
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final ratio = MediaQuery.devicePixelRatioOf(context);
-    if (_pixelRatio != ratio) {
-      _pixelRatio = ratio;
-      _iconos.clear();
-      _iconoCliente = null;
-      _cargarIconos(ratio);
+    final escala = _normalizarEscala(MediaQuery.devicePixelRatioOf(context));
+    if (_escala != escala) {
+      _escala = escala;
+      _generacion++;
+      _limpiarCacheIconos();
+      _cargarIconos(escala);
     }
   }
 
   @override
   void didUpdateWidget(covariant _VistaGoogleMap oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final ratio = _pixelRatio ?? MediaQuery.devicePixelRatioOf(context);
-    _cargarIconos(ratio);
+    final escala =
+        _escala ?? _normalizarEscala(MediaQuery.devicePixelRatioOf(context));
+    _cargarIconos(escala);
     final nuevoId = widget.datos.seleccionadoId;
     if (nuevoId != null && nuevoId != oldWidget.datos.seleccionadoId) {
       for (final pin in widget.datos.pines) {
@@ -388,38 +416,87 @@ class _VistaGoogleMapState extends State<_VistaGoogleMap> {
 
   @override
   void dispose() {
+    _desechado = true;
+    _generacion++;
+    _limpiarCacheIconos();
     _controller?.dispose();
+    _controller = null;
     super.dispose();
   }
 
-  String _claveIcono(PinNegocioMapa pin) =>
-      '${pin.etiqueta}|${pin.seleccionado}';
+  _ClaveIconoPin _claveIcono(String etiqueta, bool seleccionado, double escala) =>
+      (etiqueta: etiqueta, seleccionado: seleccionado, escala: escala);
 
-  Future<void> _cargarIconos(double ratio) async {
-    var cambio = false;
-    if (_iconoCliente == null) {
-      final icono = await crearMarcadorCliente(pixelRatio: ratio);
-      if (!mounted || _pixelRatio != ratio) return;
-      _iconoCliente = icono;
-      cambio = true;
-    }
-    for (final pin in widget.datos.pines) {
-      final clave = _claveIcono(pin);
-      if (_iconos.containsKey(clave)) continue;
-      final icono = await crearMarcadorDistancia(
-        etiqueta: pin.etiqueta,
-        seleccionado: pin.seleccionado,
-        pixelRatio: ratio,
+  void _podarCache(double escala, Set<String> etiquetasActivas) {
+    _iconos.removeWhere(
+      (clave, _) =>
+          clave.escala != escala || !etiquetasActivas.contains(clave.etiqueta),
+    );
+  }
+
+  void _cargarIconos(double escala) {
+    final generacion = _generacion;
+    final etiquetasActivas = {
+      for (final pin in widget.datos.pines) pin.etiqueta,
+    };
+    _podarCache(escala, etiquetasActivas);
+
+    if (_iconoCliente == null && _clienteEnCurso == null) {
+      final futuro = crearMarcadorCliente(pixelRatio: escala);
+      _clienteEnCurso = futuro;
+      unawaited(
+        futuro.then(
+          (icono) {
+            if (_generacion == generacion) _clienteEnCurso = null;
+            if (_desechado || !mounted || _generacion != generacion) return;
+            _iconoCliente = icono;
+            _programarActualizacion();
+          },
+          onError: (Object _) {
+            if (_generacion == generacion) _clienteEnCurso = null;
+          },
+        ),
       );
-      if (!mounted || _pixelRatio != ratio) return;
-      _iconos[clave] = icono;
-      cambio = true;
     }
-    if (cambio && mounted) setState(() {});
+
+    for (final pin in widget.datos.pines) {
+      _solicitarIconoPin(
+        _claveIcono(pin.etiqueta, pin.seleccionado, escala),
+        generacion,
+      );
+    }
+  }
+
+  void _solicitarIconoPin(_ClaveIconoPin clave, int generacion) {
+    if (_iconos.containsKey(clave) || _enCurso.containsKey(clave)) return;
+    final futuro = crearMarcadorDistancia(
+      etiqueta: clave.etiqueta,
+      seleccionado: clave.seleccionado,
+      pixelRatio: clave.escala,
+    );
+    _enCurso[clave] = futuro;
+    unawaited(
+      futuro.then(
+        (icono) {
+          if (_generacion == generacion) _enCurso.remove(clave);
+          if (_desechado || !mounted || _generacion != generacion) return;
+          final sigueActivo = widget.datos.pines.any(
+            (pin) => pin.etiqueta == clave.etiqueta,
+          );
+          if (!sigueActivo) return;
+          _iconos[clave] = icono;
+          _programarActualizacion();
+        },
+        onError: (Object _) {
+          if (_generacion == generacion) _enCurso.remove(clave);
+        },
+      ),
+    );
   }
 
   Set<Marker> _marcadores() {
     final pos = widget.datos.posicionCliente;
+    final escala = _escala;
     final marcadores = <Marker>{
       if (_iconoCliente case final iconoCliente?)
         Marker(
@@ -432,8 +509,9 @@ class _VistaGoogleMapState extends State<_VistaGoogleMap> {
           infoWindow: const InfoWindow(title: MensajesNegocios.tuUbicacion),
         ),
     };
+    if (escala == null) return marcadores;
     for (final pin in widget.datos.pines) {
-      final icono = _iconos[_claveIcono(pin)];
+      final icono = _iconos[_claveIcono(pin.etiqueta, pin.seleccionado, escala)];
       if (icono == null) continue;
       marcadores.add(
         Marker(
@@ -466,7 +544,13 @@ class _VistaGoogleMapState extends State<_VistaGoogleMap> {
       mapToolbarEnabled: false,
       zoomControlsEnabled: false,
       padding: EdgeInsets.only(bottom: MediaQuery.sizeOf(context).height * 0.36),
-      onMapCreated: (controller) => _controller = controller,
+      onMapCreated: (controller) {
+        if (_desechado) {
+          controller.dispose();
+          return;
+        }
+        _controller = controller;
+      },
     );
   }
 }
