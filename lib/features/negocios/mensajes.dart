@@ -46,6 +46,8 @@ class MensajesNegocios {
   static const servicioNoDisponible = 'Este servicio ya no está disponible.';
   static const reservar = 'Reservar';
   static const detalleServicio = 'Detalle del servicio';
+  static String imagenDeServicio(int posicion, int total, String servicio) =>
+      'Imagen $posicion de $total de $servicio';
   static const horario = 'Horario de atención';
   static const galeria = 'Galería';
 

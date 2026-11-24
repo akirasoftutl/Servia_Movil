@@ -304,6 +304,7 @@ class _ContenidoPerfil extends StatelessWidget {
                   negocioNombre: negocio.nombre,
                   aceptaReservas: negocio.aceptaReservas,
                   service: service,
+                  proveedorImagenes: proveedorFotos,
                 ),
               ],
             ),

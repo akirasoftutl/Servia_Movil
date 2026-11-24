@@ -26,6 +26,10 @@ class FotosNegocio {
     );
   }
 
+  /// Lista de fotos `[{id, url}]`; lo malformado se ignora (la usan las
+  /// imágenes de cada servicio, HU-C32).
+  static List<FotoNegocio> lista(Object? valor) => _galeria(valor);
+
   static FotoNegocio? _foto(Object? valor) {
     if (valor is! Map) return null;
     final url = valor['url'];

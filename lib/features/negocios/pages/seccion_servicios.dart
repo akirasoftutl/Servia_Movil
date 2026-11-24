@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/tokens.dart';
 import '../../../core/widgets/estados.dart';
 import '../data/negocios_service.dart';
 import '../data/servicio.dart';
 import '../formatos.dart';
 import '../mensajes.dart';
 import 'detalle_servicio_page.dart';
+import 'fotos_negocio.dart';
+import 'imagenes_servicio.dart';
 
 enum _EstadoServicios { cargando, error, vacio, listo }
 
@@ -16,8 +19,10 @@ class SeccionServicios extends StatefulWidget {
     required this.negocioNombre,
     required this.aceptaReservas,
     required this.service,
+    this.proveedorImagenes = NetworkImage.new,
   });
 
+  final ProveedorImagenNegocio proveedorImagenes;
   final String negocioId;
   final String negocioNombre;
   final bool aceptaReservas;
@@ -71,6 +76,7 @@ class _SeccionServiciosState extends State<SeccionServicios> {
           aceptaReservas: widget.aceptaReservas,
           negocioNombre: widget.negocioNombre,
           negociosService: widget.service,
+          proveedorImagenes: widget.proveedorImagenes,
         ),
       ),
     );
@@ -108,6 +114,7 @@ class _SeccionServiciosState extends State<SeccionServicios> {
               _TarjetaServicio(
                 servicio: servicios[i],
                 aceptaReservas: widget.aceptaReservas,
+                proveedorImagenes: widget.proveedorImagenes,
                 onAbrir: () => _abrirServicio(servicios[i]),
               ),
             ],
@@ -145,9 +152,11 @@ class _TarjetaServicio extends StatelessWidget {
   const _TarjetaServicio({
     required this.servicio,
     required this.aceptaReservas,
+    required this.proveedorImagenes,
     required this.onAbrir,
   });
 
+  final ProveedorImagenNegocio proveedorImagenes;
   final Servicio servicio;
   final bool aceptaReservas;
   final VoidCallback onAbrir;
@@ -172,6 +181,16 @@ class _TarjetaServicio extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              // Miniatura de la primera imagen (HU-C32); sin imágenes no hay hueco
+              if (servicio.imagenes.isNotEmpty &&
+                  MiniaturaServicio.cabe(context)) ...[
+                MiniaturaServicio(
+                  servicioId: servicio.id,
+                  imagen: servicio.imagenes.first,
+                  proveedor: proveedorImagenes,
+                ),
+                const SizedBox(width: Espacios.l),
+              ],
               // Información izquierda: Título, duración y precio
               Expanded(
                 child: Column(
