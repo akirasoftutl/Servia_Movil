@@ -12,6 +12,7 @@ import 'hoja_inicio.dart';
 import 'lista_negocios_page.dart';
 import 'mapa_cercanos.dart';
 import 'marcador_mapa.dart';
+import 'tarjeta_negocio.dart';
 
 // Literales del rediseño ya usados en «Cerca de ti» y en las tarjetas.
 const _margen = 20.0;
@@ -22,6 +23,9 @@ const _estiloMensaje = TextStyle(fontSize: 14, color: Color(0xFF6B7280));
 
 /// Parte del alto que el mapa deja a la vista con la hoja abierta.
 const _fraccionMapa = 0.36;
+
+/// Alto mínimo de la tarjeta flotante (el de la portada de la tarjeta).
+const _altoTarjeta = 108.0;
 
 /// Alto aproximado de la búsqueda mientras no se ha medido.
 const _encabezadoEstimado = 130.0;
@@ -159,6 +163,13 @@ class _InicioConMapaState extends State<InicioConMapa>
         ),
   ];
 
+  NegocioCercano? get _seleccionado {
+    for (final cercano in _negocios) {
+      if (cercano.negocio.id == _seleccionadoId) return cercano;
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback(_medirEncabezado);
@@ -168,6 +179,7 @@ class _InicioConMapaState extends State<InicioConMapa>
         posicion != null &&
         (_cargando || _error || _negocios.isEmpty || pines.isNotEmpty);
     final margenSuperior = MediaQuery.paddingOf(context).top;
+    final seleccionado = conMapa ? _seleccionado : null;
 
     final hoja = MediaQuery.removePadding(
       context: context,
@@ -214,7 +226,13 @@ class _InicioConMapaState extends State<InicioConMapa>
                   onTocarMapa: _alTocarMapa,
                   padding: EdgeInsets.only(
                     top: margenSuperior + Medidas.tactil + Espacios.m,
-                    bottom: visibleEnReposo,
+                    // La tarjeta flotante también tapa el mapa: los pines se
+                    // centran en lo que queda libre.
+                    bottom:
+                        visibleEnReposo +
+                        (seleccionado == null
+                            ? 0
+                            : _altoTarjeta + Espacios.s * 2),
                   ),
                 ),
               ),
@@ -255,6 +273,13 @@ class _InicioConMapaState extends State<InicioConMapa>
                       bottom: visible + Espacios.s,
                       child: aviso,
                     ),
+                  if (seleccionado != null)
+                    Positioned(
+                      left: _margen,
+                      right: _margen,
+                      bottom: visible + Espacios.s,
+                      child: _TarjetaFlotante(cercano: seleccionado),
+                    ),
                   Positioned(
                     top: top,
                     left: 0,
@@ -267,6 +292,32 @@ class _InicioConMapaState extends State<InicioConMapa>
             },
           );
         },
+      ),
+    );
+  }
+}
+
+/// Datos del negocio del pin tocado: nombre, distancia y reservas. Tocarla
+/// abre el perfil; tocar el mapa vacío la cierra.
+class _TarjetaFlotante extends StatelessWidget {
+  const _TarjetaFlotante({required this.cercano});
+
+  final NegocioCercano cercano;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      container: true,
+      selected: true,
+      child: Material(
+        key: const Key('tarjeta-flotante'),
+        color: Colors.white,
+        elevation: 4,
+        borderRadius: BorderRadius.circular(Radios.l),
+        child: TarjetaNegocio(
+          negocio: cercano.negocio,
+          categoria: MensajesNegocios.distancia(cercano.distanciaKm),
+        ),
       ),
     );
   }
