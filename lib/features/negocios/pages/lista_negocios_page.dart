@@ -7,10 +7,12 @@ import '../../../core/widgets/estados.dart';
 import '../data/categoria.dart';
 import '../data/negocio_resumen.dart';
 import '../data/negocios_service.dart';
+import '../data/orden_negocios.dart';
 import '../mensajes.dart';
 import 'perfil_negocio_page.dart';
 import 'pie_lista.dart';
 import 'seccion_destacados.dart';
+import 'selector_orden_negocios.dart';
 
 enum _EstadoLista { cargando, error, lista }
 
@@ -26,12 +28,25 @@ class ListaNegociosPage extends StatelessWidget {
 }
 
 class ListaNegocios extends StatefulWidget {
-  const ListaNegocios({super.key, this.negociosService, this.seccionFinal});
+  const ListaNegocios({
+    super.key,
+    this.negociosService,
+    this.seccionFinal,
+    this.enHoja = false,
+    this.claveEncabezado,
+  });
   final NegociosService? negociosService;
 
   /// Sección opcional que se muestra al final de la portada, debajo de
   /// «Lugares cercanos». La pestaña Inicio la usa para «Cerca de ti».
   final Widget? seccionFinal;
+
+  /// Dentro de la hoja deslizable de «Buscar»: sin el hueco superior que deja
+  /// sitio a los iconos flotantes, porque la hoja ya empieza bajo el mapa.
+  final bool enHoja;
+
+  /// Permite a la hoja medir la búsqueda para dejarla a la vista al bajar.
+  final GlobalKey? claveEncabezado;
 
   @override
   State<ListaNegocios> createState() => _ListaNegociosState();
@@ -48,6 +63,7 @@ class _ListaNegociosState extends State<ListaNegocios> {
   Timer? _espera;
   String? _consulta;
   String? _categoriaId;
+  OrdenNegocios _orden = OrdenNegocios.nombre;
   int _version = 0;
   final _items = <NegocioResumen>[];
   List<Categoria> _categorias = [];
@@ -96,7 +112,7 @@ class _ListaNegociosState extends State<ListaNegocios> {
 
   /// Con una búsqueda o una categoría la sección de destacados está oculta:
   /// no se consulta.
-  void _reiniciar() {
+  void _reiniciar({bool destacados = true}) {
     _espera?.cancel();
     setState(() {
       _version++;
@@ -109,9 +125,17 @@ class _ListaNegociosState extends State<ListaNegocios> {
     });
     if (_scroll.hasClients) _scroll.jumpTo(0);
     _cargar();
-    if (_consulta == null && _categoriaId == null) {
+    if (destacados && _consulta == null && _categoriaId == null) {
       _cargarDestacados();
     }
+  }
+
+  /// El cursor solo vale con el orden con el que se obtuvo: al cambiarlo se
+  /// reinicia la lista, y `_version` descarta lo que siga en vuelo.
+  void _elegirOrden(OrdenNegocios orden) {
+    if (orden == _orden) return;
+    setState(() => _orden = orden);
+    _reiniciar(destacados: false);
   }
 
   void _limpiarBusqueda() {
@@ -197,6 +221,7 @@ class _ListaNegociosState extends State<ListaNegocios> {
         cursor: cursor,
         q: _consulta,
         categoriaId: _categoriaId,
+        orden: _orden,
       );
       if (!mounted || version != _version) return null;
       if (pagina.siguiente != null && pagina.siguiente == cursor) {
@@ -271,10 +296,14 @@ class _ListaNegociosState extends State<ListaNegocios> {
         child: Column(
           children: [
             _EncabezadoExploracion(
+              key: widget.claveEncabezado,
+              margenSuperior: widget.enHoja ? 0 : 30,
               controller: _texto,
               onChanged: _alEscribir,
               onLimpiar: _limpiarBusqueda,
               onBuscar: _reiniciar,
+              orden: _orden,
+              onOrden: _elegirOrden,
             ),
             Expanded(child: _contenido()),
           ],
@@ -465,42 +494,60 @@ class _ListaNegociosState extends State<ListaNegocios> {
 /// Encabezado superior: Ubicación actual + Barra de búsqueda tipo píldora con botón negro
 class _EncabezadoExploracion extends StatelessWidget {
   const _EncabezadoExploracion({
+    super.key,
+    required this.margenSuperior,
     required this.controller,
     required this.onChanged,
     required this.onLimpiar,
     required this.onBuscar,
+    required this.orden,
+    required this.onOrden,
   });
 
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
   final VoidCallback onLimpiar;
   final VoidCallback onBuscar;
+  final OrdenNegocios orden;
+  final ValueChanged<OrdenNegocios> onOrden;
+  final double margenSuperior;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 40, 20, 12),
+      padding: EdgeInsets.fromLTRB(20, margenSuperior, 20, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
-            mainAxisSize: MainAxisSize.min,
+          // En pantallas angostas o con texto grande el selector baja a su
+          // propia línea en lugar de desbordar.
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: Espacios.m,
+            runSpacing: Espacios.s,
             children: [
-              Icon(
-                Icons.location_on,
-                size: 18,
-                color: Color.fromARGB(255, 145, 90, 240),
+              const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.location_on,
+                    size: 18,
+                    color: Color.fromARGB(255, 145, 90, 240),
+                  ),
+                  SizedBox(width: 4),
+                  Text(
+                    'Ubicación actual',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                  SizedBox(width: 2),
+                ],
               ),
-              SizedBox(width: 4),
-              Text(
-                'Ubicación actual',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF111827),
-                ),
-              ),
-              SizedBox(width: 2),
+              SelectorOrdenNegocios(orden: orden, onOrden: onOrden),
             ],
           ),
           const SizedBox(height: 20),

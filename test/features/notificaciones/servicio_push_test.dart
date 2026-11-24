@@ -35,23 +35,25 @@ void main() {
       expect(avisos.registros, isEmpty);
     });
 
-    test('un fallo del permiso o del plugin no impide entrar a la app',
-        () async {
-      for (final acceso in [
-        () => MessagingFalso(errorPermiso: StateError('sin permiso')),
-        () => MessagingFalso(errorToken: StateError('sin token')),
-      ]) {
-        final mensajeria = acceso();
-        final avisos = NotificacionesFalso();
-        final push = ServicioPush(
-          messaging: mensajeria,
-          notificaciones: avisos,
-        );
-        addTearDown(push.dispose);
-        await push.registrar('token-api');
-        expect(avisos.registros, isEmpty);
-      }
-    });
+    test(
+      'un fallo del permiso o del plugin no impide entrar a la app',
+      () async {
+        for (final acceso in [
+          () => MessagingFalso(errorPermiso: StateError('sin permiso')),
+          () => MessagingFalso(errorToken: StateError('sin token')),
+        ]) {
+          final mensajeria = acceso();
+          final avisos = NotificacionesFalso();
+          final push = ServicioPush(
+            messaging: mensajeria,
+            notificaciones: avisos,
+          );
+          addTearDown(push.dispose);
+          await push.registrar('token-api');
+          expect(avisos.registros, isEmpty);
+        }
+      },
+    );
 
     test('registra de nuevo al renovar el token', () async {
       final mensajeria = MessagingFalso();
@@ -171,25 +173,28 @@ void main() {
         expect(avisos.tokensMarcadas, ['fresco-1']);
       });
 
-      test('al renovarse el token FCM se registra con un token fresco', () async {
-        final mensajeria = MessagingFalso();
-        final avisos = NotificacionesFalso();
-        final push = ServicioPush(
-          messaging: mensajeria,
-          notificaciones: avisos,
-        );
-        addTearDown(push.dispose);
-        push.configurar();
-        await push.registrar('token-viejo', proveedorToken: proveedor);
+      test(
+        'al renovarse el token FCM se registra con un token fresco',
+        () async {
+          final mensajeria = MessagingFalso();
+          final avisos = NotificacionesFalso();
+          final push = ServicioPush(
+            messaging: mensajeria,
+            notificaciones: avisos,
+          );
+          addTearDown(push.dispose);
+          push.configurar();
+          await push.registrar('token-viejo', proveedorToken: proveedor);
 
-        mensajeria.refrescos.add('nuevo-token');
-        await pumpEventQueue();
+          mensajeria.refrescos.add('nuevo-token');
+          await pumpEventQueue();
 
-        expect(avisos.registros.last, {
-          'token': 'fresco-1',
-          'tokenFcm': 'nuevo-token',
-        });
-      });
+          expect(avisos.registros.last, {
+            'token': 'fresco-1',
+            'tokenFcm': 'nuevo-token',
+          });
+        },
+      );
 
       test('si el proveedor falla usa el último token conocido', () async {
         final mensajeria = MessagingFalso();

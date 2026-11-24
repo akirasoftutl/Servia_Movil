@@ -142,7 +142,10 @@ class _DetalleServicioPageState extends State<DetalleServicioPage> {
 
   void _onVerticalDragUpdate(DragUpdateDetails details) {
     setState(() {
-      _desplazamientoY = (_desplazamientoY + details.delta.dy).clamp(0.0, 700.0);
+      _desplazamientoY = (_desplazamientoY + details.delta.dy).clamp(
+        0.0,
+        700.0,
+      );
     });
   }
 
@@ -414,24 +417,27 @@ class _ContenidoServicio extends StatelessWidget {
           ),
         ),
 
-       // Barra inferior fija con precio + duración a la izquierda y botón píldora a la derecha
+        // Barra inferior fija con precio + duración a la izquierda y botón píldora a la derecha
         Container(
           width: double.infinity,
           decoration: const BoxDecoration(
             color: Colors.white,
-            border: Border(
-              top: BorderSide(color: Color(0xFFF3F4F6), width: 1),
-            ),
+            border: Border(top: BorderSide(color: Color(0xFFF3F4F6), width: 1)),
           ),
           child: SafeArea(
             top: false,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
+              // El botón pasa a una segunda línea si el texto escalado no
+              // deja sitio; el precio nunca se reduce hasta lo ilegible.
+              child: Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 20,
+                runSpacing: 10,
                 children: [
-                  Flexible(
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(minWidth: 140),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
@@ -457,8 +463,7 @@ class _ContenidoServicio extends StatelessWidget {
                       ],
                     ),
                   ),
-                  if (aceptaReservas) ...[
-                    const SizedBox(width: 20),
+                  if (aceptaReservas)
                     ConstrainedBox(
                       constraints: const BoxConstraints(minHeight: 52),
                       child: ElevatedButton(
@@ -477,7 +482,6 @@ class _ContenidoServicio extends StatelessWidget {
                         child: const Text(MensajesNegocios.reservar),
                       ),
                     ),
-                  ],
                 ],
               ),
             ),

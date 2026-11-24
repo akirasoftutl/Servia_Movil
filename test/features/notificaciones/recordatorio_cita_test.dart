@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:servia/core/theme/colores_servia.dart';
-import 'package:servia/core/theme/tokens.dart';
 import 'package:servia/features/notificaciones/data/aviso.dart';
 import 'package:servia/features/notificaciones/data/servicio_push.dart';
 import 'package:servia/features/notificaciones/pages/avisos_page.dart';
@@ -49,7 +47,8 @@ Widget pagina(
   theme: tema,
   navigatorKey: push.navigatorKey,
   builder: (context, child) => MediaQuery(
-    data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(escala)),
+    data: MediaQuery.of(context)
+        .copyWith(textScaler: TextScaler.linear(escala)),
     child: child!,
   ),
   home: AvisosPage(
@@ -235,43 +234,48 @@ void main() {
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
 
-        // Tarjeta: la del tema (superficie, borde y radio de Servia).
-        final tarjeta = tester.widget<Card>(find.byType(Card).first);
-        expect(tarjeta.shape, isNull, reason: 'la forma sale del cardTheme');
-        expect(tarjeta.color, isNull, reason: 'el color sale del cardTheme');
-        expect(tema.cardTheme.color, ColoresServia.superficie);
-        expect(tema.cardTheme.shape, isA<RoundedRectangleBorder>());
-
-        // Título y cuerpo: estilos de la escala tipográfica del tema.
-        final titulo = tester.widget<Text>(find.text(tituloRecordatorio).first);
-        expect(titulo.style?.fontFamily, tema.textTheme.titleMedium?.fontFamily);
-        expect(titulo.style?.fontSize, tema.textTheme.titleMedium?.fontSize);
-        expect(titulo.style?.color, ColoresServia.texto);
-        final cuerpo = tester.widget<Text>(find.text(cuerpoRecordatorio).first);
-        expect(cuerpo.style?.fontSize, tema.textTheme.bodyMedium?.fontSize);
-        expect(cuerpo.style?.color, ColoresServia.textoSuave);
-
-        // Ícono: círculo de contenedor primario con el ícono sobre él.
-        final icono = tester.widget<Icon>(find.byIcon(Icons.alarm).first);
-        expect(icono.color, ColoresServia.enPrimarioContenedor);
-        final circulo = tester.widget<Container>(
+        // Tarjeta del rediseño: fondo violeta claro si no está leída, borde
+        // suave y esquinas redondeadas.
+        final tarjeta = tester.widget<Container>(
           find
               .ancestor(
-                of: find.byIcon(Icons.alarm).first,
+                of: find.text(tituloRecordatorio).first,
                 matching: find.byType(Container),
               )
               .first,
         );
-        expect(
-          (circulo.decoration as BoxDecoration).color,
-          ColoresServia.primarioContenedor,
-        );
-        expect(circulo.constraints?.minWidth, Medidas.tactil);
+        final caja = tarjeta.decoration as BoxDecoration;
+        expect(caja.color, const Color(0xFFFAF8FF));
+        expect(caja.borderRadius, BorderRadius.circular(18));
+        expect((caja.border! as Border).top.color, const Color(0xFFDCD2F5));
 
-        // Fondo de la pantalla: el del tema, no uno literal.
+        // Título y cuerpo con la jerarquía visual del rediseño.
+        final titulo = tester.widget<Text>(find.text(tituloRecordatorio).first);
+        expect(titulo.style?.fontSize, 15);
+        expect(titulo.style?.fontWeight, FontWeight.w700);
+        expect(titulo.style?.color, const Color(0xFF111827));
+        final cuerpo = tester.widget<Text>(find.text(cuerpoRecordatorio).first);
+        expect(cuerpo.style?.fontSize, 14);
+        expect(cuerpo.style?.color, const Color(0xFF4B5563));
+
+        // Ícono: cuadro violeta redondeado de 44 dp con el ícono encima.
+        final icono = tester.widget<Icon>(find.byIcon(Icons.alarm).first);
+        expect(icono.color, const Color(0xFF7C3AED));
+        final circulo = find
+            .ancestor(
+              of: find.byIcon(Icons.alarm).first,
+              matching: find.byType(Container),
+            )
+            .first;
+        final fondoIcono =
+            tester.widget<Container>(circulo).decoration as BoxDecoration;
+        expect(fondoIcono.color, const Color(0xFFF3E8FF));
+        expect(fondoIcono.borderRadius, BorderRadius.circular(12));
+        expect(tester.getSize(circulo), const Size(44, 44));
+
+        // Fondo blanco de la pantalla, como el resto del rediseño.
         final scaffold = tester.widget<Scaffold>(find.byType(Scaffold).first);
-        expect(scaffold.backgroundColor, isNull);
-        expect(tema.scaffoldBackgroundColor, ColoresServia.fondo);
+        expect(scaffold.backgroundColor, Colors.white);
 
         if (escala == 1.0) {
           await expectLater(tester, meetsGuideline(androidTapTargetGuideline));

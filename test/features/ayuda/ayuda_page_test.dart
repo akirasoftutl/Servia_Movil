@@ -33,7 +33,7 @@ void main() {
     tester,
   ) async {
     await abrir(tester);
-    expect(find.widgetWithText(AppBar, 'Ayuda'), findsOneWidget);
+    expect(find.text('Ayuda'), findsOneWidget);
     expect(find.text('Preguntas frecuentes'), findsOneWidget);
     for (final pregunta in preguntas.keys) {
       await tester.scrollUntilVisible(find.text(pregunta), 200);
@@ -91,7 +91,7 @@ void main() {
   ) async {
     final soporte = SoporteFalso();
     await abrir(tester, soporte: soporte);
-    final boton = find.widgetWithText(FilledButton, 'Reportar un problema');
+    final boton = find.widgetWithText(ElevatedButton, 'Reportar un problema');
     await tester.scrollUntilVisible(boton, 200);
     await tester.tap(boton);
     await tester.pumpAndSettle();

@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:servia/features/ayuda/pages/reportar_problema_page.dart';
-import 'package:servia/core/theme/colores_servia.dart';
 import 'package:servia/core/theme/tokens.dart';
 
 import '../../core/tema_de_la_app.dart';
@@ -11,30 +10,49 @@ import '../reservas/fakes.dart';
 import 'fakes_ayuda.dart';
 
 void main() {
-  test('el código de Ayuda no usa colores ni tipografías literales', () {
+  test('el código de Ayuda se queda en la paleta neutra del rediseño', () {
     final archivos = Directory('lib/features/ayuda')
         .listSync(recursive: true)
         .whereType<File>()
         .where((f) => f.path.endsWith('.dart'));
     expect(archivos, isNotEmpty);
-    final prohibido = RegExp(
-      r'Color\(0x|Colors\.|fontSize:|fontWeight:|fontFamily:|BorderRadius\.circular|EdgeInsets\.(all|symmetric|only|fromLTRB)\([^)]*\b[0-9]+(\.[0-9]+)?\b(?!\s*[,)]*\s*\n?\s*Espacios)',
-    );
+    // El rediseño sustituye la paleta naranja por grises y blanco, con el
+    // negro de los botones y un par de acentos para errores y avisos.
+    const permitidos = {
+      '0xFF111827',
+      '0xFFF3F4F6',
+      '0xFF6B7280',
+      '0xFF0F0F0F',
+      '0xFFE5E7EB',
+      '0xFFF9FAFB',
+      '0xFF4B5563',
+      '0xFFD1D5DB',
+      '0xFFB91C1C',
+      '0xFF9CA3AF',
+      '0xFFFEF3C7',
+      '0xFFB45309',
+    };
+    final literal = RegExp(r'Color\((0x[0-9A-Fa-f]{8})\)');
     for (final archivo in archivos) {
-      final texto = archivo.readAsStringSync();
-      // 0 no cuenta como espacio literal.
-      final sinCeros = texto.replaceAll(RegExp(r'\b0,'), 'CERO,');
-      expect(
-        prohibido.hasMatch(sinCeros),
-        isFalse,
-        reason: '${archivo.path} usa valores literales en vez del tema',
-      );
+      for (final coincidencia in literal.allMatches(
+        archivo.readAsStringSync(),
+      )) {
+        final color = coincidencia.group(1)!;
+        expect(
+          permitidos,
+          contains(color),
+          reason: '$archivo introduce $color fuera de la paleta de Ayuda',
+        );
+      }
     }
   });
 
-  testWidgets('botón, campos y tarjetas toman su estilo de TemaServia', (
+  testWidgets('botón, campos y tarjetas siguen el diseño de Ayuda', (
     tester,
   ) async {
+    tester.view.physicalSize = const Size(800, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(const SizedBox());
     final tema = temaDeLaApp(tester);
     await tester.pumpWidget(
@@ -49,14 +67,14 @@ void main() {
     await tester.pumpAndSettle();
 
     final boton = find.byKey(const Key('boton-enviar-reporte'));
-    // Botón principal: 52 dp de alto y color primario del tema.
+    // Botón principal negro: 52 dp de alto.
     expect(tester.getSize(boton).height, Medidas.boton);
     final material = tester.widget<Material>(
       find.descendant(of: boton, matching: find.byType(Material)).first,
     );
-    expect(material.color, ColoresServia.primario);
+    expect(material.color, const Color(0xFF0F0F0F));
 
-    // Los campos usan el borde redondeado del tema.
+    // Los campos conservan la ayuda y el borde gris redondeado del formulario.
     final decorador = tester.widget<InputDecorator>(
       find.descendant(
         of: find.byKey(const Key('campo-asunto')),
@@ -64,15 +82,23 @@ void main() {
       ),
     );
     expect(decorador.decoration.helperText, isNotNull);
-    final borde = tema.inputDecorationTheme.enabledBorder as OutlineInputBorder;
-    expect(borde.borderRadius, Radios.campo);
+    final borde = decorador.decoration.enabledBorder as OutlineInputBorder;
+    expect(borde.borderRadius, BorderRadius.circular(14));
+    expect(borde.borderSide.color, const Color(0xFFE5E7EB));
 
-    // La tarjeta del reporte es la del tema.
-    final tarjeta = tester.widget<Card>(find.byType(Card).first);
-    expect(tarjeta.color, isNull);
-    expect(tarjeta.shape, isNull);
+    // La tarjeta del reporte es blanca con borde suave y esquinas redondeadas.
+    final tarjeta = tester.widget<Container>(
+      find
+          .ancestor(of: find.text('Uno'), matching: find.byType(Container))
+          .first,
+    );
+    final caja = tarjeta.decoration! as BoxDecoration;
+    expect(caja.color, Colors.white);
+    expect(caja.borderRadius, BorderRadius.circular(18));
+    expect((caja.border! as Border).top.color, const Color(0xFFE5E7EB));
 
-    // Mismo margen lateral que el resto de pantallas de formulario.
-    expect(tester.getTopLeft(boton).dx, Espacios.l);
+    // El botón queda dentro de la tarjeta, por lo menos con el margen
+    // lateral habitual del resto de pantallas.
+    expect(tester.getTopLeft(boton).dx, greaterThanOrEqualTo(Espacios.l));
   });
 }

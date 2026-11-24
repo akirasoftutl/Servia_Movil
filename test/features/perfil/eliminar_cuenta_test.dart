@@ -109,8 +109,8 @@ void main() {
     api = PerfilClienteFalso(eventos);
   });
 
-  testWidgets('el botón está al final y abre el diálogo que explica qué se '
-      'elimina y qué se conserva', (tester) async {
+  testWidgets('el botón acompaña a «Soporte» y «Español» y abre el diálogo que '
+      'explica qué se elimina y qué se conserva', (tester) async {
     await _abrir(tester, sesion: sesion, api: api);
     await _abrirDialogo(tester);
     expect(find.text(MensajesPerfil.eliminarTitulo), findsOneWidget);

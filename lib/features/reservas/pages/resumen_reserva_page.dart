@@ -433,11 +433,16 @@ class _ResumenReservaPageState extends State<ResumenReservaPage> {
                 top: false,
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                  // Con texto grande el botón baja a una segunda línea en vez
+                  // de estrangular el precio hasta hacerlo interminable.
+                  child: Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 20,
+                    runSpacing: 10,
                     children: [
-                      Flexible(
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(minWidth: 140),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
@@ -464,7 +469,6 @@ class _ResumenReservaPageState extends State<ResumenReservaPage> {
                           ],
                         ),
                       ),
-                      const SizedBox(width: 20),
                       ConstrainedBox(
                         constraints: const BoxConstraints(minHeight: 52),
                         child: ElevatedButton(

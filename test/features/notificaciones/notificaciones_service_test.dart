@@ -38,23 +38,25 @@ String paginaJson({
 
 void main() {
   group('NotificacionesService', () {
-    test('GET /notificaciones envía token, límite y cursor y parsea la página',
-        () async {
-      final servicio = servicioCon((peticion) async {
-        expect(peticion.method, 'GET');
-        expect(peticion.url.path, '/notificaciones');
-        expect(peticion.url.queryParameters['limite'], '20');
-        expect(peticion.url.queryParameters['cursor'], 'cursor-2');
-        expect(peticion.headers['Authorization'], 'Bearer token-api');
-        return http.Response(paginaJson(siguiente: 'cursor-3'), 200);
-      });
-      final pagina = await servicio.listar('token-api', cursor: 'cursor-2');
-      expect(pagina.items, hasLength(2));
-      expect(pagina.items.first.id, 'a1');
-      expect(pagina.items.first.leida, isFalse);
-      expect(pagina.noLeidas, 2);
-      expect(pagina.siguiente, 'cursor-3');
-    });
+    test(
+      'GET /notificaciones envía token, límite y cursor y parsea la página',
+      () async {
+        final servicio = servicioCon((peticion) async {
+          expect(peticion.method, 'GET');
+          expect(peticion.url.path, '/notificaciones');
+          expect(peticion.url.queryParameters['limite'], '20');
+          expect(peticion.url.queryParameters['cursor'], 'cursor-2');
+          expect(peticion.headers['Authorization'], 'Bearer token-api');
+          return http.Response(paginaJson(siguiente: 'cursor-3'), 200);
+        });
+        final pagina = await servicio.listar('token-api', cursor: 'cursor-2');
+        expect(pagina.items, hasLength(2));
+        expect(pagina.items.first.id, 'a1');
+        expect(pagina.items.first.leida, isFalse);
+        expect(pagina.noLeidas, 2);
+        expect(pagina.siguiente, 'cursor-3');
+      },
+    );
 
     test('GET sin cursor omite el parámetro', () async {
       final servicio = servicioCon((peticion) async {
@@ -78,19 +80,21 @@ void main() {
       await servicio.registrarToken('token-api', 'fcm-123');
     });
 
-    test('DELETE /notificaciones/tokens envía el token FCM en el body',
-        () async {
-      final servicio = servicioCon((peticion) async {
-        expect(peticion.method, 'DELETE');
-        expect(peticion.url.path, '/notificaciones/tokens');
-        expect(peticion.headers['Authorization'], 'Bearer token-api');
-        expect(jsonDecode(peticion.body), <String, dynamic>{
-          'token': 'fcm-123',
+    test(
+      'DELETE /notificaciones/tokens envía el token FCM en el body',
+      () async {
+        final servicio = servicioCon((peticion) async {
+          expect(peticion.method, 'DELETE');
+          expect(peticion.url.path, '/notificaciones/tokens');
+          expect(peticion.headers['Authorization'], 'Bearer token-api');
+          expect(jsonDecode(peticion.body), <String, dynamic>{
+            'token': 'fcm-123',
+          });
+          return http.Response('', 204);
         });
-        return http.Response('', 204);
-      });
-      await servicio.desactivarToken('token-api', 'fcm-123');
-    });
+        await servicio.desactivarToken('token-api', 'fcm-123');
+      },
+    );
 
     test('PATCH /notificaciones/:id/leida codifica el id', () async {
       final servicio = servicioCon((peticion) async {
@@ -136,19 +140,22 @@ void main() {
 
     test('respuestas mal formadas se rechazan', () async {
       for (final cuerpo in ['[]', 'null', '{}', 'no json']) {
-        final servicio = servicioCon(
-          (_) async => http.Response(cuerpo, 200),
-        );
+        final servicio = servicioCon((_) async => http.Response(cuerpo, 200));
         await expectLater(servicio.listar('token-api'), throwsFormatException);
       }
       final servicio = servicioCon((_) async => http.Response('', 204));
-      await expectLater(servicio.listar('token-api'), throwsA(isA<ApiException>()));
+      await expectLater(
+        servicio.listar('token-api'),
+        throwsA(isA<ApiException>()),
+      );
     });
 
     test('Aviso.fromJson valida la fecha', () {
       final json = avisoJson();
-      expect(() => Aviso.fromJson({...json, 'creadaEn': 'no-fecha'}),
-          throwsFormatException);
+      expect(
+        () => Aviso.fromJson({...json, 'creadaEn': 'no-fecha'}),
+        throwsFormatException,
+      );
     });
   });
 }

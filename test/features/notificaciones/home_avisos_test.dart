@@ -62,6 +62,9 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    // La campana vive con los accesos rápidos de la pestaña «Perfil».
+    await tester.tap(find.text('Perfil'));
+    await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.notifications_outlined), findsOneWidget);
     expect(find.text('3'), findsOneWidget);
@@ -85,6 +88,8 @@ void main() {
         push: push,
       ),
     );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Perfil'));
     await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.notifications_outlined), findsOneWidget);
@@ -121,6 +126,8 @@ void main() {
         push: push,
       ),
     );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Perfil'));
     await tester.pumpAndSettle();
 
     mensajeria.mensajes.add(

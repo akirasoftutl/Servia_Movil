@@ -10,10 +10,23 @@ class MensajesNegocios {
   static const errorAppMapas = 'No se pudo abrir la app de mapas.';
 
   static const destacados = 'Destacados';
-  static const cercaDeTi = 'Cerca de ti';
+  static const tuUbicacion = 'Tu ubicación';
   static const errorCercanos = 'No se pudieron cargar los negocios cercanos.';
   static const sinCercanos = 'No hay negocios cerca de ti.';
+  static const cercaDeTi = 'Cerca de ti';
   static String distancia(double km) => 'a ${km.toStringAsFixed(1)} km';
+  static String distanciaCorta(double km) => '${km.toStringAsFixed(1)} km';
+  static String descripcionPin(String nombre, double km) =>
+      '$nombre ${distancia(km)}';
+  static const descripcionMapaCercanos =
+      'Mapa de negocios cercanos. Toca un pin para ver el negocio.';
+  static const buscandoCercanos = 'Buscando negocios cerca de ti…';
+  static const hojaAbierta =
+      'Hoja de contenido. Desliza hacia abajo para ver el mapa';
+  static const hojaColapsada =
+      'Hoja de contenido. Desliza hacia arriba para ver el contenido';
+  static const asaVerMapa = 'Bajar la hoja y ampliar el mapa';
+  static const asaVerContenido = 'Subir la hoja y ver el contenido';
 
   static const errorRed =
       'No se pudo conectar. Revisa tu conexión e inténtalo de nuevo.';

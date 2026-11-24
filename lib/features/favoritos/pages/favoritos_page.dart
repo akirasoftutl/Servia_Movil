@@ -153,14 +153,16 @@ class _FavoritosPageState extends State<FavoritosPage>
             // Selector de pestañas tipo píldora ("Negocios" / "Servicios")
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
-              child: Row(
+              // A 2x las píldoras no caben juntas: la segunda baja de línea.
+              child: Wrap(
+                spacing: 10,
+                runSpacing: 8,
                 children: [
                   _ChipPestanaFavoritos(
                     texto: MensajesFavoritos.tabNegocios,
                     seleccionada: _indice == 0,
                     onTap: () => _pestanas.animateTo(0),
                   ),
-                  const SizedBox(width: 10),
                   _ChipPestanaFavoritos(
                     texto: MensajesFavoritos.tabServicios,
                     seleccionada: _indice == 1,
@@ -283,27 +285,33 @@ class _ChipPestanaFavoritos extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        decoration: BoxDecoration(
-          color: seleccionada ? const Color(0xFF0F0F0F) : Colors.white,
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(
-            color: seleccionada
-                ? const Color(0xFF0F0F0F)
-                : const Color(0xFFD1D5DB),
-            width: 1,
-          ),
-        ),
-        child: Text(
-          texto,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: seleccionada ? Colors.white : const Color(0xFF111827),
+    // El área táctil mide 48 dp aunque la píldora visible sea más baja.
+    return SizedBox(
+      height: Medidas.tactil,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Center(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            decoration: BoxDecoration(
+              color: seleccionada ? const Color(0xFF0F0F0F) : Colors.white,
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(
+                color: seleccionada
+                    ? const Color(0xFF0F0F0F)
+                    : const Color(0xFFD1D5DB),
+                width: 1,
+              ),
+            ),
+            child: Text(
+              texto,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: seleccionada ? Colors.white : const Color(0xFF111827),
+              ),
+            ),
           ),
         ),
       ),

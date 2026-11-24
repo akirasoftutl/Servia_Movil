@@ -207,10 +207,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        tester.getSemantics(find.byType(IconButton)).tooltip,
+        tester.getSemantics(find.byTooltip(MensajesFavoritos.quitar)).tooltip,
         MensajesFavoritos.quitar,
       );
-      final tamano = tester.getSize(find.byType(IconButton));
+      final tamano = tester.getSize(find.byType(IconButton).last);
       expect(tamano.width, greaterThanOrEqualTo(48));
       expect(tamano.height, greaterThanOrEqualTo(48));
       semantica.dispose();

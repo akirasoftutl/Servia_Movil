@@ -7,7 +7,9 @@ import '../../ayuda/mensajes.dart';
 import '../../ayuda/pages/ayuda_page.dart';
 import '../../negocios/data/negocios_service.dart';
 import '../../negocios/data/ubicacion_cliente.dart';
+import '../../negocios/pages/inicio_con_mapa.dart';
 import '../../negocios/pages/lista_negocios_page.dart';
+import '../../negocios/pages/mapa_cercanos.dart';
 import '../../negocios/pages/negocios_cercanos.dart';
 import '../../perfil/data/perfil_cliente_service.dart';
 import '../../perfil/pages/mi_perfil_page.dart';
@@ -31,6 +33,7 @@ class HomePage extends StatefulWidget {
     this.notificacionesService,
     this.push,
     this.onSolicitarLogin,
+    this.constructorMapa,
   });
 
   final NegociosService? negociosService;
@@ -43,6 +46,9 @@ class HomePage extends StatefulWidget {
   final ServicioPush? push;
   final VoidCallback onCerrarSesion;
   final VoidCallback? onSolicitarLogin;
+
+  /// Mapa de cercanos de la pestaña Buscar; las pruebas inyectan uno sin plataforma.
+  final ConstructorMapaCercanos? constructorMapa;
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -54,12 +60,15 @@ class _HomePageState extends State<HomePage> {
   late final ServicioPush _push;
   late final List<Key> _clavesPantallas;
 
+  /// El mapa se crea la primera vez que se abre «Buscar»: así «Inicio» no
+  /// pide la ubicación dos veces ni carga dos listas al arrancar.
+  bool _mapaBuscarCreado = false;
+
   @override
   void initState() {
     super.initState();
     _auth = widget.authService ?? AuthService();
-    _notificaciones =
-        widget.notificacionesService ?? NotificacionesService();
+    _notificaciones = widget.notificacionesService ?? NotificacionesService();
     _push = widget.push ?? ServicioPush();
     _clavesPantallas = List<Key>.generate(4, (_) => UniqueKey());
     if (_auth.usuarioActual != null) _cargarNoLeidas();
@@ -88,6 +97,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     setState(() {
+      if (nuevoIndice == 1) _mapaBuscarCreado = true;
       if (nuevoIndice == 2) {
         _clavesPantallas[nuevoIndice] = UniqueKey();
       }
@@ -124,31 +134,26 @@ class _HomePageState extends State<HomePage> {
     final inicial = _obtenerInicialUsuario();
 
     final pantallas = <Widget>[
-      ColoredBox(
+      // Inicio conserva la portada con «Cerca de ti» al final de la lista.
+      ListaNegocios(
         key: _clavesPantallas[0],
-        color: Colors.white,
-        child: SafeArea(
-          bottom: false,
-          child: Column(
-            children: [
-              Expanded(
-                child: ListaNegocios(
-                  negociosService: widget.negociosService,
-                  seccionFinal: NegociosCercanos(
-                    service: widget.negociosService,
-                    proveedorUbicacion: widget.proveedorUbicacion,
-                  ),
-                ),
-              ),
-            ],
-          ),
+        negociosService: widget.negociosService,
+        seccionFinal: NegociosCercanos(
+          service: widget.negociosService,
+          proveedorUbicacion: widget.proveedorUbicacion,
         ),
       ),
 
-      ListaNegocios(
-        key: _clavesPantallas[1],
-        negociosService: widget.negociosService,
-      ),
+      // Buscar: el mapa de cercanos de fondo con la lista en una hoja.
+      if (_mapaBuscarCreado)
+        InicioConMapa(
+          key: _clavesPantallas[1],
+          negociosService: widget.negociosService,
+          proveedorUbicacion: widget.proveedorUbicacion,
+          constructorMapa: widget.constructorMapa,
+        )
+      else
+        SizedBox.shrink(key: _clavesPantallas[1]),
 
       if (estaLogueado)
         MisReservasPage(
@@ -159,7 +164,7 @@ class _HomePageState extends State<HomePage> {
       else
         ActividadScreen(
           key: _clavesPantallas[2],
-          onBuscarLugares: () => _seleccionar(0),
+          onBuscarLugares: () => _seleccionar(1),
           onIniciarSesion: widget.onSolicitarLogin,
         ),
 
@@ -209,10 +214,9 @@ class _HomePageState extends State<HomePage> {
                         if (estaLogueado)
                           IconButton(
                             tooltip: MensajesNotificaciones.campana,
-                            onPressed: () => Navigator.of(context).pushNamed(
-                              '/avisos',
-                              arguments: _push,
-                            ),
+                            onPressed: () =>
+                                Navigator.of(context)
+                                    .pushNamed('/avisos', arguments: _push),
                             icon: _CampanaAvisos(push: _push),
                           ),
                         if (estaLogueado)

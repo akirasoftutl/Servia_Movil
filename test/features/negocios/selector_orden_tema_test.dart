@@ -44,7 +44,7 @@ void main() {
     final caja = _caja(tester);
     expect(caja.color, ColoresServia.superficie);
     expect((caja.border! as Border).top.color, ColoresServia.bordeCampo);
-    expect(caja.borderRadius, Radios.campo);
+    expect(caja.borderRadius, BorderRadius.circular(Medidas.tactil / 2));
     final texto = tester.widget<DefaultTextStyle>(
       find
           .descendant(

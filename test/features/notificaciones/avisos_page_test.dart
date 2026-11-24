@@ -4,6 +4,7 @@ import 'package:servia/features/notificaciones/data/aviso.dart';
 import 'package:servia/features/notificaciones/data/servicio_push.dart';
 import 'package:servia/features/notificaciones/mensajes.dart';
 import 'package:servia/features/notificaciones/pages/avisos_page.dart';
+
 import '../reservas/fakes.dart';
 import 'fakes.dart';
 
@@ -52,9 +53,7 @@ void main() {
       notificaciones: notificaciones,
     );
     addTearDown(push.dispose);
-    await tester.pumpWidget(
-      appCon(notificaciones: notificaciones, push: push),
-    );
+    await tester.pumpWidget(appCon(notificaciones: notificaciones, push: push));
     await tester.pumpAndSettle();
 
     expect(find.text(MensajesNotificaciones.titulo), findsOneWidget);
@@ -72,7 +71,9 @@ void main() {
     expect(push.noLeidas.value, 1);
   });
 
-  testWidgets('no leídos en negrita con punto; leídos sin punto', (tester) async {
+  testWidgets('no leídos en negrita con punto; leídos sin punto', (
+    tester,
+  ) async {
     final notificaciones = NotificacionesFalso(
       paginas: {
         null: PaginaAvisos(
@@ -95,9 +96,7 @@ void main() {
       notificaciones: notificaciones,
     );
     addTearDown(push.dispose);
-    await tester.pumpWidget(
-      appCon(notificaciones: notificaciones, push: push),
-    );
+    await tester.pumpWidget(appCon(notificaciones: notificaciones, push: push));
     await tester.pumpAndSettle();
 
     expect(
@@ -127,9 +126,7 @@ void main() {
       notificaciones: notificaciones,
     );
     addTearDown(push.dispose);
-    await tester.pumpWidget(
-      appCon(notificaciones: notificaciones, push: push),
-    );
+    await tester.pumpWidget(appCon(notificaciones: notificaciones, push: push));
     await tester.pumpAndSettle();
 
     expect(find.text(MensajesNotificaciones.sinAvisos), findsOneWidget);
@@ -153,9 +150,7 @@ void main() {
     addTearDown(push.dispose);
     // Primer intento falla; el reintento devuelve la lista.
     notificaciones.error = StateError('sin red');
-    await tester.pumpWidget(
-      appCon(notificaciones: notificaciones, push: push),
-    );
+    await tester.pumpWidget(appCon(notificaciones: notificaciones, push: push));
     await tester.pumpAndSettle();
     expect(find.text(MensajesNotificaciones.errorCarga), findsOneWidget);
 
@@ -166,7 +161,9 @@ void main() {
     expect(find.text(MensajesNotificaciones.errorCarga), findsNothing);
   });
 
-  testWidgets('paginación con «Cargar más» y al llegar al final', (tester) async {
+  testWidgets('paginación con «Cargar más» y al llegar al final', (
+    tester,
+  ) async {
     final notificaciones = NotificacionesFalso(
       paginas: {
         null: PaginaAvisos(
@@ -192,9 +189,7 @@ void main() {
       notificaciones: notificaciones,
     );
     addTearDown(push.dispose);
-    await tester.pumpWidget(
-      appCon(notificaciones: notificaciones, push: push),
-    );
+    await tester.pumpWidget(appCon(notificaciones: notificaciones, push: push));
     await tester.pumpAndSettle();
 
     expect(find.text('Segunda reserva'), findsNothing);

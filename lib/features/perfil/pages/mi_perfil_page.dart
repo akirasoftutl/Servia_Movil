@@ -638,9 +638,6 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
                     color: Color(0xFFF3F4F6),
                   ),
                   InkWell(
-                    borderRadius: const BorderRadius.vertical(
-                      bottom: Radius.circular(16),
-                    ),
                     onTap: () {
                       // TODO: Acción de idioma
                     },
@@ -668,6 +665,36 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
                             ),
                           ),
                         ],
+                      ),
+                    ),
+                  ),
+                  const Divider(
+                    height: 1,
+                    indent: 56,
+                    endIndent: 18,
+                    color: Color(0xFFF3F4F6),
+                  ),
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton.icon(
+                      key: const Key('boton-eliminar-cuenta'),
+                      onPressed: _eliminarCuenta,
+                      icon: const Icon(Icons.delete_forever_outlined, size: 22),
+                      label: const Text(MensajesPerfil.eliminarCuenta),
+                      style: estiloAccionQuitar(context).merge(
+                        TextButton.styleFrom(
+                          alignment: Alignment.centerLeft,
+                          minimumSize: const Size.fromHeight(Medidas.tactil),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 12,
+                          ),
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(
+                              bottom: Radius.circular(16),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -705,10 +732,7 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
                 label: const Text('Cambiar contraseña'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFF111827),
-                  side: const BorderSide(
-                    color: Color(0xFFD1D5DB),
-                    width: 1.2,
-                  ),
+                  side: const BorderSide(color: Color(0xFFD1D5DB), width: 1.2),
                   shape: const StadiumBorder(),
                   textStyle: const TextStyle(
                     fontSize: 15,
@@ -756,15 +780,6 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
             ),
 
             const SizedBox(height: Espacios.l),
-            Center(
-              child: TextButton.icon(
-                key: const Key('boton-eliminar-cuenta'),
-                onPressed: _eliminarCuenta,
-                icon: const Icon(Icons.delete_forever_outlined),
-                label: const Text(MensajesPerfil.eliminarCuenta),
-                style: estiloAccionQuitar(context),
-              ),
-            ),
           ],
         ),
       ),
