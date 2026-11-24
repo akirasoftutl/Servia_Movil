@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:servia/features/auth/pages/login_page.dart';
+import 'package:servia/features/ayuda/pages/ayuda_page.dart';
+import 'package:servia/features/ayuda/pages/reportar_problema_page.dart';
 import 'package:servia/features/auth/pages/register_page.dart';
 import 'package:servia/features/favoritos/pages/favoritos_page.dart';
 import 'package:servia/features/home/pages/home_page.dart';
@@ -16,9 +18,11 @@ import 'package:servia/features/negocios/pages/perfil_negocio_page.dart';
 import 'package:servia/features/perfil/pages/mi_perfil_page.dart';
 import 'package:servia/features/reservas/pages/confirmacion_reserva_page.dart';
 import 'package:servia/features/reservas/pages/resumen_reserva_page.dart';
+import 'package:servia/core/network/api_exception.dart';
 import 'package:servia/features/negocios/data/servicio.dart';
 
 import '../features/favoritos/fakes_favoritos.dart';
+import '../features/ayuda/fakes_ayuda.dart';
 import '../features/negocios/fakes.dart';
 import '../features/perfil/fakes_perfil.dart';
 import '../features/reservas/fakes.dart';
@@ -192,6 +196,63 @@ void main() {
             perfilClienteService: PerfilClienteFalso([]),
           ),
           null,
+        ),
+        'Ayuda': (
+          () => AyudaPage(
+            authService: SesionFalsa(),
+            soporteService: SoporteFalso(),
+          ),
+          null,
+        ),
+        'Ayuda con una pregunta abierta': (
+          () => AyudaPage(
+            authService: SesionFalsa(),
+            soporteService: SoporteFalso(),
+          ),
+          (t) async {
+            await t.scrollUntilVisible(find.text('¿Puedo cancelar?'), 200);
+            await t.tap(find.text('¿Puedo cancelar?'));
+            await t.pumpAndSettle();
+          },
+        ),
+        'Reportar un problema con reportes': (
+          () => ReportarProblemaPage(
+            authService: SesionFalsa(),
+            soporteService: SoporteFalso(
+              existentes: [
+                reporte(
+                  'No me deja reservar con el negocio de cortes y peinados de mi colonia',
+                ),
+              ],
+            ),
+          ),
+          null,
+        ),
+        'Reportar un problema con error al enviar': (
+          () => ReportarProblemaPage(
+            authService: SesionFalsa(),
+            soporteService: SoporteFalso()
+              ..fallosAlListar.add(const ApiException(500, 'x'))
+              ..fallosAlEnviar.add(
+                const ApiException(
+                  429,
+                  'Enviaste demasiados reportes; inténtalo más tarde.',
+                ),
+              ),
+          ),
+          (t) async {
+            await t.enterText(
+              find.byKey(const Key('campo-asunto')),
+              'No me deja reservar con el negocio',
+            );
+            await t.enterText(
+              find.byKey(const Key('campo-descripcion')),
+              'Cada vez que intento reservar la pantalla se queda cargando.',
+            );
+            await t.ensureVisible(find.byKey(const Key('boton-enviar-reporte')));
+            await t.tap(find.byKey(const Key('boton-enviar-reporte')));
+            await t.pumpAndSettle();
+          },
         ),
         'Mi perfil en edición': (
           () => MiPerfilPage(

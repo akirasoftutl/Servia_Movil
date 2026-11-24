@@ -7,9 +7,11 @@ import '../../../core/widgets/estados.dart';
 import '../data/categoria.dart';
 import '../data/negocio_resumen.dart';
 import '../data/negocios_service.dart';
+import '../data/orden_negocios.dart';
 import '../mensajes.dart';
 import 'perfil_negocio_page.dart';
 import 'pie_lista.dart';
+import 'selector_orden_negocios.dart';
 
 enum _EstadoLista { cargando, error, lista }
 
@@ -43,6 +45,7 @@ class _ListaNegociosState extends State<ListaNegocios> {
   Timer? _espera;
   String? _consulta;
   String? _categoriaId;
+  OrdenNegocios _orden = OrdenNegocios.nombre;
   int _version = 0;
   final _items = <NegocioResumen>[];
   List<Categoria> _categorias = [];
@@ -109,6 +112,14 @@ class _ListaNegociosState extends State<ListaNegocios> {
     _reiniciar();
   }
 
+  /// El cursor solo vale con el orden con el que se obtuvo: al cambiarlo se
+  /// reinicia la lista, y `_version` descarta lo que siga en vuelo.
+  void _elegirOrden(OrdenNegocios orden) {
+    if (orden == _orden) return;
+    setState(() => _orden = orden);
+    _reiniciar();
+  }
+
   void _alDesplazarse() {
     if (_scroll.position.extentAfter < _distanciaCarga &&
         _siguiente != null &&
@@ -170,6 +181,7 @@ class _ListaNegociosState extends State<ListaNegocios> {
         cursor: cursor,
         q: _consulta,
         categoriaId: _categoriaId,
+        orden: _orden,
       );
       if (!mounted || version != _version) return null;
       if (pagina.siguiente != null && pagina.siguiente == cursor) {
@@ -213,7 +225,8 @@ class _ListaNegociosState extends State<ListaNegocios> {
     child: const Text(MensajesNegocios.cargarMas),
   );
 
-  String _nombreCategoria(String id) {
+  String? _nombreCategoria(String? id) {
+    if (id == null) return null;
     for (final categoria in _categorias) {
       if (categoria.id == id) return categoria.nombre;
     }
@@ -247,6 +260,8 @@ class _ListaNegociosState extends State<ListaNegocios> {
               onChanged: _alEscribir,
               onLimpiar: _limpiarBusqueda,
               onBuscar: _reiniciar,
+              orden: _orden,
+              onOrden: _elegirOrden,
             ),
             Expanded(child: _contenido()),
           ],
@@ -441,12 +456,16 @@ class _EncabezadoExploracion extends StatelessWidget {
     required this.onChanged,
     required this.onLimpiar,
     required this.onBuscar,
+    required this.orden,
+    required this.onOrden,
   });
 
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
   final VoidCallback onLimpiar;
   final VoidCallback onBuscar;
+  final OrdenNegocios orden;
+  final ValueChanged<OrdenNegocios> onOrden;
 
   @override
   Widget build(BuildContext context) {
@@ -455,27 +474,38 @@ class _EncabezadoExploracion extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
-            mainAxisSize: MainAxisSize.min,
+          // En pantallas angostas o con texto grande el selector baja a su
+          // propia línea en lugar de desbordar.
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: Espacios.m,
+            runSpacing: Espacios.s,
             children: [
-              Icon(
-                Icons.location_on,
-                size: 18,
-                color: Color.fromARGB(255, 145, 90, 240),
+              const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.location_on,
+                    size: 18,
+                    color: Color.fromARGB(255, 145, 90, 240),
+                  ),
+                  SizedBox(width: 4),
+                  Text(
+                    'Ubicación actual',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                  SizedBox(width: 2),
+                ],
               ),
-              SizedBox(width: 4),
-              Text(
-                'Ubicación actual',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF111827),
-                ),
-              ),
-              SizedBox(width: 2),
+              SelectorOrdenNegocios(orden: orden, onOrden: onOrden),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: Espacios.s),
 
           // Barra de búsqueda tipo píldora flotante
           Container(
@@ -680,7 +710,9 @@ class _CuadriculaCategorias extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 10,
                     height: 1.25,
-                    fontWeight: seleccionada ? FontWeight.w600 : FontWeight.w400,
+                    fontWeight: seleccionada
+                        ? FontWeight.w600
+                        : FontWeight.w400,
                     color: const Color(0xFF111111),
                   ),
                 ),
@@ -736,7 +768,7 @@ class _TarjetaNegocioCarrusel extends StatelessWidget {
   });
 
   final NegocioResumen negocio;
-  final String categoria;
+  final String? categoria;
   final String? imagenUrl;
   final String etiquetaSuperior;
   final VoidCallback onTap;
@@ -842,7 +874,10 @@ class _TarjetaNegocioCarrusel extends StatelessWidget {
             // Categoría y estado de reservas
             Flexible(
               child: Text(
-                negocio.aceptaReservas ? '$categoria · Disponible' : categoria,
+                [
+                  ?categoria,
+                  if (negocio.aceptaReservas) 'Disponible',
+                ].join(' · '),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
@@ -865,7 +900,7 @@ class _TarjetaNegocioHorizontal extends StatelessWidget {
   });
 
   final NegocioResumen negocio;
-  final String categoria;
+  final String? categoria;
   final String? imagenUrl;
   final VoidCallback onTap;
 
@@ -940,18 +975,20 @@ class _TarjetaNegocioHorizontal extends StatelessWidget {
                             color: Color(0xFF111827),
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            '· $categoria',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF6B7280),
+                        if (categoria != null) ...[
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              '· $categoria',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF6B7280),
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ],

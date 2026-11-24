@@ -5,7 +5,9 @@ import 'negocios_service.dart';
 class NegocioResumen {
   final String id;
   final String nombre;
-  final String categoriaId;
+
+  /// La API declara `categoriaId` como `string | null`.
+  final String? categoriaId;
   final bool aceptaReservas;
 
   /// URL de la portada incluida en el listado de negocios.
@@ -14,7 +16,7 @@ class NegocioResumen {
   const NegocioResumen({
     required this.id,
     required this.nombre,
-    required this.categoriaId,
+    this.categoriaId,
     required this.aceptaReservas,
     this.imagenUrl,
   });
@@ -25,10 +27,15 @@ class NegocioResumen {
     return NegocioResumen(
       id: id,
       nombre: leerTexto(json, 'nombre'),
-      categoriaId: leerTexto(json, 'categoriaId'),
+      categoriaId: _leerCategoriaId(json),
       aceptaReservas: leerBooleano(json, 'aceptaReservas'),
       imagenUrl: _leerImagenUrl(json),
     );
+  }
+
+  static String? _leerCategoriaId(Map<String, dynamic> json) {
+    if (json['categoriaId'] == null) return null;
+    return leerTexto(json, 'categoriaId');
   }
 
   static String? _leerImagenUrl(Map<String, dynamic> json) {
