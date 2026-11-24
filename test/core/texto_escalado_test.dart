@@ -22,6 +22,7 @@ import 'package:servia/features/negocios/data/servicio.dart';
 
 import '../features/ayuda/fakes_ayuda.dart';
 import '../features/negocios/fakes.dart';
+import '../features/negocios/fakes_destacados.dart';
 import '../features/perfil/fakes_perfil.dart';
 import '../features/reservas/fakes.dart';
 import 'tema_de_la_app.dart';
@@ -93,6 +94,29 @@ void main() {
                 ],
                 siguiente: null,
               );
+            return HomePage(
+              onCerrarSesion: () {},
+              negociosService: lista,
+              authService: SesionFalsa(conSesion: false),
+            );
+          },
+          null,
+        ),
+        'inicio con destacados': (
+          () {
+            final lista = ListaConDestacados()
+              ..destacados = [
+                destacado('d1'),
+                const NegocioResumen(
+                  id: 'd2',
+                  nombre:
+                      'Estética Lupita: cortes, color y peinados para toda la familia',
+                  categoriaId: 'cabello',
+                  aceptaReservas: false,
+                ),
+              ]
+              ..responder = (_) async =>
+                  PaginaNegocios(items: [resumen('a')], siguiente: null);
             return HomePage(
               onCerrarSesion: () {},
               negociosService: lista,
