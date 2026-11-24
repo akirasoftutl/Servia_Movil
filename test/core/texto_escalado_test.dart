@@ -16,6 +16,7 @@ import 'package:servia/features/negocios/data/negocio_resumen.dart';
 import 'package:servia/features/negocios/pages/detalle_servicio_page.dart';
 import 'package:servia/features/negocios/pages/disponibilidad_page.dart';
 import 'package:servia/features/negocios/pages/perfil_negocio_page.dart';
+import 'package:servia/features/perfil/data/cuenta_con_reservas.dart';
 import 'package:servia/features/perfil/data/foto_perfil.dart';
 import 'package:servia/features/perfil/data/perfil_cliente.dart';
 import 'package:servia/features/perfil/data/selector_foto.dart';
@@ -531,6 +532,57 @@ void main() {
             final agregar = find.text('Agregar foto');
             await t.scrollUntilVisible(agregar, 300);
             await t.tap(agregar);
+            await t.pumpAndSettle();
+          },
+        ),
+        'Mi perfil con el diálogo de eliminar la cuenta': (
+          () => _miPerfilConFoto(),
+          (t) async {
+            final eliminar = find.text('Eliminar mi cuenta');
+            await t.scrollUntilVisible(eliminar, 300);
+            await t.tap(eliminar);
+            await t.pumpAndSettle();
+          },
+        ),
+        'Mi perfil con reservas por atender al eliminar la cuenta': (
+          () => MiPerfilPage(
+            authService: SesionPerfilFalsa([]),
+            perfilClienteService: PerfilClienteFalso([])
+              ..errorAlEliminar = CuentaConReservasException(
+                mensaje:
+                    'No puedes eliminar tu cuenta porque tienes reservas pendientes o confirmadas: SRV-AAAAAA, SRV-BBBBBB. Cancélalas o espera a que terminen.',
+                total: 2,
+                reservas: [
+                  ReservaPorAtender(
+                    id: 'r1',
+                    folio: 'SRV-AAAAAA',
+                    estado: 'pendiente',
+                    inicio: DateTime.utc(2026, 11, 25, 16, 30),
+                  ),
+                  ReservaPorAtender(
+                    id: 'r2',
+                    folio: 'SRV-BBBBBB',
+                    estado: 'confirmada',
+                    inicio: DateTime.utc(2026, 12, 2, 1),
+                  ),
+                ],
+              ),
+          ),
+          (t) async {
+            final eliminar = find.text('Eliminar mi cuenta');
+            await t.scrollUntilVisible(eliminar, 300);
+            await t.tap(eliminar);
+            await t.pumpAndSettle();
+            await t.enterText(
+              find.byKey(const Key('campo-contrasena-eliminar')),
+              'clave-correcta',
+            );
+            await t.tap(
+              find.descendant(
+                of: find.byType(AlertDialog),
+                matching: find.text('Eliminar cuenta'),
+              ),
+            );
             await t.pumpAndSettle();
           },
         ),
