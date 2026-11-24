@@ -234,12 +234,13 @@ void main() {
     ) async {
       final api = ApiFalsa();
       await abrirConApi(tester, api);
-      expect(find.text(MensajesNegocios.ordenarPor), findsOneWidget);
-      expect(find.text(MensajesNegocios.ordenNombre), findsOneWidget);
-      expect(find.text(MensajesNegocios.ordenRecientes), findsNothing);
+      // Cerrado: «Ordenar por: Nombre (A-Z)» (la opción por omisión).
+      expect(find.text('Ordenar por: Nombre (A-Z)'), findsOneWidget);
+      expect(find.textContaining('Más recientes'), findsNothing);
       await tester.tap(find.byType(DropdownButton<OrdenNegocios>));
       await tester.pumpAndSettle();
-      expect(find.text(MensajesNegocios.ordenNombre), findsWidgets);
+      // Abierto: las dos opciones, con las etiquetas en español.
+      expect(find.text(MensajesNegocios.ordenNombre), findsOneWidget);
       expect(find.text(MensajesNegocios.ordenRecientes), findsOneWidget);
       // La primera carga se comporta como hoy: sin parámetro `orden`.
       expect(api.listados.single.queryParameters, {'limite': '20'});
@@ -342,7 +343,7 @@ void main() {
         'q': 'corte',
       });
       // Con búsqueda activa el selector sigue ahí y conserva la elección.
-      expect(find.text(MensajesNegocios.ordenRecientes), findsOneWidget);
+      expect(find.text('Ordenar por: Más recientes'), findsOneWidget);
     });
 
     testWidgets('cambiar el orden con búsqueda activa conserva q y categoría', (
@@ -398,7 +399,7 @@ void main() {
       await elegirOrden(tester, MensajesNegocios.ordenRecientes);
       expect(find.text(MensajesNegocios.errorApi), findsOneWidget);
       // El selector sigue disponible durante el error.
-      expect(find.text(MensajesNegocios.ordenRecientes), findsOneWidget);
+      expect(find.text('Ordenar por: Más recientes'), findsOneWidget);
       falla = false;
       final antes = api.listados.length;
       await tester.tap(find.text(MensajesNegocios.reintentar));
@@ -440,7 +441,7 @@ void main() {
           : null;
       await elegirOrden(tester, MensajesNegocios.ordenRecientes);
       expect(find.text(MensajesNegocios.listaVacia), findsOneWidget);
-      expect(find.text(MensajesNegocios.ordenRecientes), findsOneWidget);
+      expect(find.text('Ordenar por: Más recientes'), findsOneWidget);
     });
   });
 

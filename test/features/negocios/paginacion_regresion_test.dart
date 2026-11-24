@@ -11,6 +11,9 @@ void main() {
     testWidgets(
       'conserva el cursor tras cinco vacías; lista previa $conItems',
       (tester) async {
+        tester.view.physicalSize = const Size(800, 700);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
         final fake = ListaServiceFalso()
           ..responder = (cursor) async {
             if (conItems && cursor == null) {

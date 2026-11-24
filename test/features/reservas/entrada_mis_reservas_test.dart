@@ -10,6 +10,10 @@ void main() {
   testWidgets('desde el inicio se abre «Mis reservas» y se vuelve a la lista', (
     tester,
   ) async {
+    // El selector de orden ocupa unos dp más en el encabezado: viewport más alto.
+    tester.view.physicalSize = const Size(800, 700);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     final sesion = SesionFalsa();
     addTearDown(sesion.eventos.close);
     await tester.pumpWidget(

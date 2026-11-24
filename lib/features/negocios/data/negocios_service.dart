@@ -9,6 +9,7 @@ import 'lectura_json.dart';
 import 'negocio.dart';
 import 'negocio_cercano.dart';
 import 'negocio_resumen.dart';
+import 'orden_negocios.dart';
 import 'servicio.dart';
 
 const tiempoLimiteConsulta = Duration(seconds: 10);
@@ -46,6 +47,7 @@ class NegociosService {
     String? cursor,
     String? q,
     String? categoriaId,
+    OrdenNegocios orden = OrdenNegocios.nombre,
   }) async {
     final texto = q?.trim();
     final categoria = categoriaId?.trim();
@@ -57,6 +59,8 @@ class NegociosService {
         if (texto != null && texto.length >= 2)
           'q': texto.length > 50 ? texto.substring(0, 50) : texto,
         if (categoria != null && categoria.isNotEmpty) 'categoriaId': categoria,
+        // A-Z es el orden por omisión de la API: no se manda.
+        'orden': ?orden.valorApi,
       },
     );
     final datos = await _consultar(ruta.toString());
