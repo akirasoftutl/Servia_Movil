@@ -50,4 +50,38 @@ void main() {
 
     await expectLater(api.delete('/x', token: 't'), throwsA(isA<TimeoutException>()));
   });
+
+  test('put envía PUT con el token y sin cuerpo cuando no se da', () async {
+    late http.Request recibida;
+    final api = ApiClient(
+      client: MockClient((peticion) async {
+        recibida = peticion;
+        return http.Response('', 204);
+      }),
+    );
+
+    final respuesta = await api.put('/favoritos/negocios/n1', token: 'tok');
+
+    expect(respuesta.statusCode, 204);
+    expect(recibida.method, 'PUT');
+    expect(recibida.url.toString(), '${ApiClient.baseUrl}/favoritos/negocios/n1');
+    expect(recibida.headers['Authorization'], 'Bearer tok');
+    expect(recibida.body, isEmpty);
+  });
+
+  test('put manda el cuerpo cuando se da y respeta el tiempo límite', () async {
+    late http.Request recibida;
+    final api = ApiClient(
+      limite: const Duration(milliseconds: 20),
+      client: MockClient((peticion) async {
+        recibida = peticion;
+        if (peticion.url.path == '/lento') return Completer<http.Response>().future;
+        return http.Response('', 204);
+      }),
+    );
+
+    await api.put('/x', body: '{"a":1}');
+    expect(recibida.body, '{"a":1}');
+    await expectLater(api.put('/lento'), throwsA(isA<TimeoutException>()));
+  });
 }
