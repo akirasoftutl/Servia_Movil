@@ -98,6 +98,14 @@ Future<void> _perfil(
   await tester.pumpAndSettle();
 }
 
+/// Color de relleno del chip: el `chipTheme` lo pinta con un `Ink`.
+Color? _fondoChip(WidgetTester tester, String texto) {
+  final tinta = tester.widget<Ink>(
+    find.descendant(of: _chip(texto), matching: find.byType(Ink)).first,
+  );
+  return (tinta.decoration as ShapeDecoration).color;
+}
+
 Finder _chips() => find.byType(ChoiceChip);
 Finder _chip(String texto) =>
     find.widgetWithText(ChoiceChip, texto, skipOffstage: false);
@@ -105,7 +113,9 @@ Finder _chip(String texto) =>
 void main() {
   group('modelo: categorías del servicio (T18, T19)', () {
     test('lee categoriaServicio {id, nombre} y personalizada nula', () {
-      final s = Servicio.fromJson(_json('s1', 'Corte', categoriaServicio: _corte));
+      final s = Servicio.fromJson(
+        _json('s1', 'Corte', categoriaServicio: _corte),
+      );
       expect(s.categoriaServicio?.id, 'corte-caballero');
       expect(s.categoriaServicio?.nombre, 'Corte de caballero');
       expect(s.categoriaPersonalizada, isNull);
@@ -132,7 +142,13 @@ void main() {
     });
 
     test('campos malformados se ignoran sin romper el servicio', () {
-      for (final malo in <Object?>['x', 4, <Object?>[], {'id': 'a'}, {'nombre': 'b'}]) {
+      // La personalizada solo es válida como texto; un texto sí es válido.
+      for (final malo in <Object?>[
+        4,
+        true,
+        <Object?>[],
+        {'id': 'a'},
+      ]) {
         final s = Servicio.fromJson({
           ..._json('s1', 'Corte'),
           'categoriaServicio': malo,
@@ -141,27 +157,42 @@ void main() {
         expect(s.categoriaServicio, isNull);
         expect(s.categoriaPersonalizada, isNull);
       }
+      for (final malo in <Object?>[
+        'x',
+        4,
+        {'nombre': 'b'},
+        {'id': 'a'},
+      ]) {
+        final s = Servicio.fromJson({
+          ..._json('s1', 'Corte'),
+          'categoriaServicio': malo,
+        });
+        expect(s.categoriaServicio, isNull);
+        expect(s.nombre, 'Corte');
+      }
       final vacia = Servicio.fromJson(
         _json('s1', 'Corte', categoriaPersonalizada: '   '),
       );
       expect(vacia.categoriaPersonalizada, isNull);
     });
 
-    test('NegociosService trae las categorías en la lista y en el detalle',
-        () async {
-      final lista = await _api([
-        _json('s1', 'Corte', categoriaServicio: _corte),
-        _json('s2', 'Peinado', categoriaPersonalizada: 'Peinados de gala'),
-        _json('s3', 'Masaje'),
-      ]).obtenerServicios('abc123');
-      expect(lista[0].categoriaServicio?.nombre, 'Corte de caballero');
-      expect(lista[1].categoriaPersonalizada, 'Peinados de gala');
-      expect(lista[2].categoriaServicio, isNull);
-      final detalle = await _api(
-        _json('s1', 'Corte', categoriaServicio: _corte),
-      ).obtenerServicio('abc123', 's1');
-      expect(detalle.categoriaServicio?.id, 'corte-caballero');
-    });
+    test(
+      'NegociosService trae las categorías en la lista y en el detalle',
+      () async {
+        final lista = await _api([
+          _json('s1', 'Corte', categoriaServicio: _corte),
+          _json('s2', 'Peinado', categoriaPersonalizada: 'Peinados de gala'),
+          _json('s3', 'Masaje'),
+        ]).obtenerServicios('abc123');
+        expect(lista[0].categoriaServicio?.nombre, 'Corte de caballero');
+        expect(lista[1].categoriaPersonalizada, 'Peinados de gala');
+        expect(lista[2].categoriaServicio, isNull);
+        final detalle = await _api(
+          _json('s1', 'Corte', categoriaServicio: _corte),
+        ).obtenerServicio('abc123', 's1');
+        expect(detalle.categoriaServicio?.id, 'corte-caballero');
+      },
+    );
   });
 
   group('filtro por categoría en el perfil del negocio', () {
@@ -189,42 +220,44 @@ void main() {
       expect(find.text('Masaje'), findsOneWidget);
     });
 
-    testWidgets('elegir una categoría deja solo sus servicios y Todas restaura',
-        (tester) async {
-      final fake = _Fijo(varias);
-      await _perfil(tester, varias, servicio: fake);
-      await tester.tap(_chip('Corte de caballero'));
-      await tester.pumpAndSettle();
-      expect(find.text('Corte clásico'), findsOneWidget);
-      expect(find.text('Corte fade'), findsOneWidget);
-      expect(find.text('Perfilado'), findsNothing);
-      expect(find.text('Peinado de gala'), findsNothing);
-      expect(find.text('Masaje'), findsNothing);
-      expect(
-        tester.widget<ChoiceChip>(_chip('Corte de caballero')).selected,
-        isTrue,
-      );
-      // Sin recargar: sigue siendo la misma consulta.
-      expect(fake.consultasServicios, 1);
+    testWidgets(
+      'elegir una categoría deja solo sus servicios y Todas restaura',
+      (tester) async {
+        final fake = _Fijo(varias);
+        await _perfil(tester, varias, servicio: fake);
+        await tester.tap(_chip('Corte de caballero'));
+        await tester.pumpAndSettle();
+        expect(find.text('Corte clásico'), findsOneWidget);
+        expect(find.text('Corte fade'), findsOneWidget);
+        expect(find.text('Perfilado'), findsNothing);
+        expect(find.text('Peinado de gala'), findsNothing);
+        expect(find.text('Masaje'), findsNothing);
+        expect(
+          tester.widget<ChoiceChip>(_chip('Corte de caballero')).selected,
+          isTrue,
+        );
+        // Sin recargar: sigue siendo la misma consulta.
+        expect(fake.consultasServicios, 1);
 
-      await tester.tap(_chip('Barba y afeitado'));
-      await tester.pumpAndSettle();
-      expect(find.text('Perfilado'), findsOneWidget);
-      expect(find.text('Corte clásico'), findsNothing);
+        await tester.tap(_chip('Barba y afeitado'));
+        await tester.pumpAndSettle();
+        expect(find.text('Perfilado'), findsOneWidget);
+        expect(find.text('Corte clásico'), findsNothing);
 
-      await tester.tap(_chip(MensajesNegocios.todas));
-      await tester.pumpAndSettle();
-      for (final nombre in [
-        'Corte clásico',
-        'Perfilado',
-        'Corte fade',
-        'Peinado de gala',
-        'Masaje',
-      ]) {
-        expect(find.text(nombre), findsOneWidget);
-      }
-      expect(fake.consultasServicios, 1);
-    });
+        await tester.tap(_chip(MensajesNegocios.todas));
+        await tester.pumpAndSettle();
+        for (final nombre in [
+          'Corte clásico',
+          'Perfilado',
+          'Corte fade',
+          'Peinado de gala',
+          'Masaje',
+        ]) {
+          expect(find.text(nombre), findsOneWidget);
+        }
+        expect(fake.consultasServicios, 1);
+      },
+    );
 
     testWidgets('sin categorías de catálogo no hay fila de chips', (
       tester,
@@ -248,10 +281,7 @@ void main() {
       ]);
       expect(_chips(), findsNWidgets(2)); // Todas + Corte de caballero
       expect(_chip('Peinados de gala'), findsNothing);
-      expect(
-        find.byKey(const Key('categoria-servicio-s1')),
-        findsOneWidget,
-      );
+      expect(find.byKey(const Key('categoria-servicio-s1')), findsOneWidget);
       expect(
         find.descendant(
           of: find.byKey(const Key('categoria-servicio-s1')),
@@ -297,7 +327,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text(MensajesNegocios.reservar));
       await tester.pumpAndSettle();
-      expect(find.text(MensajesNegocios.detalleServicio), findsOneWidget);
+      expect(find.byType(DetalleServicioPage), findsOneWidget);
       Navigator.of(tester.element(find.byType(DetalleServicioPage))).pop();
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.text(MensajesNegocios.servicios));
@@ -330,7 +360,11 @@ void main() {
   });
 
   group('detalle del servicio', () {
-    Future<void> detalle(WidgetTester tester, Servicio s, {ThemeData? tema}) async {
+    Future<void> detalle(
+      WidgetTester tester,
+      Servicio s, {
+      ThemeData? tema,
+    }) async {
       tester.view.physicalSize = const Size(360, 780);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
@@ -392,14 +426,11 @@ void main() {
         _servicio('s2', 'Perfilado', categoria: _barba),
       ], tema: tema);
 
-      Color? fondo(String texto) => tester
-          .widget<Material>(
-            find
-                .descendant(of: _chip(texto), matching: find.byType(Material))
-                .first,
-          )
-          .color;
-      expect(fondo('Corte de caballero'), tema.colorScheme.surfaceContainerHigh);
+      Color? fondo(String texto) => _fondoChip(tester, texto);
+      expect(
+        fondo('Corte de caballero'),
+        tema.colorScheme.surfaceContainerHigh,
+      );
       expect(fondo('Corte de caballero'), ColoresServia.superficieHundida);
       await tester.tap(_chip('Corte de caballero'));
       await tester.pumpAndSettle();
@@ -407,12 +438,16 @@ void main() {
       expect(fondo('Corte de caballero'), ColoresServia.primarioContenedor);
 
       final alto = tester.getSize(_chip('Corte de caballero')).height;
-      final area = tester.getSize(
-        find.ancestor(
-          of: _chip('Corte de caballero'),
-          matching: find.byType(ConstrainedBox),
-        ).first,
-      ).height;
+      final area = tester
+          .getSize(
+            find
+                .ancestor(
+                  of: _chip('Corte de caballero'),
+                  matching: find.byType(ConstrainedBox),
+                )
+                .first,
+          )
+          .height;
       expect(alto >= Medidas.tactil || area >= Medidas.tactil, isTrue);
 
       final texto = tester.widget<Text>(
@@ -429,10 +464,14 @@ void main() {
     testWidgets('si cambia el esquema del tema, cambian chip y texto', (
       tester,
     ) async {
-      final otro = ThemeData(
-        colorScheme: ColoresServia.esquema.copyWith(
-          primaryContainer: const Color(0xFF123456),
+      await tester.pumpWidget(const SizedBox());
+      final base = temaDeLaApp(tester);
+      final otro = base.copyWith(
+        colorScheme: base.colorScheme.copyWith(
           onSurfaceVariant: const Color(0xFF654321),
+        ),
+        chipTheme: base.chipTheme.copyWith(
+          selectedColor: const Color(0xFF123456),
         ),
       );
       await _perfil(tester, [
@@ -440,16 +479,7 @@ void main() {
       ], tema: otro);
       await tester.tap(_chip('Corte de caballero'));
       await tester.pumpAndSettle();
-      final fondo = tester
-          .widget<Material>(
-            find
-                .descendant(
-                  of: _chip('Corte de caballero'),
-                  matching: find.byType(Material),
-                )
-                .first,
-          )
-          .color;
+      final fondo = _fondoChip(tester, 'Corte de caballero');
       expect(fondo, const Color(0xFF123456));
       final texto = tester.widget<Text>(
         find.descendant(
@@ -478,6 +508,7 @@ void main() {
           isEnabled: true,
           hasTapAction: true,
           isFocusable: true,
+          hasFocusAction: true,
         ),
       );
       semantica.dispose();

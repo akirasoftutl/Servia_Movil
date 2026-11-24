@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/tokens.dart';
 import '../../../core/widgets/estados.dart';
 import '../../reservas/flujo_reserva.dart';
 import '../../reservas/mensajes.dart';
@@ -10,6 +11,7 @@ import '../data/negocios_service.dart';
 import '../data/servicio.dart';
 import '../formatos.dart';
 import '../mensajes.dart';
+import 'categorias_servicio.dart';
 import 'disponibilidad_page.dart';
 import 'fotos_negocio.dart';
 import 'imagenes_servicio.dart';
@@ -281,6 +283,16 @@ class _ContenidoServicio extends StatelessWidget {
                     letterSpacing: -0.5,
                   ),
                 ),
+
+                // Categoría del servicio (T18); sin categoría no ocupa nada
+                if (servicio.categoria != null) ...[
+                  const SizedBox(height: Espacios.s),
+                  CategoriaDelServicio(
+                    key: const Key('categoria-servicio'),
+                    servicio: servicio,
+                    estilo: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
 
                 const SizedBox(height: 12),
 
