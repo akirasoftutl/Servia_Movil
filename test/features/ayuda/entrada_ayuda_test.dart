@@ -21,6 +21,10 @@ void main() {
   testWidgets(
     'el inicio del cliente tiene el ícono «Ayuda» que abre la pantalla',
     (tester) async {
+      // El selector de orden (Móvil#63) ocupa espacio en el encabezado: 800x700.
+      tester.view.physicalSize = const Size(800, 700);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
       await tester.pumpWidget(inicio(conSesion: true));
       await tester.pumpAndSettle();
       final icono = find.byTooltip('Ayuda');
