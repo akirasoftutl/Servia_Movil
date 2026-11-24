@@ -158,8 +158,9 @@ class _ResumenReservaPageState extends State<ResumenReservaPage> {
               child: Row(
                 children: [
                   IconButton(
-                    onPressed:
-                        _enviando ? null : () => Navigator.of(context).pop(),
+                    onPressed: _enviando
+                        ? null
+                        : () => Navigator.of(context).pop(),
                     icon: const Icon(
                       Icons.arrow_back_rounded,
                       color: Color(0xFF111827),
@@ -421,6 +422,7 @@ class _ResumenReservaPageState extends State<ResumenReservaPage> {
 
             // Barra inferior fija con precio total y botón píldora negro
             Container(
+              width: double.infinity,
               decoration: const BoxDecoration(
                 color: Colors.white,
                 border: Border(
@@ -431,37 +433,38 @@ class _ResumenReservaPageState extends State<ResumenReservaPage> {
                 top: false,
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
-                  // Con textos grandes el botón pasa a su propia línea en vez
-                  // de comprimir el precio hasta hacerlo crecer en altura.
-                  child: Wrap(
-                    alignment: WrapAlignment.spaceBetween,
-                    crossAxisAlignment: WrapCrossAlignment.center,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            formatearPrecio(widget.servicio.precio),
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF111827),
-                              letterSpacing: -0.3,
-                              fontFeatures: [FontFeature.tabularFigures()],
+                      Flexible(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              formatearPrecio(widget.servicio.precio),
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF111827),
+                                letterSpacing: -0.3,
+                                fontFeatures: [FontFeature.tabularFigures()],
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            formatearDuracion(widget.servicio.duracionMin),
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w400,
-                              color: Color(0xFF6B7280),
+                            const SizedBox(height: 4),
+                            Text(
+                              formatearDuracion(widget.servicio.duracionMin),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w400,
+                                color: Color(0xFF6B7280),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: 20),
                       ConstrainedBox(
                         constraints: const BoxConstraints(minHeight: 52),
                         child: ElevatedButton(
@@ -584,11 +587,7 @@ class _ResumenReservaPageState extends State<ResumenReservaPage> {
       return const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.info_outline_rounded,
-            size: 20,
-            color: Color(0xFFB45309),
-          ),
+          Icon(Icons.info_outline_rounded, size: 20, color: Color(0xFFB45309)),
           SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -642,10 +641,7 @@ class _ResumenReservaPageState extends State<ResumenReservaPage> {
               const SizedBox(height: 2),
               Text(
                 perfil.correo,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF6B7280),
-                ),
+                style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
               ),
               if (telefono != null && telefono.isNotEmpty) ...[
                 const SizedBox(height: 2),
@@ -700,8 +696,9 @@ class _Dato extends StatelessWidget {
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF111827),
-                fontFeatures:
-                    tabular ? const [FontFeature.tabularFigures()] : null,
+                fontFeatures: tabular
+                    ? const [FontFeature.tabularFigures()]
+                    : null,
               ),
             ),
           ),

@@ -4,8 +4,8 @@ import '../../../core/theme/tokens.dart';
 import '../../../core/widgets/estados.dart';
 import '../../negocios/data/categoria.dart';
 import '../../negocios/data/negocios_service.dart';
-import '../../negocios/pages/tarjeta_negocio.dart';
 import '../../negocios/pages/detalle_servicio_page.dart';
+import '../../negocios/pages/tarjeta_negocio.dart';
 import '../data/favoritos_controlador.dart';
 import '../data/favoritos_servicios_controlador.dart';
 import '../data/servicio_favorito.dart';
@@ -39,6 +39,7 @@ class _FavoritosPageState extends State<FavoritosPage>
   late final TabController _pestanas;
   late final NegociosService _negocios;
   List<Categoria> _categorias = const [];
+  int _indice = 0;
 
   @override
   void initState() {
@@ -63,6 +64,9 @@ class _FavoritosPageState extends State<FavoritosPage>
 
   /// Los servicios se consultan al abrir su pestaña (y se refrescan al volver).
   void _alCambiarPestana() {
+    if (_pestanas.index != _indice) {
+      setState(() => _indice = _pestanas.index);
+    }
     if (!_pestanas.indexIsChanging && _pestanas.index == 1) {
       _servicios.cargar();
     }
@@ -106,25 +110,79 @@ class _FavoritosPageState extends State<FavoritosPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(MensajesFavoritos.titulo),
-        bottom: TabBar(
-          controller: _pestanas,
-          tabs: const [
-            Tab(text: MensajesFavoritos.tabNegocios),
-            Tab(text: MensajesFavoritos.tabServicios),
-          ],
-        ),
-      ),
+      backgroundColor: Colors.white,
       body: SafeArea(
         bottom: false,
-        child: TabBarView(
-          controller: _pestanas,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ListenableBuilder(listenable: _favoritos, builder: _cuerpo),
-            ListenableBuilder(
-              listenable: _servicios,
-              builder: _cuerpoServicios,
+            // Encabezado limpio estilo Fresha con flecha para regresar
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 14, 20, 14),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.of(context).maybePop(),
+                    icon: const Icon(
+                      Icons.arrow_back_rounded,
+                      color: Color(0xFF111827),
+                      size: 24,
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 40,
+                      minHeight: 40,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  const Expanded(
+                    child: Text(
+                      MensajesFavoritos.titulo,
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111827),
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Selector de pestañas tipo píldora ("Negocios" / "Servicios")
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+              child: Row(
+                children: [
+                  _ChipPestanaFavoritos(
+                    texto: MensajesFavoritos.tabNegocios,
+                    seleccionada: _indice == 0,
+                    onTap: () => _pestanas.animateTo(0),
+                  ),
+                  const SizedBox(width: 10),
+                  _ChipPestanaFavoritos(
+                    texto: MensajesFavoritos.tabServicios,
+                    seleccionada: _indice == 1,
+                    onTap: () => _pestanas.animateTo(1),
+                  ),
+                ],
+              ),
+            ),
+
+            const Divider(height: 1, color: Color(0xFFF3F4F6)),
+
+            Expanded(
+              child: TabBarView(
+                controller: _pestanas,
+                children: [
+                  ListenableBuilder(listenable: _favoritos, builder: _cuerpo),
+                  ListenableBuilder(
+                    listenable: _servicios,
+                    builder: _cuerpoServicios,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -154,9 +212,9 @@ class _FavoritosPageState extends State<FavoritosPage>
           );
         }
         return ListView.separated(
-          padding: Espacios.pantalla.copyWith(bottom: Espacios.xl),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, Espacios.xl),
           itemCount: items.length,
-          separatorBuilder: (_, _) => const SizedBox(height: Espacios.m),
+          separatorBuilder: (_, _) => const SizedBox(height: 14),
           itemBuilder: (context, indice) {
             final servicio = items[indice];
             return TarjetaServicioFavorito(
@@ -195,9 +253,9 @@ class _FavoritosPageState extends State<FavoritosPage>
           );
         }
         return ListView.separated(
-          padding: Espacios.pantalla.copyWith(bottom: Espacios.xl),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, Espacios.xl),
           itemCount: items.length,
-          separatorBuilder: (_, _) => const SizedBox(height: Espacios.m),
+          separatorBuilder: (_, _) => const SizedBox(height: 14),
           itemBuilder: (context, indice) {
             final negocio = items[indice];
             return TarjetaNegocio(
@@ -209,5 +267,46 @@ class _FavoritosPageState extends State<FavoritosPage>
           },
         );
     }
+  }
+}
+
+class _ChipPestanaFavoritos extends StatelessWidget {
+  const _ChipPestanaFavoritos({
+    required this.texto,
+    required this.seleccionada,
+    required this.onTap,
+  });
+
+  final String texto;
+  final bool seleccionada;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(
+          color: seleccionada ? const Color(0xFF0F0F0F) : Colors.white,
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(
+            color: seleccionada
+                ? const Color(0xFF0F0F0F)
+                : const Color(0xFFD1D5DB),
+            width: 1,
+          ),
+        ),
+        child: Text(
+          texto,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: seleccionada ? Colors.white : const Color(0xFF111827),
+          ),
+        ),
+      ),
+    );
   }
 }

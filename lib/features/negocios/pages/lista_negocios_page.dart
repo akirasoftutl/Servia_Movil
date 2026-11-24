@@ -7,12 +7,10 @@ import '../../../core/widgets/estados.dart';
 import '../data/categoria.dart';
 import '../data/negocio_resumen.dart';
 import '../data/negocios_service.dart';
-import '../data/orden_negocios.dart';
 import '../mensajes.dart';
 import 'perfil_negocio_page.dart';
 import 'pie_lista.dart';
 import 'seccion_destacados.dart';
-import 'selector_orden_negocios.dart';
 
 enum _EstadoLista { cargando, error, lista }
 
@@ -28,8 +26,12 @@ class ListaNegociosPage extends StatelessWidget {
 }
 
 class ListaNegocios extends StatefulWidget {
-  const ListaNegocios({super.key, this.negociosService});
+  const ListaNegocios({super.key, this.negociosService, this.seccionFinal});
   final NegociosService? negociosService;
+
+  /// Sección opcional que se muestra al final de la portada, debajo de
+  /// «Lugares cercanos». La pestaña Inicio la usa para «Cerca de ti».
+  final Widget? seccionFinal;
 
   @override
   State<ListaNegocios> createState() => _ListaNegociosState();
@@ -46,7 +48,6 @@ class _ListaNegociosState extends State<ListaNegocios> {
   Timer? _espera;
   String? _consulta;
   String? _categoriaId;
-  OrdenNegocios _orden = OrdenNegocios.nombre;
   int _version = 0;
   final _items = <NegocioResumen>[];
   List<Categoria> _categorias = [];
@@ -93,9 +94,9 @@ class _ListaNegociosState extends State<ListaNegocios> {
     _espera = Timer(_esperaBusqueda, _reiniciar);
   }
 
-  /// [destacados] es falso solo al cambiar el orden, que no los afecta. Con
-  /// una búsqueda o una categoría la sección está oculta: no se consulta.
-  void _reiniciar({bool destacados = true}) {
+  /// Con una búsqueda o una categoría la sección de destacados está oculta:
+  /// no se consulta.
+  void _reiniciar() {
     _espera?.cancel();
     setState(() {
       _version++;
@@ -108,7 +109,7 @@ class _ListaNegociosState extends State<ListaNegocios> {
     });
     if (_scroll.hasClients) _scroll.jumpTo(0);
     _cargar();
-    if (destacados && _consulta == null && _categoriaId == null) {
+    if (_consulta == null && _categoriaId == null) {
       _cargarDestacados();
     }
   }
@@ -121,14 +122,6 @@ class _ListaNegociosState extends State<ListaNegocios> {
   void _elegirCategoria(String? id) {
     setState(() => _categoriaId = id);
     _reiniciar();
-  }
-
-  /// El cursor solo vale con el orden con el que se obtuvo: al cambiarlo se
-  /// reinicia la lista, y `_version` descarta lo que siga en vuelo.
-  void _elegirOrden(OrdenNegocios orden) {
-    if (orden == _orden) return;
-    setState(() => _orden = orden);
-    _reiniciar(destacados: false);
   }
 
   void _alDesplazarse() {
@@ -204,7 +197,6 @@ class _ListaNegociosState extends State<ListaNegocios> {
         cursor: cursor,
         q: _consulta,
         categoriaId: _categoriaId,
-        orden: _orden,
       );
       if (!mounted || version != _version) return null;
       if (pagina.siguiente != null && pagina.siguiente == cursor) {
@@ -283,8 +275,6 @@ class _ListaNegociosState extends State<ListaNegocios> {
               onChanged: _alEscribir,
               onLimpiar: _limpiarBusqueda,
               onBuscar: _reiniciar,
-              orden: _orden,
-              onOrden: _elegirOrden,
             ),
             Expanded(child: _contenido()),
           ],
@@ -461,6 +451,11 @@ class _ListaNegociosState extends State<ListaNegocios> {
                 ],
               ),
             ),
+
+            if (widget.seccionFinal != null) ...[
+              const SizedBox(height: Espacios.m),
+              widget.seccionFinal!,
+            ],
           ],
         );
     }
@@ -474,56 +469,41 @@ class _EncabezadoExploracion extends StatelessWidget {
     required this.onChanged,
     required this.onLimpiar,
     required this.onBuscar,
-    required this.orden,
-    required this.onOrden,
   });
 
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
   final VoidCallback onLimpiar;
   final VoidCallback onBuscar;
-  final OrdenNegocios orden;
-  final ValueChanged<OrdenNegocios> onOrden;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 30, 20, 12),
+      padding: const EdgeInsets.fromLTRB(20, 40, 20, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // En pantallas angostas o con texto grande el selector baja a su
-          // propia línea en lugar de desbordar.
-          Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: Espacios.m,
-            runSpacing: Espacios.s,
+          const Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.location_on,
-                    size: 18,
-                    color: Color.fromARGB(255, 145, 90, 240),
-                  ),
-                  SizedBox(width: 4),
-                  Text(
-                    'Ubicación actual',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF111827),
-                    ),
-                  ),
-                  SizedBox(width: 2),
-                ],
+              Icon(
+                Icons.location_on,
+                size: 18,
+                color: Color.fromARGB(255, 145, 90, 240),
               ),
-              SelectorOrdenNegocios(orden: orden, onOrden: onOrden),
+              SizedBox(width: 4),
+              Text(
+                'Ubicación actual',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF111827),
+                ),
+              ),
+              SizedBox(width: 2),
             ],
           ),
-          const SizedBox(height: Espacios.s),
+          const SizedBox(height: 20),
 
           // Barra de búsqueda tipo píldora flotante
           Container(
@@ -542,6 +522,7 @@ class _EncabezadoExploracion extends StatelessWidget {
               ],
             ),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const Icon(
                   Icons.search_rounded,
@@ -550,14 +531,14 @@ class _EncabezadoExploracion extends StatelessWidget {
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  // Área táctil de al menos 48 dp, también con texto escalado.
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(minHeight: 48),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
                     child: TextField(
                       controller: controller,
                       onChanged: onChanged,
                       onSubmitted: (_) => onBuscar(),
                       textInputAction: TextInputAction.search,
+                      textAlignVertical: TextAlignVertical.center,
                       style: const TextStyle(
                         fontSize: 14,
                         color: Color(0xFF111827),
@@ -572,8 +553,7 @@ class _EncabezadoExploracion extends StatelessWidget {
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.zero,
+                        isCollapsed: true,
                       ),
                     ),
                   ),

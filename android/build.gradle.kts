@@ -1,3 +1,9 @@
+plugins {
+    // Necesario para que google_sign_in_android lea el OAuth client web de
+    // google-services.json en Android.
+    id("com.google.gms.google-services") version "4.4.4" apply false
+}
+
 allprojects {
     repositories {
         google()

@@ -1,0 +1,12 @@
+// Copia este archivo a GoogleSignIn.xcconfig y rellena los valores con los
+// del GoogleService-Info.plist descargado DESPUÉS de activar Google en Firebase.
+// GoogleSignIn.xcconfig está ignorado por Git: no subas valores reales.
+
+// GoogleService-Info.plist -> CLIENT_ID
+GOOGLE_CLIENT_ID = TU_CLIENT_ID_DE_IOS
+
+// Firebase Console -> configuración de la app web del proyecto -> ID de cliente
+GOOGLE_SERVER_CLIENT_ID = TU_CLIENT_ID_WEB
+
+// GoogleService-Info.plist -> REVERSED_CLIENT_ID
+GOOGLE_REVERSED_CLIENT_ID = TU_REVERSED_CLIENT_ID

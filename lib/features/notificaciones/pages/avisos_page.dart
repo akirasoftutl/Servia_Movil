@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/network/api_exception.dart';
-import '../../../core/theme/colores_servia.dart';
 import '../../../core/theme/tokens.dart';
 import '../../../core/widgets/estados.dart';
 import '../../auth/data/auth_service.dart';
@@ -149,27 +148,76 @@ class _AvisosPageState extends State<AvisosPage> {
 
   @override
   Widget build(BuildContext context) {
+    final puedeRegresar = Navigator.of(context).canPop();
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(MensajesNotificaciones.titulo),
-      ),
+      backgroundColor: Colors.white,
       body: SafeArea(
         bottom: false,
-        child: switch (_estado) {
-          _EstadoLista.cargando => const EstadoCargando(
-              mensaje: MensajesNotificaciones.cargando,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Encabezado minimalista estilo Fresha
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                puedeRegresar ? 12 : 20,
+                16,
+                20,
+                14,
+              ),
+              child: Row(
+                children: [
+                  if (puedeRegresar) ...[
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(
+                        Icons.arrow_back_rounded,
+                        color: Color(0xFF111827),
+                        size: 24,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 40,
+                        minHeight: 40,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                  ],
+                  const Expanded(
+                    child: Text(
+                      MensajesNotificaciones.titulo,
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111827),
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          _EstadoLista.error => EstadoError(
-              mensaje: MensajesNotificaciones.errorCarga,
-              onReintentar: () => _cargar(),
+            const Divider(height: 1, color: Color(0xFFF3F4F6)),
+
+            Expanded(
+              child: switch (_estado) {
+                _EstadoLista.cargando => const EstadoCargando(
+                    mensaje: MensajesNotificaciones.cargando,
+                  ),
+                _EstadoLista.error => EstadoError(
+                    mensaje: MensajesNotificaciones.errorCarga,
+                    onReintentar: () => _cargar(),
+                  ),
+                _EstadoLista.lista => _avisos.isEmpty
+                    ? const EstadoVacio(
+                        icono: Icons.notifications_none_rounded,
+                        mensaje: MensajesNotificaciones.sinAvisos,
+                      )
+                    : _lista(),
+              },
             ),
-          _EstadoLista.lista => _avisos.isEmpty
-              ? const EstadoVacio(
-                  icono: Icons.notifications_none,
-                  mensaje: MensajesNotificaciones.sinAvisos,
-                )
-              : _lista(),
-        },
+          ],
+        ),
       ),
     );
   }
@@ -178,17 +226,12 @@ class _AvisosPageState extends State<AvisosPage> {
     final conPie = _siguiente != null || _error != null;
     return ListView.builder(
       controller: _controller,
-      padding: const EdgeInsets.fromLTRB(
-        Espacios.l,
-        Espacios.l,
-        Espacios.l,
-        Espacios.xl,
-      ),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, Espacios.xl),
       itemCount: _avisos.length + (conPie ? 1 : 0),
       itemBuilder: (context, indice) {
         if (indice == _avisos.length) return _pie();
         return Padding(
-          padding: const EdgeInsets.only(bottom: Espacios.m),
+          padding: const EdgeInsets.only(bottom: 14),
           child: _TarjetaAviso(aviso: _avisos[indice], alAbrir: _abrir),
         );
       },
@@ -218,7 +261,19 @@ class _AvisosPageState extends State<AvisosPage> {
               )
             : OutlinedButton(
                 onPressed: () => _cargar(siguientePagina: true),
-                child: const Text(MensajesNotificaciones.cargarMas),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF111827),
+                  side: const BorderSide(color: Color(0xFFD1D5DB)),
+                  shape: const StadiumBorder(),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                ),
+                child: const Text(
+                  MensajesNotificaciones.cargarMas,
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
               ),
       ),
     );
@@ -233,35 +288,51 @@ class _TarjetaAviso extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tema = Theme.of(context);
-    final textos = tema.textTheme;
     final fecha = formatearFechaAviso(aviso.creadaEn);
     final peso = aviso.leida ? FontWeight.w500 : FontWeight.w700;
-    // Tarjeta del tema (superficie, borde y radio de Servia); sin leer va en
-    // negritas y con punto.
-    return Card(
+
+    return Material(
+      color: aviso.leida ? Colors.white : const Color(0xFFFAF8FF),
+      borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: () => alAbrir(aviso),
-        child: Padding(
-          padding: const EdgeInsets.all(Espacios.l),
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: aviso.leida ? Colors.white : const Color(0xFFFAF8FF),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: aviso.leida
+                  ? const Color(0xFFE5E7EB)
+                  : const Color(0xFFDCD2F5),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                constraints: const BoxConstraints.tightFor(
-                  width: Medidas.tactil,
-                  height: Medidas.tactil,
-                ),
-                decoration: const BoxDecoration(
-                  color: ColoresServia.primarioContenedor,
-                  shape: BoxShape.circle,
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3E8FF),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   iconoDeAviso(aviso.tipo),
-                  color: ColoresServia.enPrimarioContenedor,
+                  color: const Color(0xFF7C3AED),
+                  size: 22,
                 ),
               ),
-              const SizedBox(width: Espacios.m),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -272,8 +343,10 @@ class _TarjetaAviso extends StatelessWidget {
                         Expanded(
                           child: Text(
                             aviso.titulo,
-                            style: textos.titleMedium?.copyWith(
+                            style: TextStyle(
+                              fontSize: 15,
                               fontWeight: peso,
+                              color: const Color(0xFF111827),
                             ),
                           ),
                         ),
@@ -281,30 +354,39 @@ class _TarjetaAviso extends StatelessWidget {
                           Semantics(
                             label: MensajesNotificaciones.noLeida,
                             child: Container(
-                              width: Espacios.s,
-                              height: Espacios.s,
+                              width: 9,
+                              height: 9,
                               margin: const EdgeInsets.only(
-                                top: Espacios.s,
-                                left: Espacios.s,
+                                top: 5,
+                                left: 8,
                               ),
                               decoration: const BoxDecoration(
-                                color: ColoresServia.morado,
+                                color: Color(0xFF7C3AED),
                                 shape: BoxShape.circle,
                               ),
                             ),
                           ),
                       ],
                     ),
-                    const SizedBox(height: Espacios.xs),
+                    const SizedBox(height: 4),
                     Text(
                       aviso.cuerpo,
-                      style: textos.bodyMedium?.copyWith(
+                      style: TextStyle(
+                        fontSize: 14,
                         fontWeight: peso,
-                        color: tema.colorScheme.onSurfaceVariant,
+                        color: const Color(0xFF4B5563),
+                        height: 1.4,
                       ),
                     ),
-                    const SizedBox(height: Espacios.s),
-                    Text(fecha, style: textos.bodySmall),
+                    const SizedBox(height: 8),
+                    Text(
+                      fecha,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF6B7280),
+                      ),
+                    ),
                   ],
                 ),
               ),

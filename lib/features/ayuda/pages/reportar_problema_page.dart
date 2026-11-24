@@ -4,7 +4,6 @@ import '../../../core/network/api_exception.dart';
 import '../../../core/theme/tokens.dart';
 import '../../../core/widgets/aviso.dart';
 import '../../../core/widgets/estados.dart';
-import '../../../core/widgets/etiqueta_estado.dart';
 import '../../auth/data/auth_service.dart';
 import '../../reservas/fechas_reserva.dart';
 import '../data/reporte.dart';
@@ -12,10 +11,6 @@ import '../data/soporte_service.dart';
 import '../mensajes.dart';
 import '../validaciones.dart';
 
-/// Formulario para reportar un problema y lista de los reportes ya enviados
-/// por la cuenta (HU-C115 a HU-C117, T17). Usa `POST /soporte/reportes` y
-/// `GET /soporte/reportes/mios`; la API valida de verdad, aquí solo se da el
-/// aviso rápido.
 class ReportarProblemaPage extends StatefulWidget {
   const ReportarProblemaPage({
     super.key,
@@ -159,30 +154,156 @@ class _ReportarProblemaPageState extends State<ReportarProblemaPage> {
 
   @override
   Widget build(BuildContext context) {
-    final tema = Theme.of(context);
+    final puedeRegresar = Navigator.of(context).canPop();
+
     return Scaffold(
-      appBar: AppBar(title: const Text(MensajesAyuda.tituloReportar)),
+      backgroundColor: Colors.white,
       body: SafeArea(
         bottom: false,
-        child: ListView(
-          padding: Espacios.pantalla,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(MensajesAyuda.introReportar, style: tema.textTheme.bodyLarge),
-            const SizedBox(height: Espacios.l),
-            _formulario(),
-            const SizedBox(height: Espacios.xl),
-            Semantics(
-              header: true,
-              child: Text(
-                MensajesAyuda.misReportes,
-                style: tema.textTheme.titleLarge,
+            // Encabezado minimalista estilo Fresha
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                puedeRegresar ? 12 : 20,
+                16,
+                20,
+                14,
+              ),
+              child: Row(
+                children: [
+                  if (puedeRegresar) ...[
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(
+                        Icons.arrow_back_rounded,
+                        color: Color(0xFF111827),
+                        size: 24,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 40,
+                        minHeight: 40,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                  ],
+                  const Expanded(
+                    child: Text(
+                      MensajesAyuda.tituloReportar,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111827),
+                        letterSpacing: -0.4,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: Espacios.m),
-            _seccionLista(),
-            const SizedBox(height: Espacios.xl),
+            const Divider(height: 1, color: Color(0xFFF3F4F6)),
+
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, Espacios.xxl),
+                children: [
+                  Text(
+                    MensajesAyuda.introReportar,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF4B5563),
+                      height: 1.45,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: const Color(0xFFE5E7EB),
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: _formulario(),
+                  ),
+                  const SizedBox(height: 28),
+                  Semantics(
+                    header: true,
+                    child: const Text(
+                      MensajesAyuda.misReportes,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111827),
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  _seccionLista(),
+                  const SizedBox(height: Espacios.xl),
+                ],
+              ),
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  InputDecoration _decoracionCampo({
+    required String ayuda,
+    required String contador,
+    bool multiline = false,
+  }) {
+    final bordeBase = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1),
+    );
+    return InputDecoration(
+      filled: true,
+      fillColor: const Color(0xFFF9FAFB),
+      helperText: ayuda,
+      helperMaxLines: 2,
+      helperStyle: const TextStyle(
+        fontSize: 12,
+        color: Color(0xFF6B7280),
+      ),
+      counterText: contador,
+      counterStyle: const TextStyle(
+        fontSize: 12,
+        color: Color(0xFF6B7280),
+      ),
+      alignLabelWithHint: multiline,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 14,
+      ),
+      border: bordeBase,
+      enabledBorder: bordeBase,
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFF0F0F0F), width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFFB91C1C), width: 1),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFFB91C1C), width: 1.5),
       ),
     );
   }
@@ -198,6 +319,7 @@ class _ReportarProblemaPageState extends State<ReportarProblemaPage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const EtiquetaCampo(MensajesAyuda.etiquetaAsunto),
+          const SizedBox(height: 8),
           TextFormField(
             key: const Key('campo-asunto'),
             controller: _asunto,
@@ -206,14 +328,15 @@ class _ReportarProblemaPageState extends State<ReportarProblemaPage> {
             textCapitalization: TextCapitalization.sentences,
             validator: validarAsunto,
             onChanged: _alEscribir,
-            decoration: InputDecoration(
-              helperText: MensajesAyuda.ayudaAsunto,
-              helperMaxLines: 2,
-              counterText: '${_asunto.text.trim().length}/$asuntoMax',
+            style: const TextStyle(fontSize: 15, color: Color(0xFF111827)),
+            decoration: _decoracionCampo(
+              ayuda: MensajesAyuda.ayudaAsunto,
+              contador: '${_asunto.text.trim().length}/$asuntoMax',
             ),
           ),
-          const SizedBox(height: Espacios.l),
+          const SizedBox(height: 18),
           const EtiquetaCampo(MensajesAyuda.etiquetaDescripcion),
+          const SizedBox(height: 8),
           TextFormField(
             key: const Key('campo-descripcion'),
             controller: _descripcion,
@@ -224,15 +347,15 @@ class _ReportarProblemaPageState extends State<ReportarProblemaPage> {
             textCapitalization: TextCapitalization.sentences,
             validator: validarDescripcion,
             onChanged: _alEscribir,
-            decoration: InputDecoration(
-              helperText: MensajesAyuda.ayudaDescripcion,
-              helperMaxLines: 2,
-              alignLabelWithHint: true,
-              counterText: '${_descripcion.text.trim().length}/$descripcionMax',
+            style: const TextStyle(fontSize: 15, color: Color(0xFF111827)),
+            decoration: _decoracionCampo(
+              ayuda: MensajesAyuda.ayudaDescripcion,
+              contador: '${_descripcion.text.trim().length}/$descripcionMax',
+              multiline: true,
             ),
           ),
           if (_enviado) ...[
-            const SizedBox(height: Espacios.l),
+            const SizedBox(height: 16),
             Semantics(
               liveRegion: true,
               child: const Aviso(
@@ -243,15 +366,30 @@ class _ReportarProblemaPageState extends State<ReportarProblemaPage> {
             ),
           ],
           if (errorEnvio != null) ...[
-            const SizedBox(height: Espacios.l),
+            const SizedBox(height: 16),
             Aviso(texto: errorEnvio),
           ],
-          const SizedBox(height: Espacios.l),
-          FilledButton(
-            key: const Key('boton-enviar-reporte'),
-            onPressed: _enviando ? null : _enviar,
-            child: Text(
-              _enviando ? MensajesAyuda.enviando : MensajesAyuda.enviar,
+          const SizedBox(height: 20),
+          SizedBox(
+            height: 52,
+            child: ElevatedButton(
+              key: const Key('boton-enviar-reporte'),
+              onPressed: _enviando ? null : _enviar,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0F0F0F),
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: const Color(0xFFE5E7EB),
+                disabledForegroundColor: const Color(0xFF9CA3AF),
+                elevation: 0,
+                shape: const StadiumBorder(),
+                textStyle: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              child: Text(
+                _enviando ? MensajesAyuda.enviando : MensajesAyuda.enviar,
+              ),
             ),
           ),
         ],
@@ -288,7 +426,7 @@ class _ReportarProblemaPageState extends State<ReportarProblemaPage> {
           children: [
             for (final reporte in _reportes)
               Padding(
-                padding: const EdgeInsets.only(bottom: Espacios.s),
+                padding: const EdgeInsets.only(bottom: 12),
                 child: _TarjetaReporte(reporte: reporte),
               ),
           ],
@@ -304,27 +442,84 @@ class _TarjetaReporte extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tema = Theme.of(context);
     // Fecha y hora de la Ciudad de México, nunca la zona del teléfono.
     final fecha =
         '${formatearFechaLarga(fechaEnMexico(reporte.creadaEn))} · '
         '${horaEnMexico(reporte.creadaEn)}';
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(Espacios.l),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(reporte.asunto, style: tema.textTheme.titleSmall),
-            const SizedBox(height: Espacios.xs),
-            Text(fecha, style: tema.textTheme.bodySmall),
-            const SizedBox(height: Espacios.s),
-            const EtiquetaEstado(
-              texto: MensajesAyuda.etiquetaAbierto,
-              tono: TonoEstado.aviso,
-            ),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  reporte.asunto,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF111827),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  MensajesAyuda.etiquetaAbierto,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFFB45309),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              const Icon(
+                Icons.access_time_rounded,
+                size: 14,
+                color: Color(0xFF6B7280),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  fecha,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF6B7280),
+                    fontFeatures: [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

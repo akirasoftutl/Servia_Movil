@@ -131,12 +131,14 @@ class _HomePageState extends State<HomePage> {
           bottom: false,
           child: Column(
             children: [
-              NegociosCercanos(
-                service: widget.negociosService,
-                proveedorUbicacion: widget.proveedorUbicacion,
-              ),
               Expanded(
-                child: ListaNegocios(negociosService: widget.negociosService),
+                child: ListaNegocios(
+                  negociosService: widget.negociosService,
+                  seccionFinal: NegociosCercanos(
+                    service: widget.negociosService,
+                    proveedorUbicacion: widget.proveedorUbicacion,
+                  ),
+                ),
               ),
             ],
           ),
@@ -174,60 +176,62 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F8),
-      // La barra superior va superpuesta: así no quita espacio a las listas
-      // que ya tienen su propia cabecera (Inicio, Mis reservas, Mi perfil).
+      // La barra de accesos rápidos se superpone solo en Mi perfil.
       body: Stack(
         children: [
           Positioned.fill(
             child: IndexedStack(index: _indiceActual, children: pantallas),
           ),
-          Positioned(
-            top: 0,
-            right: 0,
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(8, 4, 12, 8),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.92),
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (estaLogueado)
-                        IconButton(
-                          tooltip: MensajesFavoritos.titulo,
-                          onPressed: () =>
-                              Navigator.of(context).pushNamed('/favoritos'),
-                          icon: const Icon(Icons.favorite_border),
-                        ),
-                      if (estaLogueado)
-                        IconButton(
-                          tooltip: MensajesNotificaciones.campana,
-                          onPressed: () => Navigator.of(context).pushNamed(
-                            '/avisos',
-                            arguments: _push,
+          // Accesos rápidos solo en Mi perfil; en el resto de pestañas no
+          // tapan sus propias cabeceras.
+          if (_indiceActual == 3)
+            Positioned(
+              top: 0,
+              right: 0,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 4, 12, 8),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.92),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (estaLogueado)
+                          IconButton(
+                            tooltip: MensajesFavoritos.titulo,
+                            onPressed: () =>
+                                Navigator.of(context).pushNamed('/favoritos'),
+                            icon: const Icon(Icons.favorite_border),
                           ),
-                          icon: _CampanaAvisos(push: _push),
-                        ),
-                      if (estaLogueado)
+                        if (estaLogueado)
+                          IconButton(
+                            tooltip: MensajesNotificaciones.campana,
+                            onPressed: () => Navigator.of(context).pushNamed(
+                              '/avisos',
+                              arguments: _push,
+                            ),
+                            icon: _CampanaAvisos(push: _push),
+                          ),
+                        if (estaLogueado)
+                          IconButton(
+                            tooltip: MensajesAyuda.tooltipAyuda,
+                            onPressed: _abrirAyuda,
+                            icon: const Icon(Icons.help_outline),
+                          ),
                         IconButton(
-                          tooltip: MensajesAyuda.tooltipAyuda,
-                          onPressed: _abrirAyuda,
-                          icon: const Icon(Icons.help_outline),
+                          tooltip: MensajesNotificaciones.perfil,
+                          onPressed: () => _seleccionar(3),
+                          icon: const Icon(Icons.person_outline_rounded),
                         ),
-                      IconButton(
-                        tooltip: MensajesNotificaciones.perfil,
-                        onPressed: () => _seleccionar(3),
-                        icon: const Icon(Icons.person_outline_rounded),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
         ],
       ),
       bottomNavigationBar: _BarraNavegacionInferior(

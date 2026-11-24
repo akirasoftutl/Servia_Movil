@@ -414,8 +414,9 @@ class _ContenidoServicio extends StatelessWidget {
           ),
         ),
 
-        // Barra inferior fija con precio + duración a la izquierda y botón píldora a la derecha
+       // Barra inferior fija con precio + duración a la izquierda y botón píldora a la derecha
         Container(
+          width: double.infinity,
           decoration: const BoxDecoration(
             color: Colors.white,
             border: Border(
@@ -426,38 +427,38 @@ class _ContenidoServicio extends StatelessWidget {
             top: false,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
-              // El precio y el botón comparten línea mientras haya espacio;
-              // con texto muy grande el botón baja en lugar de estrangular
-              // al precio y provocar un desbordamiento vertical.
-              child: Wrap(
-                alignment: WrapAlignment.spaceBetween,
-                crossAxisAlignment: WrapCrossAlignment.center,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        formatearPrecio(servicio.precio),
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF111827),
-                          letterSpacing: -0.3,
+                  Flexible(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          formatearPrecio(servicio.precio),
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF111827),
+                            letterSpacing: -0.3,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        formatearDuracion(servicio.duracionMin),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                          color: Color(0xFF6B7280),
+                        const SizedBox(height: 4),
+                        Text(
+                          formatearDuracion(servicio.duracionMin),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                            color: Color(0xFF6B7280),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                  if (aceptaReservas)
+                  if (aceptaReservas) ...[
+                    const SizedBox(width: 20),
                     ConstrainedBox(
                       constraints: const BoxConstraints(minHeight: 52),
                       child: ElevatedButton(
@@ -476,6 +477,7 @@ class _ContenidoServicio extends StatelessWidget {
                         child: const Text(MensajesNegocios.reservar),
                       ),
                     ),
+                  ],
                 ],
               ),
             ),

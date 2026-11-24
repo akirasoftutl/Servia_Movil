@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import 'package:servia/features/auth/data/auth_service.dart';
 import 'package:servia/features/auth/data/perfil.dart';
@@ -34,6 +35,16 @@ class AuthServiceFalso extends AuthService {
   }
 }
 
+class AuthServiceGoogleFalso extends AuthService {
+  bool llamado = false;
+
+  @override
+  Future<UserCredential> iniciarSesionConGoogle() async {
+    llamado = true;
+    throw const InicioGoogleCancelado();
+  }
+}
+
 void main() {
   group('MensajesAuth.mensajeDeInicioSesion', () {
     test('credenciales inválidas producen el mensaje genérico', () {
@@ -55,16 +66,38 @@ void main() {
     });
 
     test('errores desconocidos producen el mensaje de red', () {
-      expect(MensajesAuth.mensajeDeInicioSesion(Exception('x')),
-          MensajesAuth.errorRed);
+      expect(
+        MensajesAuth.mensajeDeInicioSesion(Exception('x')),
+        MensajesAuth.errorRed,
+      );
       expect(
         MensajesAuth.mensajeDeInicioSesion(
-          FirebaseAuthException(
-            code: 'algo-desconocido',
-            message: 'x',
-          ),
+          FirebaseAuthException(code: 'algo-desconocido', message: 'x'),
         ),
         MensajesAuth.errorRed,
+      );
+    });
+
+    test('Google cancelado y mal configurado tienen su propio mensaje', () {
+      expect(
+        MensajesAuth.mensajeDeInicioSesion(const InicioGoogleCancelado()),
+        MensajesAuth.googleCancelado,
+      );
+      expect(
+        MensajesAuth.mensajeDeInicioSesion(
+          const GoogleSignInException(
+            code: GoogleSignInExceptionCode.clientConfigurationError,
+          ),
+        ),
+        MensajesAuth.googleNoConfigurado,
+      );
+      expect(
+        MensajesAuth.mensajeDeInicioSesion(
+          const InicioGoogleCancelado(
+            descripcion: '[16] Account reauth failed.',
+          ),
+        ),
+        MensajesAuth.googleSha,
       );
     });
   });
@@ -92,26 +125,35 @@ void main() {
   });
 
   group('LoginPage', () {
-    testWidgets('muestra "Correo o contraseña incorrectos" con credenciales malas',
-        (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: LoginPage(authService: AuthServiceFalso(tipoError: 'credenciales')),
-        ),
-      );
+    testWidgets(
+      'muestra "Correo o contraseña incorrectos" con credenciales malas',
+      (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: LoginPage(
+              authService: AuthServiceFalso(tipoError: 'credenciales'),
+            ),
+          ),
+        );
 
-      await tester.enterText(find.byType(TextField).at(0), 'cliente@test.com');
-      await tester.enterText(find.byType(TextField).at(1), 'contraseña-mala');
-      await tester.tap(find.text('Continuar'));
-      await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byType(TextField).at(0),
+          'cliente@test.com',
+        );
+        await tester.enterText(find.byType(TextField).at(1), 'contraseña-mala');
+        await tester.tap(find.text('Continuar'));
+        await tester.pumpAndSettle();
 
-      expect(find.text(MensajesAuth.credencialesInvalidas), findsOneWidget);
-    });
+        expect(find.text(MensajesAuth.credencialesInvalidas), findsOneWidget);
+      },
+    );
 
     testWidgets('no dice cuál campo falló', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: LoginPage(authService: AuthServiceFalso(tipoError: 'credenciales')),
+          home: LoginPage(
+            authService: AuthServiceFalso(tipoError: 'credenciales'),
+          ),
         ),
       );
 
@@ -141,8 +183,9 @@ void main() {
       expect(find.text(MensajesAuth.camposVacios), findsOneWidget);
     });
 
-    testWidgets('muestra el mensaje inicial enviado por AuthGate',
-        (tester) async {
+    testWidgets('muestra el mensaje inicial enviado por AuthGate', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: LoginPage(
@@ -153,6 +196,20 @@ void main() {
       );
 
       expect(find.text(MensajesAuth.soloClientes), findsOneWidget);
+    });
+
+    testWidgets('el botón de Google usa AuthService y avisa si se cancela', (
+      tester,
+    ) async {
+      final auth = AuthServiceGoogleFalso();
+      await tester.pumpWidget(MaterialApp(home: LoginPage(authService: auth)));
+
+      await tester.ensureVisible(find.text('Continuar con Google'));
+      await tester.tap(find.text('Continuar con Google'));
+      await tester.pumpAndSettle();
+
+      expect(auth.llamado, isTrue);
+      expect(find.text(MensajesAuth.googleCancelado), findsOneWidget);
     });
   });
 }
