@@ -32,6 +32,11 @@ Future<void> abrir(
   SesionPerfilFalsa sesion,
   PerfilClienteFalso api,
 ) async {
+  // La foto de perfil va arriba: con la ventana de 800 × 600 por defecto el
+  // botón «Editar información» queda fuera de la pantalla y no se construye.
+  tester.view.physicalSize = const Size(400, 1000);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
   await tester.pumpWidget(pagina(sesion, api));
   await tester.pumpAndSettle();
 }
@@ -181,6 +186,9 @@ void main() {
       WidgetTester tester,
       PerfilClienteFalso api,
     ) async {
+      tester.view.physicalSize = const Size(400, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
       await tester.pumpWidget(
         MaterialApp(
           home: Builder(
