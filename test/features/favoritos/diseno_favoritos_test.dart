@@ -8,12 +8,13 @@ import 'package:servia/core/theme/tokens.dart';
 import 'package:servia/core/widgets/estados.dart';
 import 'package:servia/features/favoritos/mensajes.dart';
 import 'package:servia/features/favoritos/pages/favoritos_page.dart';
+import 'package:servia/features/favoritos/pages/tarjeta_servicio_favorito.dart';
 
 import '../../core/tema_de_la_app.dart';
 import '../negocios/fakes.dart';
 import 'fakes_favoritos.dart';
 
-/// Archivos de la issue #64 que no deben traer colores, tamaños de letra,
+/// Archivos de las issues #64 y #82 que no deben traer colores, tamaños de letra,
 /// radios ni espacios literales: todo sale del tema y de los tokens.
 List<File> archivosDeFavoritos() => [
   ...Directory('lib/features/favoritos')
@@ -162,6 +163,127 @@ void main() {
         (fondoIcono.decoration! as BoxDecoration).color,
         tema.colorScheme.primaryContainer,
       );
+    });
+  });
+
+  group('favoritos de servicios: los estilos salen del tema de Servia', () {
+    late ThemeData tema;
+    late ApiFavoritosFalsa api;
+
+    setUp(() {
+      api = ApiFavoritosFalsa();
+      api
+          .serviciosDe('ana')
+          .add(servicioFavorito('n1', 's1', nombre: 'Masaje relajante'));
+    });
+
+    Future<void> montar(WidgetTester tester) async {
+      await tester.pumpWidget(const SizedBox());
+      tema = temaDeLaApp(tester);
+      final sesion = SesionFavoritos('ana');
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: tema,
+          home: FavoritosPage(
+            controlador: api.controlador(sesion),
+            serviciosControlador: api.controladorServicios(sesion),
+            negociosService: NegociosServiceFalso(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(MensajesFavoritos.tabServicios));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets(
+      'pestañas, tarjeta y corazón usan colores, fuente y radios del tema',
+      (tester) async {
+        await montar(tester);
+        final c = tema.colorScheme;
+
+        // Las pestañas toman su estilo del tema, sin colores propios.
+        final barra = tester.widget<TabBar>(find.byType(TabBar));
+        expect(barra.labelColor, isNull);
+        expect(barra.indicatorColor, isNull);
+        expect(barra.labelStyle, isNull);
+        final seleccionada = tester
+            .renderObject<RenderParagraph>(
+              find.text(MensajesFavoritos.tabServicios),
+            )
+            .text
+            .style!;
+        expect(seleccionada.color, c.primary);
+        expect(seleccionada.fontFamily, 'PlusJakartaSans');
+        final otra = tester
+            .renderObject<RenderParagraph>(
+              find.text(MensajesFavoritos.tabNegocios),
+            )
+            .text
+            .style!;
+        expect(otra.color, c.onSurfaceVariant);
+
+        // Tarjeta: superficie, borde y radio de tarjeta de los tokens.
+        final tarjeta = tester.widget<Container>(
+          find.descendant(
+            of: find.byType(TarjetaServicioFavorito),
+            matching: find.byWidgetPredicate(
+              (w) =>
+                  w is Container &&
+                  w.decoration is BoxDecoration &&
+                  (w.decoration! as BoxDecoration).border != null,
+            ),
+          ),
+        );
+        final decoracion = tarjeta.decoration! as BoxDecoration;
+        expect(decoracion.color, c.surface);
+        expect(decoracion.borderRadius, Radios.tarjeta);
+        expect((decoracion.border! as Border).top.color, ColoresServia.borde);
+
+        // Nombre con la fuente y el color del tema.
+        final nombre = tester
+            .renderObject<RenderParagraph>(find.text('Masaje relajante'))
+            .text
+            .style!;
+        expect(nombre.fontFamily, 'PlusJakartaSans');
+        expect(nombre.color, c.onSurface);
+
+        // Corazón marcado con el primario y área táctil de 48 dp.
+        final corazon = tester.widget<IconButton>(find.byType(IconButton).last);
+        expect(corazon.isSelected, isTrue);
+        expect(corazon.style!.foregroundColor!.resolve({}), c.primary);
+        expect(
+          tester.getSize(find.byType(IconButton).last).shortestSide,
+          greaterThanOrEqualTo(Medidas.tactil),
+        );
+      },
+    );
+
+    testWidgets('vacío y error de servicios usan EstadoVacio y EstadoError', (
+      tester,
+    ) async {
+      api.serviciosPorCuenta.clear();
+      await montar(tester);
+      expect(find.byType(EstadoVacio), findsOneWidget);
+
+      api.erroresServicios['GET'] = (codigo: 500, mensaje: 'Falló');
+      final sesion = SesionFavoritos('ana');
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: tema,
+          home: FavoritosPage(
+            controlador: api.controlador(sesion),
+            serviciosControlador: api.controladorServicios(sesion),
+            negociosService: NegociosServiceFalso(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(MensajesFavoritos.tabServicios));
+      await tester.pumpAndSettle();
+      expect(find.byType(EstadoError), findsOneWidget);
     });
   });
 }
