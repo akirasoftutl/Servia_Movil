@@ -60,8 +60,26 @@ class DatosMapaCercanos {
 typedef ConstructorMapaCercanos =
     Widget Function(BuildContext context, DatosMapaCercanos datos);
 
+typedef GeneradorIconoPinMapa =
+    Future<BitmapDescriptor> Function({
+      required String etiqueta,
+      required bool seleccionado,
+      required double pixelRatio,
+    });
+
+typedef GeneradorIconoClienteMapa =
+    Future<BitmapDescriptor> Function({required double pixelRatio});
+
+typedef ConstructorMapaNativo =
+    Widget Function({
+      required CameraPosition camaraInicial,
+      required Set<Marker> marcadores,
+      required EdgeInsets padding,
+      required MapCreatedCallback onMapCreated,
+    });
+
 Widget _construirGoogleMap(BuildContext context, DatosMapaCercanos datos) =>
-    _VistaGoogleMap(datos: datos);
+    VistaGoogleMap(datos: datos);
 
 class MapaCercanosPage extends StatefulWidget {
   const MapaCercanosPage({
@@ -341,16 +359,27 @@ class _ElementoListaMapa extends StatelessWidget {
 typedef _ClaveIconoPin = ({String etiqueta, bool seleccionado, double escala});
 
 /// Implementación real con el SDK de Google Maps (`google_maps_flutter`).
-class _VistaGoogleMap extends StatefulWidget {
-  const _VistaGoogleMap({required this.datos});
+@visibleForTesting
+class VistaGoogleMap extends StatefulWidget {
+  const VistaGoogleMap({
+    super.key,
+    required this.datos,
+    this.generadorIconoPin = crearMarcadorDistancia,
+    this.generadorIconoCliente = crearMarcadorCliente,
+    this.constructorMapaNativo,
+  });
 
   final DatosMapaCercanos datos;
+  final GeneradorIconoPinMapa generadorIconoPin;
+  final GeneradorIconoClienteMapa generadorIconoCliente;
+  final ConstructorMapaNativo? constructorMapaNativo;
 
   @override
-  State<_VistaGoogleMap> createState() => _VistaGoogleMapState();
+  State<VistaGoogleMap> createState() => VistaGoogleMapState();
 }
 
-class _VistaGoogleMapState extends State<_VistaGoogleMap> {
+@visibleForTesting
+class VistaGoogleMapState extends State<VistaGoogleMap> {
   final Map<_ClaveIconoPin, BitmapDescriptor> _iconos = {};
   final Map<_ClaveIconoPin, Future<BitmapDescriptor>> _enCurso = {};
   BitmapDescriptor? _iconoCliente;
@@ -359,7 +388,13 @@ class _VistaGoogleMapState extends State<_VistaGoogleMap> {
   double? _escala;
   int _generacion = 0;
   bool _desechado = false;
-  bool _actualizacionPendiente = false;
+
+  @visibleForTesting
+  int get entradasCacheParaPruebas =>
+      _iconos.length +
+      _enCurso.length +
+      (_iconoCliente == null ? 0 : 1) +
+      (_clienteEnCurso == null ? 0 : 1);
 
   double _normalizarEscala(double ratio) =>
       ratio.isFinite ? ratio.clamp(1.0, 4.0) : 1.0;
@@ -369,16 +404,6 @@ class _VistaGoogleMapState extends State<_VistaGoogleMap> {
     _enCurso.clear();
     _iconoCliente = null;
     _clienteEnCurso = null;
-  }
-
-  void _programarActualizacion() {
-    if (_desechado || _actualizacionPendiente) return;
-    _actualizacionPendiente = true;
-    scheduleMicrotask(() {
-      _actualizacionPendiente = false;
-      if (_desechado || !mounted) return;
-      setState(() {});
-    });
   }
 
   @override
@@ -394,7 +419,7 @@ class _VistaGoogleMapState extends State<_VistaGoogleMap> {
   }
 
   @override
-  void didUpdateWidget(covariant _VistaGoogleMap oldWidget) {
+  void didUpdateWidget(covariant VistaGoogleMap oldWidget) {
     super.didUpdateWidget(oldWidget);
     final escala =
         _escala ?? _normalizarEscala(MediaQuery.devicePixelRatioOf(context));
@@ -442,7 +467,7 @@ class _VistaGoogleMapState extends State<_VistaGoogleMap> {
     _podarCache(escala, etiquetasActivas);
 
     if (_iconoCliente == null && _clienteEnCurso == null) {
-      final futuro = crearMarcadorCliente(pixelRatio: escala);
+      final futuro = widget.generadorIconoCliente(pixelRatio: escala);
       _clienteEnCurso = futuro;
       unawaited(
         futuro.then(
@@ -450,7 +475,7 @@ class _VistaGoogleMapState extends State<_VistaGoogleMap> {
             if (_generacion == generacion) _clienteEnCurso = null;
             if (_desechado || !mounted || _generacion != generacion) return;
             _iconoCliente = icono;
-            _programarActualizacion();
+            setState(() {});
           },
           onError: (Object _) {
             if (_generacion == generacion) _clienteEnCurso = null;
@@ -477,7 +502,7 @@ class _VistaGoogleMapState extends State<_VistaGoogleMap> {
 
   void _solicitarIconoPin(_ClaveIconoPin clave, int generacion) {
     if (_iconos.containsKey(clave) || _enCurso.containsKey(clave)) return;
-    final futuro = crearMarcadorDistancia(
+    final futuro = widget.generadorIconoPin(
       etiqueta: clave.etiqueta,
       seleccionado: clave.seleccionado,
       pixelRatio: clave.escala,
@@ -493,7 +518,7 @@ class _VistaGoogleMapState extends State<_VistaGoogleMap> {
           );
           if (!sigueActivo) return;
           _iconos[clave] = icono;
-          _programarActualizacion();
+          setState(() {});
         },
         onError: (Object _) {
           if (_generacion == generacion) _enCurso.remove(clave);
@@ -539,21 +564,40 @@ class _VistaGoogleMapState extends State<_VistaGoogleMap> {
     return marcadores;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final pos = widget.datos.posicionCliente;
+  Widget _construirMapaPorOmision({
+    required CameraPosition camaraInicial,
+    required Set<Marker> marcadores,
+    required EdgeInsets padding,
+    required MapCreatedCallback onMapCreated,
+  }) {
     return GoogleMap(
-      initialCameraPosition: CameraPosition(
-        target: LatLng(pos.lat, pos.lng),
-        zoom: widget.datos.zoomInicial,
-      ),
-      markers: _marcadores(),
+      initialCameraPosition: camaraInicial,
+      markers: marcadores,
       // Solo usamos la lectura puntual en memoria de `ubicacion_cliente.dart`.
       myLocationEnabled: false,
       myLocationButtonEnabled: false,
       mapToolbarEnabled: false,
       zoomControlsEnabled: false,
-      padding: EdgeInsets.only(bottom: MediaQuery.sizeOf(context).height * 0.36),
+      padding: padding,
+      onMapCreated: onMapCreated,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pos = widget.datos.posicionCliente;
+    final camaraInicial = CameraPosition(
+      target: LatLng(pos.lat, pos.lng),
+      zoom: widget.datos.zoomInicial,
+    );
+    final padding = EdgeInsets.only(
+      bottom: MediaQuery.sizeOf(context).height * 0.36,
+    );
+    final constructor = widget.constructorMapaNativo ?? _construirMapaPorOmision;
+    return constructor(
+      camaraInicial: camaraInicial,
+      marcadores: _marcadores(),
+      padding: padding,
       onMapCreated: (controller) {
         if (_desechado) {
           controller.dispose();
