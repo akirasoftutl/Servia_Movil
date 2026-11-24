@@ -9,6 +9,10 @@ void main() {
   testWidgets('inicio no requiere datos personales para mostrar negocios', (
     tester,
   ) async {
+    // El selector de orden ocupa unos dp más en el encabezado: viewport más alto.
+    tester.view.physicalSize = const Size(800, 700);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
         home: HomePage(
