@@ -7,6 +7,7 @@ import 'package:servia/features/auth/pages/login_page.dart';
 import 'package:servia/features/ayuda/pages/ayuda_page.dart';
 import 'package:servia/features/ayuda/pages/reportar_problema_page.dart';
 import 'package:servia/features/auth/pages/register_page.dart';
+import 'package:servia/features/favoritos/pages/favoritos_page.dart';
 import 'package:servia/features/home/pages/home_page.dart';
 import 'package:servia/features/negocios/data/disponibilidad.dart';
 import 'package:servia/features/negocios/data/disponibilidad_service.dart';
@@ -20,6 +21,7 @@ import 'package:servia/features/reservas/pages/resumen_reserva_page.dart';
 import 'package:servia/core/network/api_exception.dart';
 import 'package:servia/features/negocios/data/servicio.dart';
 
+import '../features/favoritos/fakes_favoritos.dart';
 import '../features/ayuda/fakes_ayuda.dart';
 import '../features/negocios/fakes.dart';
 import '../features/perfil/fakes_perfil.dart';
@@ -108,6 +110,14 @@ void main() {
           ),
           null,
         ),
+        'perfil del negocio con corazón': (
+          () => PerfilNegocioPage(
+            negocioId: 'abc123',
+            negociosService: ServiciosServiceFalso(),
+            favoritos: ApiFavoritosFalsa().controlador(SesionFavoritos('ana')),
+          ),
+          null,
+        ),
         'detalle del servicio': (
           () => DetalleServicioPage(
             negocioId: 'abc123',
@@ -151,6 +161,32 @@ void main() {
             servicioNombre: servicio.nombre,
             fecha: '2026-11-04',
             hora: '11:30',
+          ),
+          null,
+        ),
+        'Mis favoritos': (
+          () {
+            final api = ApiFavoritosFalsa();
+            api.de('ana').addAll([
+              negocioFavorito(
+                'b1',
+                nombre:
+                    'Estética Lupita: cortes, color y peinados para toda la familia',
+                aceptaReservas: false,
+              ),
+              negocioFavorito('b2', nombre: 'Salón Aurora'),
+            ]);
+            return FavoritosPage(
+              controlador: api.controlador(SesionFavoritos('ana')),
+              negociosService: NegociosServiceFalso(),
+            );
+          },
+          null,
+        ),
+        'Mis favoritos vacío': (
+          () => FavoritosPage(
+            controlador: ApiFavoritosFalsa().controlador(SesionFavoritos('ana')),
+            negociosService: NegociosServiceFalso(),
           ),
           null,
         ),
