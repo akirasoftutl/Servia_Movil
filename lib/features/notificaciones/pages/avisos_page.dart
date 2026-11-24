@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../core/theme/colores_servia.dart';
 import '../../../core/theme/tokens.dart';
 import '../../../core/widgets/estados.dart';
 import '../../auth/data/auth_service.dart';
@@ -8,6 +9,7 @@ import '../data/aviso.dart';
 import '../data/notificaciones_service.dart';
 import '../data/servicio_push.dart';
 import '../mensajes.dart';
+import '../tipos_aviso.dart';
 
 /// Lista de avisos de reservas del cliente (MVP-28).
 class AvisosPage extends StatefulWidget {
@@ -148,7 +150,6 @@ class _AvisosPageState extends State<AvisosPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F8),
       appBar: AppBar(
         title: const Text(MensajesNotificaciones.titulo),
       ),
@@ -177,12 +178,17 @@ class _AvisosPageState extends State<AvisosPage> {
     final conPie = _siguiente != null || _error != null;
     return ListView.builder(
       controller: _controller,
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, Espacios.xl),
+      padding: const EdgeInsets.fromLTRB(
+        Espacios.l,
+        Espacios.l,
+        Espacios.l,
+        Espacios.xl,
+      ),
       itemCount: _avisos.length + (conPie ? 1 : 0),
       itemBuilder: (context, indice) {
         if (indice == _avisos.length) return _pie();
         return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.only(bottom: Espacios.m),
           child: _TarjetaAviso(aviso: _avisos[indice], alAbrir: _abrir),
         );
       },
@@ -212,11 +218,6 @@ class _AvisosPageState extends State<AvisosPage> {
               )
             : OutlinedButton(
                 onPressed: () => _cargar(siguientePagina: true),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF111827),
-                  side: const BorderSide(color: Color(0xFFD1D5DB)),
-                  shape: const StadiumBorder(),
-                ),
                 child: const Text(MensajesNotificaciones.cargarMas),
               ),
       ),
@@ -232,67 +233,79 @@ class _TarjetaAviso extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    final textos = tema.textTheme;
     final fecha = formatearFechaAviso(aviso.creadaEn);
     final peso = aviso.leida ? FontWeight.w500 : FontWeight.w700;
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
+    // Tarjeta del tema (superficie, borde y radio de Servia); sin leer va en
+    // negritas y con punto.
+    return Card(
       child: InkWell(
         onTap: () => alAbrir(aviso),
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
-          ),
-          child: Column(
+        child: Padding(
+          padding: const EdgeInsets.all(Espacios.l),
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Text(
-                      aviso.titulo,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: peso,
-                        color: const Color(0xFF111827),
-                      ),
-                    ),
-                  ),
-                  if (!aviso.leida)
-                    Semantics(
-                      label: MensajesNotificaciones.noLeida,
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        margin: const EdgeInsets.only(top: 6, left: 8),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF7C3AED),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(
-                aviso.cuerpo,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: peso,
-                  color: const Color(0xFF4B5563),
+              Container(
+                constraints: const BoxConstraints.tightFor(
+                  width: Medidas.tactil,
+                  height: Medidas.tactil,
+                ),
+                decoration: const BoxDecoration(
+                  color: ColoresServia.primarioContenedor,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  iconoDeAviso(aviso.tipo),
+                  color: ColoresServia.enPrimarioContenedor,
                 ),
               ),
-              const SizedBox(height: 10),
-              Text(
-                fecha,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF6B7280),
+              const SizedBox(width: Espacios.m),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            aviso.titulo,
+                            style: textos.titleMedium?.copyWith(
+                              fontWeight: peso,
+                            ),
+                          ),
+                        ),
+                        if (!aviso.leida)
+                          Semantics(
+                            label: MensajesNotificaciones.noLeida,
+                            child: Container(
+                              width: Espacios.s,
+                              height: Espacios.s,
+                              margin: const EdgeInsets.only(
+                                top: Espacios.s,
+                                left: Espacios.s,
+                              ),
+                              decoration: const BoxDecoration(
+                                color: ColoresServia.morado,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: Espacios.xs),
+                    Text(
+                      aviso.cuerpo,
+                      style: textos.bodyMedium?.copyWith(
+                        fontWeight: peso,
+                        color: tema.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: Espacios.s),
+                    Text(fecha, style: textos.bodySmall),
+                  ],
                 ),
               ),
             ],

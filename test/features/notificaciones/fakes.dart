@@ -138,9 +138,10 @@ Aviso avisoPrueba({
   bool leida = false,
   DateTime? creadaEn,
   String? reservaId = 'r1',
+  String tipo = 'reserva.confirmada',
 }) => Aviso(
   id: id,
-  tipo: 'reserva.confirmada',
+  tipo: tipo,
   titulo: titulo,
   cuerpo: cuerpo,
   leida: leida,
@@ -153,9 +154,10 @@ RemoteMessage mensajePrueba({
   String? reservaId = 'r1',
   String titulo = 'Reserva confirmada',
   String cuerpo = 'Tu reserva quedó confirmada.',
+  String tipo = 'reserva.confirmada',
 }) => RemoteMessage(
   data: <String, dynamic>{
-    'tipo': 'reserva.confirmada',
+    'tipo': tipo,
     'notificacionId': notificacionId,
     'reservaId': ?reservaId,
   },

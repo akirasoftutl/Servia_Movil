@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../favoritos/data/favoritos_controlador.dart';
 import '../../notificaciones/data/servicio_push.dart';
 
 class AuthService {
@@ -65,5 +66,7 @@ class AuthService {
       }
     }
     await _auth.signOut();
+    // Los favoritos son de la cuenta: no deben verse con otra (RN-46).
+    FavoritosControlador.instancia.limpiar();
   }
 }
