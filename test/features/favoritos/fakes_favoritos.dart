@@ -23,7 +23,8 @@ class UsuarioFavoritos extends Fake implements User {
 /// Sesión de la app: [usuario] null = sin sesión; se cambia para simular
 /// cerrar sesión y entrar con otra cuenta.
 class SesionFavoritos extends AuthService {
-  SesionFavoritos([String? uid]) : usuario = uid == null ? null : UsuarioFavoritos(uid);
+  SesionFavoritos([String? uid])
+    : usuario = uid == null ? null : UsuarioFavoritos(uid);
 
   User? usuario;
 
@@ -72,9 +73,12 @@ class ApiFavoritosFalsa {
 
   final peticiones = <http.Request>[];
 
-  List<Map<String, dynamic>> de(String uid) => porCuenta.putIfAbsent(uid, () => []);
+  List<Map<String, dynamic>> de(String uid) =>
+      porCuenta.putIfAbsent(uid, () => []);
 
-  List<String> metodos() => [for (final p in peticiones) '${p.method} ${p.url.path}'];
+  List<String> metodos() => [
+    for (final p in peticiones) '${p.method} ${p.url.path}',
+  ];
 
   http.Response _json(int codigo, Object? cuerpo) => http.Response(
     jsonEncode(cuerpo),

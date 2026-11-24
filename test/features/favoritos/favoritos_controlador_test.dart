@@ -7,7 +7,8 @@ import 'package:servia/features/negocios/data/negocio_resumen.dart';
 
 import 'fakes_favoritos.dart';
 
-NegocioResumen resumenDe(String id) => NegocioResumen.fromJson(negocioFavorito(id));
+NegocioResumen resumenDe(String id) =>
+    NegocioResumen.fromJson(negocioFavorito(id));
 
 void main() {
   late ApiFavoritosFalsa api;
@@ -56,16 +57,19 @@ void main() {
       expect(controlador.items, isEmpty);
     });
 
-    test('recargar con datos no los esconde mientras llega la respuesta', () async {
-      api.de('ana').add(negocioFavorito('b1'));
-      await controlador.cargar();
-      api.retener = Completer<void>();
-      final recarga = controlador.cargar();
-      expect(controlador.estado, EstadoFavoritos.listo);
-      expect(controlador.items, hasLength(1));
-      api.retener!.complete();
-      await recarga;
-    });
+    test(
+      'recargar con datos no los esconde mientras llega la respuesta',
+      () async {
+        api.de('ana').add(negocioFavorito('b1'));
+        await controlador.cargar();
+        api.retener = Completer<void>();
+        final recarga = controlador.cargar();
+        expect(controlador.estado, EstadoFavoritos.listo);
+        expect(controlador.items, hasLength(1));
+        api.retener!.complete();
+        await recarga;
+      },
+    );
   });
 
   group('alternar', () {
@@ -74,20 +78,23 @@ void main() {
       await controlador.cargar();
     });
 
-    test('agregar: el corazón se marca antes de la respuesta y queda primero', () async {
-      api.retener = Completer<void>();
-      final accion = controlador.alternar(resumenDe('b2'));
+    test(
+      'agregar: el corazón se marca antes de la respuesta y queda primero',
+      () async {
+        api.retener = Completer<void>();
+        final accion = controlador.alternar(resumenDe('b2'));
 
-      expect(controlador.esFavorito('b2'), isTrue);
-      expect(controlador.estaGuardando('b2'), isTrue);
-      expect(controlador.items.map((n) => n.id), ['b2', 'b1']);
+        expect(controlador.esFavorito('b2'), isTrue);
+        expect(controlador.estaGuardando('b2'), isTrue);
+        expect(controlador.items.map((n) => n.id), ['b2', 'b1']);
 
-      api.retener!.complete();
-      await accion;
-      expect(controlador.estaGuardando('b2'), isFalse);
-      expect(controlador.esFavorito('b2'), isTrue);
-      expect(api.de('ana').map((n) => n['id']), ['b2', 'b1']);
-    });
+        api.retener!.complete();
+        await accion;
+        expect(controlador.estaGuardando('b2'), isFalse);
+        expect(controlador.esFavorito('b2'), isTrue);
+        expect(api.de('ana').map((n) => n['id']), ['b2', 'b1']);
+      },
+    );
 
     test('quitar: desaparece al instante y la API lo borra', () async {
       api.retener = Completer<void>();
@@ -115,7 +122,10 @@ void main() {
       await controlador.cargar();
       api.errores['DELETE'] = (codigo: 500, mensaje: 'Falló');
 
-      await expectLater(controlador.alternar(resumenDe('b1')), throwsA(isA<ApiException>()));
+      await expectLater(
+        controlador.alternar(resumenDe('b1')),
+        throwsA(isA<ApiException>()),
+      );
 
       expect(controlador.items.map((n) => n.id), ['b0', 'b1']);
       expect(controlador.esFavorito('b1'), isTrue);
@@ -128,42 +138,52 @@ void main() {
         throwsA(
           isA<ApiException>()
               .having((e) => e.statusCode, 'código', 409)
-              .having((e) => e.mensaje, 'mensaje', contains('Llegaste al máximo')),
+              .having(
+                (e) => e.mensaje,
+                'mensaje',
+                contains('Llegaste al máximo'),
+              ),
         ),
       );
       expect(controlador.esFavorito('b2'), isFalse);
     });
 
-    test('mientras guarda ignora un segundo toque sobre el mismo negocio', () async {
-      api.retener = Completer<void>();
-      final primera = controlador.alternar(resumenDe('b2'));
-      await controlador.alternar(resumenDe('b2'));
-      api.retener!.complete();
-      await primera;
-      expect(api.metodos().where((m) => m.startsWith('PUT')), hasLength(1));
-      expect(api.metodos().where((m) => m.startsWith('DELETE')), isEmpty);
-    });
+    test(
+      'mientras guarda ignora un segundo toque sobre el mismo negocio',
+      () async {
+        api.retener = Completer<void>();
+        final primera = controlador.alternar(resumenDe('b2'));
+        await controlador.alternar(resumenDe('b2'));
+        api.retener!.complete();
+        await primera;
+        expect(api.metodos().where((m) => m.startsWith('PUT')), hasLength(1));
+        expect(api.metodos().where((m) => m.startsWith('DELETE')), isEmpty);
+      },
+    );
   });
 
   group('cuentas', () {
-    test('al entrar con otra cuenta no se ven los favoritos de la anterior', () async {
-      api.de('ana').add(negocioFavorito('b1'));
-      await controlador.cargar();
-      expect(controlador.esFavorito('b1'), isTrue);
+    test(
+      'al entrar con otra cuenta no se ven los favoritos de la anterior',
+      () async {
+        api.de('ana').add(negocioFavorito('b1'));
+        await controlador.cargar();
+        expect(controlador.esFavorito('b1'), isTrue);
 
-      sesion.usuario = UsuarioFavoritos('beto');
-      api.retener = Completer<void>();
-      final carga = controlador.cargar();
-      // Antes de que responda la API ya no queda nada de Ana.
-      expect(controlador.items, isEmpty);
-      expect(controlador.esFavorito('b1'), isFalse);
-      expect(controlador.estado, EstadoFavoritos.cargando);
-      api.retener!.complete();
-      await carga;
+        sesion.usuario = UsuarioFavoritos('beto');
+        api.retener = Completer<void>();
+        final carga = controlador.cargar();
+        // Antes de que responda la API ya no queda nada de Ana.
+        expect(controlador.items, isEmpty);
+        expect(controlador.esFavorito('b1'), isFalse);
+        expect(controlador.estado, EstadoFavoritos.cargando);
+        api.retener!.complete();
+        await carga;
 
-      expect(controlador.items, isEmpty);
-      expect(controlador.estado, EstadoFavoritos.listo);
-    });
+        expect(controlador.items, isEmpty);
+        expect(controlador.estado, EstadoFavoritos.listo);
+      },
+    );
 
     test('limpiar vacía todo (cerrar sesión)', () async {
       api.de('ana').add(negocioFavorito('b1'));

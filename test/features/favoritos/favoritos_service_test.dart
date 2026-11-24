@@ -14,23 +14,33 @@ void main() {
   });
 
   group('listar', () {
-    test('GET /favoritos/negocios con el token y lee {items} del contrato', () async {
-      api.de('ana').addAll([
-        negocioFavorito('b2', nombre: 'Barbería Luna', portadaUrl: 'https://img/b2.jpg'),
-        negocioFavorito('b1', aceptaReservas: false),
-      ]);
+    test(
+      'GET /favoritos/negocios con el token y lee {items} del contrato',
+      () async {
+        api.de('ana').addAll([
+          negocioFavorito(
+            'b2',
+            nombre: 'Barbería Luna',
+            portadaUrl: 'https://img/b2.jpg',
+          ),
+          negocioFavorito('b1', aceptaReservas: false),
+        ]);
 
-      final lista = await servicio.listar('token-ana');
+        final lista = await servicio.listar('token-ana');
 
-      expect(api.metodos(), ['GET /favoritos/negocios']);
-      expect(api.peticiones.single.headers['Authorization'], 'Bearer token-ana');
-      expect(lista.map((n) => n.id), ['b2', 'b1']);
-      expect(lista.first.nombre, 'Barbería Luna');
-      expect(lista.first.categoriaId, 'cabello');
-      expect(lista.first.imagenUrl, 'https://img/b2.jpg');
-      expect(lista.last.aceptaReservas, isFalse);
-      expect(lista.last.imagenUrl, isNull);
-    });
+        expect(api.metodos(), ['GET /favoritos/negocios']);
+        expect(
+          api.peticiones.single.headers['Authorization'],
+          'Bearer token-ana',
+        );
+        expect(lista.map((n) => n.id), ['b2', 'b1']);
+        expect(lista.first.nombre, 'Barbería Luna');
+        expect(lista.first.categoriaId, 'cabello');
+        expect(lista.first.imagenUrl, 'https://img/b2.jpg');
+        expect(lista.last.aceptaReservas, isFalse);
+        expect(lista.last.imagenUrl, isNull);
+      },
+    );
 
     test('una cuenta sin favoritos devuelve la lista vacía', () async {
       expect(await servicio.listar('token-ana'), isEmpty);
@@ -46,7 +56,9 @@ void main() {
         api.errores['GET'] = (codigo: codigo, mensaje: 'Algo');
         await expectLater(
           servicio.listar('token-ana'),
-          throwsA(isA<ApiException>().having((e) => e.statusCode, 'código', codigo)),
+          throwsA(
+            isA<ApiException>().having((e) => e.statusCode, 'código', codigo),
+          ),
         );
       });
     }
@@ -77,7 +89,11 @@ void main() {
         throwsA(
           isA<ApiException>()
               .having((e) => e.statusCode, 'código', 404)
-              .having((e) => e.mensaje, 'mensaje', 'Negocio no encontrado o no está disponible.'),
+              .having(
+                (e) => e.mensaje,
+                'mensaje',
+                'Negocio no encontrado o no está disponible.',
+              ),
         ),
       );
     });
@@ -99,13 +115,18 @@ void main() {
       );
     });
 
-    test('un id con caracteres de ruta no sale de /favoritos/negocios', () async {
-      await expectLater(
-        servicio.agregar('token-ana', '../usuarios'),
-        throwsA(isA<ApiException>().having((e) => e.statusCode, 'código', 404)),
-      );
-      expect(api.peticiones, isEmpty);
-    });
+    test(
+      'un id con caracteres de ruta no sale de /favoritos/negocios',
+      () async {
+        await expectLater(
+          servicio.agregar('token-ana', '../usuarios'),
+          throwsA(
+            isA<ApiException>().having((e) => e.statusCode, 'código', 404),
+          ),
+        );
+        expect(api.peticiones, isEmpty);
+      },
+    );
 
     test('un cuerpo de error que no es JSON usa el mensaje genérico', () async {
       api.errores['PUT'] = (codigo: 500, mensaje: null);

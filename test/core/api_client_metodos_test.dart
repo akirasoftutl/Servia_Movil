@@ -21,26 +21,32 @@ void main() {
 
     expect(respuesta.statusCode, 204);
     expect(recibida.method, 'DELETE');
-    expect(recibida.url.toString(), '${ApiClient.baseUrl}/favoritos/negocios/n1');
+    expect(
+      recibida.url.toString(),
+      '${ApiClient.baseUrl}/favoritos/negocios/n1',
+    );
     expect(recibida.headers['Authorization'], 'Bearer tok');
     expect(recibida.headers['Accept'], 'application/json');
     expect(recibida.body, isEmpty);
   });
 
-  test('delete sin token no manda Authorization y manda el cuerpo si hay', () async {
-    late http.Request recibida;
-    final api = ApiClient(
-      client: MockClient((peticion) async {
-        recibida = peticion;
-        return http.Response('', 204);
-      }),
-    );
+  test(
+    'delete sin token no manda Authorization y manda el cuerpo si hay',
+    () async {
+      late http.Request recibida;
+      final api = ApiClient(
+        client: MockClient((peticion) async {
+          recibida = peticion;
+          return http.Response('', 204);
+        }),
+      );
 
-    await api.delete('/x', body: '{"a":1}');
+      await api.delete('/x', body: '{"a":1}');
 
-    expect(recibida.headers.containsKey('Authorization'), isFalse);
-    expect(recibida.body, '{"a":1}');
-  });
+      expect(recibida.headers.containsKey('Authorization'), isFalse);
+      expect(recibida.body, '{"a":1}');
+    },
+  );
 
   test('delete respeta el tiempo límite del cliente', () async {
     final api = ApiClient(
@@ -48,7 +54,10 @@ void main() {
       client: MockClient((_) => Completer<http.Response>().future),
     );
 
-    await expectLater(api.delete('/x', token: 't'), throwsA(isA<TimeoutException>()));
+    await expectLater(
+      api.delete('/x', token: 't'),
+      throwsA(isA<TimeoutException>()),
+    );
   });
 
   test('put envía PUT con el token y sin cuerpo cuando no se da', () async {
@@ -64,7 +73,10 @@ void main() {
 
     expect(respuesta.statusCode, 204);
     expect(recibida.method, 'PUT');
-    expect(recibida.url.toString(), '${ApiClient.baseUrl}/favoritos/negocios/n1');
+    expect(
+      recibida.url.toString(),
+      '${ApiClient.baseUrl}/favoritos/negocios/n1',
+    );
     expect(recibida.headers['Authorization'], 'Bearer tok');
     expect(recibida.body, isEmpty);
   });
@@ -75,7 +87,9 @@ void main() {
       limite: const Duration(milliseconds: 20),
       client: MockClient((peticion) async {
         recibida = peticion;
-        if (peticion.url.path == '/lento') return Completer<http.Response>().future;
+        if (peticion.url.path == '/lento') {
+          return Completer<http.Response>().future;
+        }
         return http.Response('', 204);
       }),
     );
