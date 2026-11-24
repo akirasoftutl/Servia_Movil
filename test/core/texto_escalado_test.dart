@@ -12,9 +12,12 @@ import 'package:servia/features/favoritos/pages/favoritos_page.dart';
 import 'package:servia/features/home/pages/home_page.dart';
 import 'package:servia/features/negocios/data/disponibilidad.dart';
 import 'package:servia/features/negocios/data/disponibilidad_service.dart';
+import 'package:servia/features/negocios/data/negocio_cercano.dart';
 import 'package:servia/features/negocios/data/negocio_resumen.dart';
+import 'package:servia/features/negocios/data/ubicacion_negocio.dart';
 import 'package:servia/features/negocios/pages/detalle_servicio_page.dart';
 import 'package:servia/features/negocios/pages/disponibilidad_page.dart';
+import 'package:servia/features/negocios/pages/mapa_cercanos_page.dart';
 import 'package:servia/features/negocios/pages/perfil_negocio_page.dart';
 import 'package:servia/features/perfil/data/cuenta_con_reservas.dart';
 import 'package:servia/features/perfil/data/foto_perfil.dart';
@@ -94,6 +97,34 @@ const servicioConImagenes = Servicio(
     FotoNegocio(id: 'i3', url: 'https://supabase.test/s2/i3.jpg'),
   ],
 );
+
+class _CercanosMapaFalso extends NegociosServiceFalso {
+  @override
+  Future<List<NegocioCercano>> obtenerCercanos({
+    required double lat,
+    required double lng,
+  }) async => const [
+    NegocioCercano(
+      negocio: NegocioResumen(
+        id: 'n1',
+        nombre: 'Estética Lupita: cortes, color y peinados para toda la familia',
+        categoriaId: 'cabello',
+        aceptaReservas: true,
+        ubicacion: UbicacionNegocio(lat: 21.125, lng: -101.681),
+      ),
+      distanciaKm: 0.8,
+    ),
+    NegocioCercano(
+      negocio: NegocioResumen(
+        id: 'n2',
+        nombre: 'Salón Aurora',
+        categoriaId: 'cabello',
+        aceptaReservas: false,
+      ),
+      distanciaKm: 1.9,
+    ),
+  ];
+}
 
 class _ServiciosConImagenes extends DetalleServiceFalso {
   @override
@@ -234,6 +265,45 @@ void main() {
               authService: SesionFalsa(conSesion: false),
             );
           },
+          null,
+        ),
+        'mapa de negocios cercanos': (
+          () => MapaCercanosPage(
+            negociosService: _CercanosMapaFalso(),
+            proveedorUbicacion: () async => (lat: 21.12, lng: -101.68),
+            constructorMapa: (_, datos) => ColoredBox(
+              color: const Color(0xFFE5E7EB),
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Wrap(
+                    spacing: 8,
+                    children: [
+                      for (final pin in datos.pines)
+                        Semantics(
+                          button: true,
+                          label: pin.descripcionSemantica,
+                          child: InkWell(
+                            onTap: () => datos.onSeleccionarPin(pin.id),
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(
+                                minWidth: 48,
+                                minHeight: 48,
+                              ),
+                              child: Center(
+                                widthFactor: 1,
+                                child: Text(pin.etiqueta),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
           null,
         ),
         'perfil del negocio': (
