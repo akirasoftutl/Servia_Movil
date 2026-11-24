@@ -7,8 +7,9 @@ import '../../ayuda/mensajes.dart';
 import '../../ayuda/pages/ayuda_page.dart';
 import '../../negocios/data/negocios_service.dart';
 import '../../negocios/data/ubicacion_cliente.dart';
+import '../../negocios/pages/inicio_con_mapa.dart';
 import '../../negocios/pages/lista_negocios_page.dart';
-import '../../negocios/pages/negocios_cercanos.dart';
+import '../../negocios/pages/mapa_cercanos.dart';
 import '../../perfil/data/perfil_cliente_service.dart';
 import '../../perfil/pages/mi_perfil_page.dart';
 import '../../notificaciones/data/notificaciones_service.dart';
@@ -31,6 +32,7 @@ class HomePage extends StatefulWidget {
     this.notificacionesService,
     this.push,
     this.onSolicitarLogin,
+    this.constructorMapa,
   });
 
   final NegociosService? negociosService;
@@ -43,6 +45,9 @@ class HomePage extends StatefulWidget {
   final ServicioPush? push;
   final VoidCallback onCerrarSesion;
   final VoidCallback? onSolicitarLogin;
+
+  /// Mapa de cercanos del inicio; las pruebas inyectan uno sin plataforma.
+  final ConstructorMapaCercanos? constructorMapa;
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -124,23 +129,12 @@ class _HomePageState extends State<HomePage> {
     final inicial = _obtenerInicialUsuario();
 
     final pantallas = <Widget>[
-      ColoredBox(
+      // Mapa de cercanos de fondo y el contenido del inicio en una hoja.
+      InicioConMapa(
         key: _clavesPantallas[0],
-        color: Colors.white,
-        child: SafeArea(
-          bottom: false,
-          child: Column(
-            children: [
-              NegociosCercanos(
-                service: widget.negociosService,
-                proveedorUbicacion: widget.proveedorUbicacion,
-              ),
-              Expanded(
-                child: ListaNegocios(negociosService: widget.negociosService),
-              ),
-            ],
-          ),
-        ),
+        negociosService: widget.negociosService,
+        proveedorUbicacion: widget.proveedorUbicacion,
+        constructorMapa: widget.constructorMapa,
       ),
 
       ListaNegocios(

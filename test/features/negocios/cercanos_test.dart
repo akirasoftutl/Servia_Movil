@@ -3,22 +3,19 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:servia/core/network/api_client.dart';
-import 'package:servia/core/widgets/estados.dart';
 import 'package:servia/features/home/pages/home_page.dart';
 import 'package:servia/features/negocios/data/negocios_service.dart';
 import 'package:servia/features/negocios/data/ubicacion_cliente.dart';
 import 'package:servia/features/negocios/mensajes.dart';
-import 'package:servia/features/negocios/pages/lista_negocios_page.dart';
 import 'package:servia/features/negocios/pages/tarjeta_negocio.dart';
-import 'package:servia/features/negocios/pages/negocios_cercanos.dart';
 
 import '../perfil/fakes_perfil.dart';
+import 'mapa_falso.dart';
 
 class UbicacionFalsa extends GeolocatorPlatform {
   bool gps = true;
@@ -69,6 +66,11 @@ Map<String, Object> cercano(int id, double km) => {
   'distanciaKm': km,
 };
 
+Map<String, Object> conUbicacion(Map<String, Object> negocio) => {
+  ...negocio,
+  'ubicacion': {'lat': 21.12, 'lng': -101.68},
+};
+
 /// Cuerpo real de `GET /negocios/cercanos` (RespuestaNegociosCercanosDto).
 String cuerpoCercanos(List<Object?> items) => jsonEncode({'items': items});
 
@@ -99,6 +101,7 @@ Future<void> inicio(
         authService: SesionPerfilFalsa([])..usuario = null,
         negociosService: negocios,
         proveedorUbicacion: UbicacionCliente(plataforma: ubicacion).obtener,
+        constructorMapa: mapaFalso,
       ),
       onGenerateRoute: (ajustes) => MaterialPageRoute<void>(
         builder: (_) => Scaffold(body: Text('Perfil ${ajustes.name}')),
@@ -109,215 +112,7 @@ Future<void> inicio(
 }
 
 void main() {
-  for (final falla in [false, true]) {
-    testWidgets('mensajes de cercanos alineados con el título: error=$falla', (
-      tester,
-    ) async {
-      await inicio(
-        tester,
-        UbicacionFalsa(),
-        servicio(
-          cercanos: (_) async =>
-              http.Response(falla ? '{}' : cuerpoCercanos([]), falla ? 503 : 200),
-        ),
-      );
-      final titulo = tester.getTopLeft(find.text(MensajesNegocios.cercaDeTi));
-      final mensaje = tester.getTopLeft(
-        find.text(
-          falla ? MensajesNegocios.errorCercanos : MensajesNegocios.sinCercanos,
-        ),
-      );
-      // Mismo margen lateral (20) que las secciones de la lista.
-      expect(
-        titulo.dx - tester.getTopLeft(find.byType(NegociosCercanos)).dx,
-        20,
-      );
-      expect(mensaje.dx, titulo.dx);
-      final padding = tester.widget<Padding>(
-        find
-            .ancestor(
-              of: find.text(
-                falla
-                    ? MensajesNegocios.errorCercanos
-                    : MensajesNegocios.sinCercanos,
-              ),
-              matching: find.byType(Padding),
-            )
-            .first,
-      );
-      expect(padding.padding, const EdgeInsets.symmetric(horizontal: 20));
-    });
-  }
-
-  testWidgets(
-    '«Cerca de ti» queda bajo la barra de estado sobre fondo blanco',
-    (tester) async {
-      const barra = 40.0;
-      tester.view.padding = FakeViewPadding(
-        top: barra * tester.view.devicePixelRatio,
-      );
-      addTearDown(tester.view.resetPadding);
-      await inicio(
-        tester,
-        UbicacionFalsa(),
-        servicio(cercanos: (_) async => http.Response(cuerpoCercanos([]), 200)),
-      );
-      expect(
-        tester.getTopLeft(find.text(MensajesNegocios.cercaDeTi)).dy,
-        greaterThanOrEqualTo(barra),
-      );
-      // La lista ya no suma otro hueco de la barra debajo de la sección.
-      expect(
-        MediaQuery.paddingOf(tester.element(find.byType(ListaNegocios))).top,
-        0,
-      );
-      expect(
-        find.ancestor(
-          of: find.byType(NegociosCercanos),
-          matching: find.byWidgetPredicate(
-            (w) => w is ColoredBox && w.color == Colors.white,
-          ),
-        ),
-        findsOneWidget,
-      );
-    },
-  );
-
-  for (final acepta in [false, true]) {
-    testWidgets('tarjeta completa a escala 2.0: acepta reservas=$acepta', (
-      tester,
-    ) async {
-      await tester.binding.setSurfaceSize(const Size(320, 900));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
-      await tester.pumpWidget(
-        MaterialApp(
-          builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(context)
-                .copyWith(textScaler: const TextScaler.linear(2)),
-            child: child!,
-          ),
-          home: Scaffold(
-            body: SizedBox(
-              width: 320,
-              child: Column(
-                children: [
-                  NegociosCercanos(
-                    proveedorUbicacion: () async => (lat: 21.1, lng: -101.7),
-                    service: servicio(
-                      cercanos: (_) async => http.Response(
-                        cuerpoCercanos([
-                          {
-                            ...cercano(1, 19.9),
-                            'nombre': 'Peluquería del centro histórico',
-                            'aceptaReservas': acepta,
-                          },
-                          cercano(2, 20),
-                        ]),
-                        200,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-      expect(tester.takeException(), isNull);
-      final tarjeta = find.byType(TarjetaNegocio).first;
-      expect(tester.getSize(tarjeta).width, 300);
-      final limites = tester.getRect(
-        find.descendant(of: tarjeta, matching: find.byType(DecoratedBox)).first,
-      );
-      final textos = find.descendant(of: tarjeta, matching: find.byType(Text));
-      expect(textos, findsNWidgets(3));
-      for (final texto in textos.evaluate()) {
-        final rect = tester.getRect(find.byWidget(texto.widget));
-        expect(rect.left, greaterThanOrEqualTo(limites.left));
-        expect(rect.right, lessThanOrEqualTo(limites.right));
-        expect(rect.top, greaterThanOrEqualTo(limites.top));
-        expect(rect.bottom, lessThanOrEqualTo(limites.bottom));
-      }
-      for (final mensaje in [
-        'a 19.9 km',
-        acepta
-            ? MensajesNegocios.aceptaReservas
-            : MensajesNegocios.noAceptaReservas,
-      ]) {
-        final parrafo = tester.renderObject<RenderParagraph>(
-          find.descendant(of: tarjeta, matching: find.text(mensaje)),
-        );
-        expect(parrafo.didExceedMaxLines, isFalse);
-      }
-      final fila = find
-          .ancestor(of: tarjeta, matching: find.byType(Scrollable))
-          .first;
-      expect(limites.bottom, lessThanOrEqualTo(tester.getRect(fila).bottom));
-      await tester.drag(fila, const Offset(-300, 0));
-      await tester.pumpAndSettle();
-      expect(find.text('Negocio 2').hitTestable(), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
-  }
-
-  testWidgets('tarjeta como la de la lista: portada, borde gris y radio 16', (
-    tester,
-  ) async {
-    const portada = 'https://ejemplo.test/portada.jpg';
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: Column(
-            children: [
-              NegociosCercanos(
-                proveedorUbicacion: () async => (lat: 21.1, lng: -101.7),
-                service: servicio(
-                  cercanos: (_) async => http.Response(
-                    cuerpoCercanos([
-                      {
-                        ...cercano(1, 1.2),
-                        'fotos': {
-                          'portada': {'id': 'f1', 'url': portada},
-                          'galeria': <Object>[],
-                        },
-                      },
-                      cercano(2, 3),
-                    ]),
-                    200,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    final tarjetas = find.byType(TarjetaNegocio);
-    final imagen = tester.widget<Image>(
-      find.descendant(of: tarjetas.first, matching: find.byType(Image)),
-    );
-    expect((imagen.image as NetworkImage).url, portada);
-    expect(
-      find.descendant(
-        of: tarjetas.at(1),
-        matching: find.byIcon(Icons.storefront_outlined),
-      ),
-      findsOneWidget,
-    );
-    final caja = tester.widget<DecoratedBox>(
-      find
-          .descendant(of: tarjetas.first, matching: find.byType(DecoratedBox))
-          .first,
-    );
-    final decoracion = caja.decoration as BoxDecoration;
-    expect(decoracion.border, Border.all(color: const Color(0xFFE5E7EB)));
-    expect(decoracion.borderRadius, BorderRadius.circular(16));
-    expect(find.text('a 1.2 km'), findsOneWidget);
-  });
-
-  testWidgets('concedido: radio, orden, cinco tarjetas, distancia y perfil', (
+  testWidgets('concedido: radio, orden, cinco pines, distancia y perfil', (
     tester,
   ) async {
     final ubicacion = UbicacionFalsa();
@@ -327,20 +122,19 @@ void main() {
         consultas.add(peticion);
         return http.Response(
           cuerpoCercanos([
-            cercano(6, 6),
-            cercano(2, 1.2),
-            cercano(1, 0.5),
-            cercano(3, 3),
-            cercano(4, 4),
-            cercano(5, 5),
-            cercano(7, 20.1),
+            conUbicacion(cercano(6, 6)),
+            conUbicacion(cercano(2, 1.2)),
+            conUbicacion(cercano(1, 0.5)),
+            conUbicacion(cercano(3, 3)),
+            conUbicacion(cercano(4, 4)),
+            conUbicacion(cercano(5, 5)),
+            conUbicacion(cercano(7, 20.1)),
           ]),
           200,
         );
       },
     );
     await inicio(tester, ubicacion, api);
-    expect(find.text(MensajesNegocios.cercaDeTi), findsOneWidget);
     expect(consultas.single.method, 'GET');
     expect(consultas.single.url.queryParameters, {
       'lat': '21.1',
@@ -348,24 +142,28 @@ void main() {
       'radioKm': '20',
     });
     expect(consultas.single.headers.containsKey('authorization'), isFalse);
-    final tarjetas = tester.widgetList<TarjetaNegocio>(
-      find.byType(TarjetaNegocio, skipOffstage: false),
-    );
-    expect(tarjetas.take(2).map((t) => t.negocio.id), ['n1', 'n2']);
+    // Solo mapa con pines: nada de nombres ni tarjetas en la sección.
+    expect(find.byType(TarjetaNegocio), findsNothing);
+    expect(find.text('Negocio 1'), findsNothing);
+    expect(find.text('0.5 km'), findsOneWidget);
+    expect(find.text('1.2 km'), findsOneWidget);
+    expect(find.byKey(const Key('pin-n5')), findsOneWidget);
+    expect(find.byKey(const Key('pin-n6')), findsNothing);
     final resultado = await api.obtenerCercanos(lat: 21.1, lng: -101.7);
     expect(resultado.map((c) => c.negocio.id), ['n1', 'n2', 'n3', 'n4', 'n5']);
-    expect(find.text('a 0.5 km'), findsOneWidget);
-    expect(find.text('a 1.2 km'), findsOneWidget);
     expect(ubicacion.solicitudes, 1);
     expect(ubicacion.ajustes!.accuracy, LocationAccuracy.low);
     expect(ubicacion.ajustes!.timeLimit, const Duration(seconds: 10));
+    await tester.tap(find.byKey(const Key('pin-n1')));
+    await tester.pumpAndSettle();
+    expect(find.text('a 0.5 km'), findsOneWidget);
     await tester.tap(find.text('Negocio 1'));
     await tester.pumpAndSettle();
     expect(find.text('Perfil /negocios/n1'), findsOneWidget);
   });
 
   for (final caso in ['negado', 'permanente', 'gps', 'sin posición']) {
-    testWidgets('$caso: oculta sin error y conserva búsqueda y lista', (
+    testWidgets('$caso: sin mapa ni error y conserva búsqueda y lista', (
       tester,
     ) async {
       final ubicacion = UbicacionFalsa();
@@ -390,7 +188,7 @@ void main() {
           },
         ),
       );
-      expect(find.text(MensajesNegocios.cercaDeTi), findsNothing);
+      expect(find.byKey(const Key('mapa-falso')), findsNothing);
       expect(find.text(MensajesNegocios.errorCercanos), findsNothing);
       expect(find.text(MensajesNegocios.reintentar), findsNothing);
       expect(find.text('Explorar todos los servicios'), findsOneWidget);
@@ -430,7 +228,7 @@ void main() {
     expect(ubicacion.posiciones, 2);
   });
 
-  testWidgets('muestra indicador mientras responde la API', (tester) async {
+  testWidgets('muestra aviso de carga mientras responde la API', (tester) async {
     final pendiente = Completer<http.Response>();
     await tester.pumpWidget(
       MaterialApp(
@@ -439,23 +237,17 @@ void main() {
           authService: SesionPerfilFalsa([])..usuario = null,
           proveedorUbicacion: () async => (lat: 21.1, lng: -101.7),
           negociosService: servicio(cercanos: (_) => pendiente.future),
+          constructorMapa: mapaFalso,
         ),
       ),
     );
     await tester.pump();
-    expect(find.text(MensajesNegocios.cercaDeTi), findsOneWidget);
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    final cargando = find.descendant(
-      of: find.byType(NegociosCercanos),
-      matching: find.byType(EstadoCargando),
-    );
-    expect(tester.widget<EstadoCargando>(cargando).compacto, isTrue);
-    final titulo = tester.widget<Text>(find.text(MensajesNegocios.cercaDeTi));
-    expect(titulo.style?.fontSize, 20);
-    expect(titulo.style?.color, const Color(0xFF111827));
+    expect(find.text(MensajesNegocios.buscandoCercanos), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsWidgets);
     pendiente.complete(http.Response(cuerpoCercanos([]), 200));
     await tester.pumpAndSettle();
     expect(find.text(MensajesNegocios.sinCercanos), findsOneWidget);
+    expect(find.text(MensajesNegocios.buscandoCercanos), findsNothing);
   });
 
   test('privacidad: no reutiliza posición ni registra coordenadas', () async {
