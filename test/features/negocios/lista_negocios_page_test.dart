@@ -31,11 +31,12 @@ void main() {
         ..responder = (_) async =>
             pagina([resumen('z', acepta: false), resumen('a')]);
       await abrir(tester, fake);
-      // Cada negocio se muestra en los dos carruseles y en «Lugares cercanos».
+      // Cada negocio se muestra en «Nuevo en Servia» y en «Lugares cercanos»
+      // (el antiguo carrusel «Recomendado» se reemplazó por «Destacados»).
       // Las secciones inferiores quedan fuera de pantalla en el viewport de
       // prueba, por eso se buscan también los widgets offstage.
-      expect(find.text('Negocio z', skipOffstage: false), findsNWidgets(3));
-      expect(find.text('Negocio a', skipOffstage: false), findsNWidgets(3));
+      expect(find.text('Negocio z', skipOffstage: false), findsNWidgets(2));
+      expect(find.text('Negocio a', skipOffstage: false), findsNWidgets(2));
       // En los carruseles el orden es horizontal; en «Lugares cercanos»,
       // vertical. Las tarjetas de esta última usan tipografía de 15 px.
       Finder tarjetaCercana(String nombre) => find.byWidgetPredicate(
@@ -53,12 +54,12 @@ void main() {
       // El estado de reservas se refleja ahora en la etiqueta del carrusel.
       expect(
         find.text('Cabello y barba · Disponible', skipOffstage: false),
-        findsNWidgets(2),
+        findsNWidgets(1),
       );
       // Una etiqueta más: la de la categoría en la nueva cuadrícula.
       expect(
         find.text('Cabello y barba', skipOffstage: false),
-        findsNWidgets(3),
+        findsNWidgets(2),
       );
       final titulo = tester.widget<Text>(find.text('Negocio z').first);
       expect(titulo.maxLines, 1);
