@@ -28,8 +28,20 @@ class ListaNegociosPage extends StatelessWidget {
 }
 
 class ListaNegocios extends StatefulWidget {
-  const ListaNegocios({super.key, this.negociosService});
+  const ListaNegocios({
+    super.key,
+    this.negociosService,
+    this.enHoja = false,
+    this.claveEncabezado,
+  });
   final NegociosService? negociosService;
+
+  /// Dentro de la hoja deslizable del inicio: sin el hueco superior que deja
+  /// sitio a los iconos flotantes, porque la hoja ya empieza bajo el mapa.
+  final bool enHoja;
+
+  /// Permite a la hoja medir la búsqueda para dejarla a la vista al bajar.
+  final GlobalKey? claveEncabezado;
 
   @override
   State<ListaNegocios> createState() => _ListaNegociosState();
@@ -279,6 +291,8 @@ class _ListaNegociosState extends State<ListaNegocios> {
         child: Column(
           children: [
             _EncabezadoExploracion(
+              key: widget.claveEncabezado,
+              margenSuperior: widget.enHoja ? 0 : 30,
               controller: _texto,
               onChanged: _alEscribir,
               onLimpiar: _limpiarBusqueda,
@@ -470,6 +484,8 @@ class _ListaNegociosState extends State<ListaNegocios> {
 /// Encabezado superior: Ubicación actual + Barra de búsqueda tipo píldora con botón negro
 class _EncabezadoExploracion extends StatelessWidget {
   const _EncabezadoExploracion({
+    super.key,
+    required this.margenSuperior,
     required this.controller,
     required this.onChanged,
     required this.onLimpiar,
@@ -484,11 +500,12 @@ class _EncabezadoExploracion extends StatelessWidget {
   final VoidCallback onBuscar;
   final OrdenNegocios orden;
   final ValueChanged<OrdenNegocios> onOrden;
+  final double margenSuperior;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 30, 20, 12),
+      padding: EdgeInsets.fromLTRB(20, margenSuperior, 20, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

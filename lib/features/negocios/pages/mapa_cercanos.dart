@@ -1,24 +1,15 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-import '../../../core/theme/colores_servia.dart';
 import '../../../core/theme/tokens.dart';
-import '../../../core/widgets/estados.dart';
 import '../data/negocio_cercano.dart';
-import '../data/negocios_service.dart';
 import '../data/ubicacion_cliente.dart';
 import '../data/ubicacion_negocio.dart';
 import '../mensajes.dart';
 import 'marcador_mapa.dart';
-import 'tarjeta_negocio.dart';
-
-// Mismos literales de los listados y tarjetas de negocios, sin modificar el tema.
-const _margen = 20.0;
-const _texto = Color(0xFF111827);
-const _borde = Color(0xFFE5E7EB);
-const _agarradera = Color(0xFFD1D5DB);
 
 /// Pin de un negocio cercano con ubicación válida listo para pintarse en el mapa.
 class PinNegocioMapa {
@@ -48,6 +39,8 @@ class DatosMapaCercanos {
     required this.seleccionadoId,
     required this.zoomInicial,
     required this.onSeleccionarPin,
+    this.padding = EdgeInsets.zero,
+    this.onTocarMapa,
   });
 
   final PosicionCliente posicionCliente;
@@ -55,6 +48,13 @@ class DatosMapaCercanos {
   final String? seleccionadoId;
   final double zoomInicial;
   final ValueChanged<String> onSeleccionarPin;
+
+  /// Lo que tapan la hoja, la tarjeta flotante y los iconos superiores: el
+  /// mapa centra la cámara en el resto para no esconder los pines.
+  final EdgeInsets padding;
+
+  /// Toque en el mapa fuera de los pines (cierra la tarjeta flotante).
+  final VoidCallback? onTocarMapa;
 }
 
 typedef ConstructorMapaCercanos =
@@ -76,285 +76,12 @@ typedef ConstructorMapaNativo =
       required Set<Marker> marcadores,
       required EdgeInsets padding,
       required MapCreatedCallback onMapCreated,
+      required ArgumentCallback<LatLng> onTap,
     });
 
-Widget _construirGoogleMap(BuildContext context, DatosMapaCercanos datos) =>
+/// Mapa real de Google por omisión; las pruebas inyectan uno falso.
+Widget construirMapaCercanos(BuildContext context, DatosMapaCercanos datos) =>
     VistaGoogleMap(datos: datos);
-
-class MapaCercanosPage extends StatefulWidget {
-  const MapaCercanosPage({
-    super.key,
-    this.negociosService,
-    this.proveedorUbicacion,
-    this.constructorMapa,
-  });
-
-  final NegociosService? negociosService;
-  final ProveedorUbicacionCliente? proveedorUbicacion;
-  final ConstructorMapaCercanos? constructorMapa;
-
-  @override
-  State<MapaCercanosPage> createState() => _MapaCercanosPageState();
-}
-
-class _MapaCercanosPageState extends State<MapaCercanosPage> {
-  late final NegociosService _service =
-      widget.negociosService ?? NegociosService();
-  late final ProveedorUbicacionCliente _ubicacion =
-      widget.proveedorUbicacion ?? UbicacionCliente().obtener;
-  final DraggableScrollableController _hojaController =
-      DraggableScrollableController();
-  final Map<String, GlobalKey> _clavesTarjetas = {};
-
-  bool _cargando = true;
-  bool _error = false;
-  // Posición efímera solo en memoria mientras esta pantalla está abierta.
-  PosicionCliente? _posicion;
-  List<NegocioCercano> _negocios = const [];
-  String? _seleccionadoId;
-
-  @override
-  void initState() {
-    super.initState();
-    _cargar();
-  }
-
-  @override
-  void dispose() {
-    _hojaController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _cargar() async {
-    setState(() {
-      _cargando = true;
-      _error = false;
-      _posicion = null;
-      _seleccionadoId = null;
-    });
-    PosicionCliente? posicion;
-    try {
-      posicion = await _ubicacion();
-    } catch (_) {
-      posicion = null;
-    }
-    if (!mounted) return;
-    if (posicion == null) {
-      setState(() {
-        _negocios = const [];
-        _clavesTarjetas.clear();
-        _cargando = false;
-      });
-      return;
-    }
-    try {
-      final negocios = await _service.obtenerCercanos(
-        lat: posicion.lat,
-        lng: posicion.lng,
-      );
-      if (!mounted) return;
-      setState(() {
-        _posicion = posicion;
-        _negocios = negocios;
-        _clavesTarjetas
-          ..clear()
-          ..addEntries(negocios.map((n) => MapEntry(n.negocio.id, GlobalKey())));
-        _cargando = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _error = true;
-        _posicion = null;
-        _cargando = false;
-      });
-    }
-  }
-
-  void _alSeleccionarPin(String negocioId) {
-    setState(() => _seleccionadoId = negocioId);
-    if (_hojaController.isAttached && _hojaController.size < 0.5) {
-      unawaited(
-        _hojaController.animateTo(
-          0.55,
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOut,
-        ),
-      );
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final contexto = _clavesTarjetas[negocioId]?.currentContext;
-      if (contexto == null) return;
-      Scrollable.ensureVisible(
-        contexto,
-        duration: const Duration(milliseconds: 250),
-        alignment: 0.2,
-        curve: Curves.easeOut,
-      );
-    });
-  }
-
-  List<PinNegocioMapa> get _pines => [
-    for (final cercano in _negocios)
-      if (cercano.ubicacion case final ubicacion?)
-        PinNegocioMapa(
-          cercano: cercano,
-          ubicacion: ubicacion,
-          seleccionado: cercano.negocio.id == _seleccionadoId,
-        ),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text(MensajesNegocios.cercaDeTi),
-        backgroundColor: Colors.white,
-        foregroundColor: _texto,
-        surfaceTintColor: Colors.transparent,
-      ),
-      body: _contenido(context),
-    );
-  }
-
-  Widget _contenido(BuildContext context) {
-    if (_cargando) return const EstadoCargando();
-    if (_error) {
-      return EstadoError(
-        mensaje: MensajesNegocios.errorCercanos,
-        onReintentar: _cargar,
-      );
-    }
-    final posicion = _posicion;
-    if (posicion == null || _negocios.isEmpty) {
-      return const EstadoVacio(
-        icono: Icons.location_off_outlined,
-        mensaje: MensajesNegocios.sinCercanos,
-      );
-    }
-
-    final pines = _pines;
-    final datosMapa = DatosMapaCercanos(
-      posicionCliente: posicion,
-      pines: pines,
-      seleccionadoId: _seleccionadoId,
-      zoomInicial: calcularZoomInicial(
-        posicion,
-        pines.map((pin) => pin.ubicacion),
-      ),
-      onSeleccionarPin: _alSeleccionarPin,
-    );
-
-    final constructorMapa = widget.constructorMapa ?? _construirGoogleMap;
-
-    return Stack(
-      children: [
-        Positioned.fill(child: constructorMapa(context, datosMapa)),
-        DraggableScrollableSheet(
-          controller: _hojaController,
-          initialChildSize: 0.36,
-          minChildSize: 0.22,
-          maxChildSize: 0.82,
-          snap: true,
-          snapSizes: const [0.36, 0.55, 0.82],
-          builder: (context, scrollController) => Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(
-                top: Radius.circular(Radios.l),
-              ),
-              border: Border(top: BorderSide(color: _borde)),
-            ),
-            child: SingleChildScrollView(
-              controller: scrollController,
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(
-                _margen,
-                Espacios.s,
-                _margen,
-                Espacios.xl,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: ExcludeSemantics(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        margin: const EdgeInsets.only(bottom: Espacios.m),
-                        decoration: BoxDecoration(
-                          color: _agarradera,
-                          borderRadius: BorderRadius.circular(Radios.s),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Semantics(
-                    header: true,
-                    child: Text(
-                      MensajesNegocios.lugaresCercanos(_negocios.length),
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: _texto,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: Espacios.m),
-                  for (final (indice, cercano) in _negocios.indexed) ...[
-                    if (indice > 0) const SizedBox(height: Espacios.m),
-                    _ElementoListaMapa(
-                      key: _clavesTarjetas[cercano.negocio.id],
-                      cercano: cercano,
-                      seleccionado: cercano.negocio.id == _seleccionadoId,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ElementoListaMapa extends StatelessWidget {
-  const _ElementoListaMapa({
-    super.key,
-    required this.cercano,
-    required this.seleccionado,
-  });
-
-  final NegocioCercano cercano;
-  final bool seleccionado;
-
-  @override
-  Widget build(BuildContext context) {
-    final tarjeta = TarjetaNegocio(
-      negocio: cercano.negocio,
-      categoria: MensajesNegocios.distancia(cercano.distanciaKm),
-    );
-    return Semantics(
-      selected: seleccionado,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: EdgeInsets.all(seleccionado ? 2 : 0),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(Radios.l + 2),
-          border: seleccionado
-              ? Border.all(color: ColoresServia.morado, width: 2)
-              : null,
-        ),
-        child: tarjeta,
-      ),
-    );
-  }
-}
 
 typedef _ClaveIconoPin = ({String etiqueta, bool seleccionado, double escala});
 
@@ -424,19 +151,72 @@ class VistaGoogleMapState extends State<VistaGoogleMap> {
     final escala =
         _escala ?? _normalizarEscala(MediaQuery.devicePixelRatioOf(context));
     _cargarIconos(escala);
+    if (widget.datos.padding != oldWidget.datos.padding) {
+      // La hoja o la tarjeta cambiaron de alto: reencuadra en lo visible.
+      _reencuadrar();
+      return;
+    }
     final nuevoId = widget.datos.seleccionadoId;
     if (nuevoId != null && nuevoId != oldWidget.datos.seleccionadoId) {
-      for (final pin in widget.datos.pines) {
-        if (pin.id == nuevoId) {
-          _controller?.animateCamera(
-            CameraUpdate.newLatLng(
-              LatLng(pin.ubicacion.lat, pin.ubicacion.lng),
-            ),
-          );
-          break;
-        }
+      final pin = _pinSeleccionado();
+      if (pin != null) {
+        _animar(
+          CameraUpdate.newLatLng(LatLng(pin.ubicacion.lat, pin.ubicacion.lng)),
+        );
       }
     }
+  }
+
+  PinNegocioMapa? _pinSeleccionado() {
+    for (final pin in widget.datos.pines) {
+      if (pin.id == widget.datos.seleccionadoId) return pin;
+    }
+    return null;
+  }
+
+  void _animar(CameraUpdate actualizacion) {
+    final controller = _controller;
+    if (controller == null) return;
+    // Si el mapa aún no tiene tamaño el SDK rechaza el encuadre; se ignora.
+    unawaited(
+      controller.animateCamera(actualizacion).catchError((Object _) {}),
+    );
+  }
+
+  /// Centra el pin seleccionado o encuadra al cliente con todos los pines.
+  void _reencuadrar() {
+    final datos = widget.datos;
+    final seleccionado = _pinSeleccionado();
+    if (seleccionado != null) {
+      _animar(
+        CameraUpdate.newLatLng(
+          LatLng(seleccionado.ubicacion.lat, seleccionado.ubicacion.lng),
+        ),
+      );
+      return;
+    }
+    final cliente = datos.posicionCliente;
+    var sur = cliente.lat, norte = cliente.lat;
+    var oeste = cliente.lng, este = cliente.lng;
+    for (final pin in datos.pines) {
+      sur = math.min(sur, pin.ubicacion.lat);
+      norte = math.max(norte, pin.ubicacion.lat);
+      oeste = math.min(oeste, pin.ubicacion.lng);
+      este = math.max(este, pin.ubicacion.lng);
+    }
+    if (datos.pines.isEmpty) {
+      _animar(CameraUpdate.newLatLng(LatLng(cliente.lat, cliente.lng)));
+      return;
+    }
+    _animar(
+      CameraUpdate.newLatLngBounds(
+        LatLngBounds(
+          southwest: LatLng(sur, oeste),
+          northeast: LatLng(norte, este),
+        ),
+        Espacios.xxxl,
+      ),
+    );
   }
 
   @override
@@ -449,8 +229,11 @@ class VistaGoogleMapState extends State<VistaGoogleMap> {
     super.dispose();
   }
 
-  _ClaveIconoPin _claveIcono(String etiqueta, bool seleccionado, double escala) =>
-      (etiqueta: etiqueta, seleccionado: seleccionado, escala: escala);
+  _ClaveIconoPin _claveIcono(
+    String etiqueta,
+    bool seleccionado,
+    double escala,
+  ) => (etiqueta: etiqueta, seleccionado: seleccionado, escala: escala);
 
   void _podarCache(double escala, Set<String> etiquetasActivas) {
     _iconos.removeWhere(
@@ -569,6 +352,7 @@ class VistaGoogleMapState extends State<VistaGoogleMap> {
     required Set<Marker> marcadores,
     required EdgeInsets padding,
     required MapCreatedCallback onMapCreated,
+    required ArgumentCallback<LatLng> onTap,
   }) {
     return GoogleMap(
       initialCameraPosition: camaraInicial,
@@ -580,6 +364,7 @@ class VistaGoogleMapState extends State<VistaGoogleMap> {
       zoomControlsEnabled: false,
       padding: padding,
       onMapCreated: onMapCreated,
+      onTap: onTap,
     );
   }
 
@@ -590,14 +375,13 @@ class VistaGoogleMapState extends State<VistaGoogleMap> {
       target: LatLng(pos.lat, pos.lng),
       zoom: widget.datos.zoomInicial,
     );
-    final padding = EdgeInsets.only(
-      bottom: MediaQuery.sizeOf(context).height * 0.36,
-    );
-    final constructor = widget.constructorMapaNativo ?? _construirMapaPorOmision;
+    final constructor =
+        widget.constructorMapaNativo ?? _construirMapaPorOmision;
     return constructor(
       camaraInicial: camaraInicial,
       marcadores: _marcadores(),
-      padding: padding,
+      padding: widget.datos.padding,
+      onTap: (_) => widget.datos.onTocarMapa?.call(),
       onMapCreated: (controller) {
         if (_desechado) {
           controller.dispose();
