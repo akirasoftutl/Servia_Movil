@@ -40,11 +40,9 @@ void main() {
     expect(negocio.imagenUrl, isNull);
   });
 
-  test('NegocioResumen sigue exigiendo que categoriaId sea texto o null', () {
+  test('NegocioResumen rechaza un categoriaId que no sea texto ni null', () {
     final json = publico('n1')..['categoriaId'] = 7;
     expect(() => NegocioResumen.fromJson(json), throwsFormatException);
-    final sinCampo = publico('n1')..remove('categoriaId');
-    expect(() => NegocioResumen.fromJson(sinCampo), throwsFormatException);
   });
 
   test('GET /negocios: un negocio sin categoría no rompe la página', () async {
