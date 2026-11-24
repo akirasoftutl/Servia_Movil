@@ -6,6 +6,7 @@ import '../data/negocios_service.dart';
 import '../data/servicio.dart';
 import '../formatos.dart';
 import '../mensajes.dart';
+import 'categorias_servicio.dart';
 import 'detalle_servicio_page.dart';
 import 'fotos_negocio.dart';
 import 'imagenes_servicio.dart';
@@ -36,6 +37,10 @@ class _SeccionServiciosState extends State<SeccionServicios> {
   List<Servicio>? _servicios;
   Object? _error;
   _EstadoServicios _estado = _EstadoServicios.cargando;
+
+  /// Categoría de catálogo elegida en el filtro (`null` es «Todas»). Vive en
+  /// el estado de la sección: al volver del detalle se conserva.
+  String? _categoriaId;
 
   @override
   void initState() {
@@ -106,9 +111,29 @@ class _SeccionServiciosState extends State<SeccionServicios> {
           mensaje: MensajesNegocios.sinServicios,
         );
       case _EstadoServicios.listo:
-        final servicios = _servicios!;
+        final todos = _servicios!;
+        final categorias = categoriasDeCatalogo(todos);
+        // Si la elegida ya no existe, se vuelve a «Todas».
+        final categoriaId = categorias.any((c) => c.id == _categoriaId)
+            ? _categoriaId
+            : null;
+        final servicios = categoriaId == null
+            ? todos
+            : [
+                for (final s in todos)
+                  if (s.categoriaServicio?.id == categoriaId) s,
+              ];
         contenido = Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (categorias.isNotEmpty) ...[
+              FiltroCategoriasServicio(
+                categorias: categorias,
+                categoriaId: categoriaId,
+                onCategoria: (id) => setState(() => _categoriaId = id),
+              ),
+              const SizedBox(height: Espacios.l),
+            ],
             for (var i = 0; i < servicios.length; i++) ...[
               if (i > 0) const SizedBox(height: 12),
               _TarjetaServicio(
@@ -205,6 +230,13 @@ class _TarjetaServicio extends StatelessWidget {
                         height: 1.25,
                       ),
                     ),
+                    if (servicio.categoria != null) ...[
+                      const SizedBox(height: Espacios.xs),
+                      CategoriaDelServicio(
+                        key: Key('categoria-servicio-${servicio.id}'),
+                        servicio: servicio,
+                      ),
+                    ],
                     const SizedBox(height: 6),
                     Text(
                       formatearDuracion(servicio.duracionMin),

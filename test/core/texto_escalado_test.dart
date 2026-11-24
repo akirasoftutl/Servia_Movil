@@ -99,6 +99,48 @@ class _ServiciosConImagenes extends DetalleServiceFalso {
       servicioConImagenes;
 }
 
+// Servicios con categoría de catálogo y personalizada (Móvil#76, T18/T19).
+const _corteCategoria = CategoriaServicio(
+  id: 'corte-caballero',
+  nombre: 'Corte y arreglo de barba para caballero',
+);
+const _serviciosConCategorias = [
+  Servicio(
+    id: 's2',
+    nombre: 'Corte y arreglo de barba con toalla caliente',
+    descripcion: 'Lavado, corte con máquina y tijera, perfilado de barba.',
+    precio: 280,
+    duracionMin: 75,
+    categoriaServicio: _corteCategoria,
+  ),
+  Servicio(
+    id: 's3',
+    nombre: 'Perfilado de barba',
+    descripcion: 'Perfilado con navaja.',
+    precio: 120,
+    duracionMin: 30,
+    categoriaServicio: CategoriaServicio(id: 'barba', nombre: 'Barba'),
+  ),
+  Servicio(
+    id: 's4',
+    nombre: 'Peinado de gala',
+    descripcion: 'Peinado para eventos.',
+    precio: 300,
+    duracionMin: 60,
+    categoriaPersonalizada: 'Peinados de gala para bodas y eventos',
+  ),
+];
+
+class _ServiciosConCategorias extends DetalleServiceFalso {
+  @override
+  Future<List<Servicio>> obtenerServicios(String negocioId) async =>
+      _serviciosConCategorias;
+
+  @override
+  Future<Servicio> obtenerServicio(String negocioId, String servicioId) async =>
+      _serviciosConCategorias.firstWhere((s) => s.id == servicioId);
+}
+
 // PNG de 1x1 para que las imágenes de prueba se decodifiquen sin red.
 ImageProvider _imagenDePrueba(String _) => MemoryImage(
   base64.decode(
@@ -205,6 +247,33 @@ void main() {
             negocioNombre: 'Salón Aurora',
             negociosService: _ServiciosConImagenes(),
             proveedorImagenes: _imagenDePrueba,
+          ),
+          null,
+        ),
+        'perfil con filtro de categorías de servicio': (
+          () => PerfilNegocioPage(
+            negocioId: 'abc123',
+            negociosService: _ServiciosConCategorias(),
+          ),
+          null,
+        ),
+        'detalle del servicio con categoría': (
+          () => DetalleServicioPage(
+            negocioId: 'abc123',
+            servicioId: 's2',
+            aceptaReservas: true,
+            negocioNombre: 'Salón Aurora',
+            negociosService: _ServiciosConCategorias(),
+          ),
+          null,
+        ),
+        'detalle del servicio con categoría personalizada': (
+          () => DetalleServicioPage(
+            negocioId: 'abc123',
+            servicioId: 's4',
+            aceptaReservas: true,
+            negocioNombre: 'Salón Aurora',
+            negociosService: _ServiciosConCategorias(),
           ),
           null,
         ),
