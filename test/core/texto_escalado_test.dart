@@ -16,6 +16,9 @@ import 'package:servia/features/negocios/data/negocio_resumen.dart';
 import 'package:servia/features/negocios/pages/detalle_servicio_page.dart';
 import 'package:servia/features/negocios/pages/disponibilidad_page.dart';
 import 'package:servia/features/negocios/pages/perfil_negocio_page.dart';
+import 'package:servia/features/perfil/data/foto_perfil.dart';
+import 'package:servia/features/perfil/data/perfil_cliente.dart';
+import 'package:servia/features/perfil/data/selector_foto.dart';
 import 'package:servia/features/perfil/pages/mi_perfil_page.dart';
 import 'package:servia/features/reservas/data/detalle_reserva.dart';
 import 'package:servia/features/reservas/pages/confirmacion_reserva_page.dart';
@@ -25,6 +28,7 @@ import 'package:servia/features/negocios/data/fotos_negocio.dart';
 import 'package:servia/features/negocios/data/servicio.dart';
 
 import '../features/negocios/datos_prueba.dart' show serviciosPrueba;
+
 import 'package:servia/core/network/api_exception.dart';
 
 import '../features/favoritos/fakes_favoritos.dart';
@@ -153,6 +157,20 @@ ImageProvider _imagenDePrueba(String _) => MemoryImage(
 
 final ahora = DateTime.utc(2026, 11, 3, 16, 15);
 
+// Mi perfil de un cliente con foto (HU-C11).
+Widget _miPerfilConFoto() => MiPerfilPage(
+  authService: SesionPerfilFalsa([]),
+  perfilClienteService: PerfilClienteFalso([])
+    ..guardado = const PerfilCliente(
+      nombre: 'Ana Pérez',
+      correo: 'ana@test.com',
+      telefono: '4771234567',
+      foto: FotoPerfil(id: 'f0', url: 'https://supabase.test/f0.png'),
+    ),
+  selectorFoto: SelectorFotoFalso(null),
+  proveedorFoto: _imagenDePrueba,
+);
+
 Widget _reprogramar(EscenarioReprogramar e) => ReprogramarReservaPage(
   reserva: DetalleReserva.fromJson(detalleApi()),
   authService: e.sesion,
@@ -202,8 +220,7 @@ void main() {
                 destacado('d1'),
                 const NegocioResumen(
                   id: 'd2',
-                  nombre:
-                      'Estética Lupita: cortes, color y peinados para toda la familia',
+                  nombre: 'Estética Lupita: cortes, color y peinados para toda la familia',
                   categoriaId: 'cabello',
                   aceptaReservas: false,
                 ),
@@ -372,8 +389,7 @@ void main() {
             api.de('ana').addAll([
               negocioFavorito(
                 'b1',
-                nombre:
-                    'Estética Lupita: cortes, color y peinados para toda la familia',
+                nombre: 'Estética Lupita: cortes, color y peinados para toda la familia',
                 aceptaReservas: false,
               ),
               negocioFavorito('b2', nombre: 'Salón Aurora'),
@@ -393,8 +409,7 @@ void main() {
                 'n1',
                 's1',
                 nombre: 'Corte de cabello, peinado y tratamiento hidratante',
-                negocioNombre:
-                    'Estética Lupita: cortes, color y peinados para toda la familia',
+                negocioNombre: 'Estética Lupita: cortes, color y peinados para toda la familia',
                 precio: 1250.5,
                 duracionMin: 135,
               ),
@@ -414,7 +429,9 @@ void main() {
         ),
         'Mis favoritos vacío': (
           () => FavoritosPage(
-            controlador: ApiFavoritosFalsa().controlador(SesionFavoritos('ana')),
+            controlador: ApiFavoritosFalsa().controlador(
+              SesionFavoritos('ana'),
+            ),
             negociosService: NegociosServiceFalso(),
           ),
           null,
@@ -478,8 +495,42 @@ void main() {
               find.byKey(const Key('campo-descripcion')),
               'Cada vez que intento reservar la pantalla se queda cargando.',
             );
-            await t.ensureVisible(find.byKey(const Key('boton-enviar-reporte')));
+            await t.ensureVisible(
+              find.byKey(const Key('boton-enviar-reporte')),
+            );
             await t.tap(find.byKey(const Key('boton-enviar-reporte')));
+            await t.pumpAndSettle();
+          },
+        ),
+        'Mi perfil con foto': (() => _miPerfilConFoto(), null),
+        'Mi perfil con foto y el diálogo de quitarla': (
+          () => _miPerfilConFoto(),
+          (t) async {
+            final quitar = find.text('Quitar foto');
+            await t.scrollUntilVisible(quitar, 300);
+            await t.tap(quitar);
+            await t.pumpAndSettle();
+          },
+        ),
+        'Mi perfil con error al subir la foto': (
+          () => MiPerfilPage(
+            authService: SesionPerfilFalsa([]),
+            perfilClienteService: PerfilClienteFalso(
+              [],
+              errorAlSubirFoto: const ApiException(
+                503,
+                'No se pudo guardar la foto en Supabase Storage.',
+              ),
+            ),
+            selectorFoto: SelectorFotoFalso(
+              FotoElegida(bytes: png1x1, nombre: 'ana.png'),
+            ),
+            proveedorFoto: _imagenDePrueba,
+          ),
+          (t) async {
+            final agregar = find.text('Agregar foto');
+            await t.scrollUntilVisible(agregar, 300);
+            await t.tap(agregar);
             await t.pumpAndSettle();
           },
         ),

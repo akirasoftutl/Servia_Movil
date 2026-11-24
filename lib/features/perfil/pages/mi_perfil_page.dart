@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -9,15 +11,32 @@ import '../../auth/data/auth_service.dart';
 import '../../auth/mensajes.dart';
 import '../../auth/pages/cambiar_contrasena_page.dart';
 import '../../auth/validaciones.dart';
+import '../../negocios/pages/fotos_negocio.dart' show ProveedorImagenNegocio;
 import '../data/perfil_cliente.dart';
 import '../data/perfil_cliente_service.dart';
+import '../data/selector_foto.dart';
+import '../data/validacion_foto.dart';
 import '../mensajes.dart';
+import 'dialogo_confirmacion.dart';
+import 'seccion_foto_perfil.dart';
 
 class MiPerfilPage extends StatefulWidget {
-  const MiPerfilPage({super.key, this.authService, this.perfilClienteService});
+  const MiPerfilPage({
+    super.key,
+    this.authService,
+    this.perfilClienteService,
+    this.selectorFoto,
+    this.proveedorFoto,
+  });
 
   final AuthService? authService;
   final PerfilClienteService? perfilClienteService;
+
+  /// Galería de donde se elige la foto; las pruebas dan una simulada.
+  final SelectorFoto? selectorFoto;
+
+  /// Cómo se descarga la foto guardada; por defecto, por red.
+  final ProveedorImagenNegocio? proveedorFoto;
 
   @override
   State<MiPerfilPage> createState() => _MiPerfilPageState();
@@ -31,8 +50,16 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
 
   late final AuthService _auth;
   late final PerfilClienteService _servicio;
+  late final SelectorFoto _selector;
+  late final ProveedorImagenNegocio _proveedorFoto;
 
   PerfilCliente? _perfil;
+  // Foto de perfil (HU-C11): lo que está en curso, el error y la foto elegida
+  // que falló, para reintentar sin volver a elegirla.
+  String? _fotoOcupada;
+  Uint8List? _vistaPrevia;
+  FotoElegida? _fotoPendiente;
+  String? _errorFoto;
   bool _cargando = true;
   bool _editando = false;
   bool _guardando = false;
@@ -45,6 +72,8 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
     super.initState();
     _auth = widget.authService ?? AuthService();
     _servicio = widget.perfilClienteService ?? PerfilClienteService();
+    _selector = widget.selectorFoto ?? SelectorFotoGaleria();
+    _proveedorFoto = widget.proveedorFoto ?? (url) => NetworkImage(url);
     _cargar();
   }
 
@@ -81,6 +110,103 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
       setState(() {
         _errorCarga = _mensajeDe(error);
         _cargando = false;
+      });
+    }
+  }
+
+  Future<String> _token() async {
+    final usuario = _auth.usuarioActual;
+    if (usuario == null) throw ApiException(401, MensajesPerfil.sesionInvalida);
+    return (await usuario.getIdToken())!;
+  }
+
+  void _avisar(String texto) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(texto)));
+  }
+
+  Future<void> _elegirFoto() async {
+    if (_fotoOcupada != null) return;
+    setState(() {
+      _errorFoto = null;
+      _fotoPendiente = null;
+    });
+    final FotoElegida? foto;
+    try {
+      foto = await _selector.elegir();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _errorFoto = MensajesPerfil.fotoNoElegida);
+      return;
+    }
+    if (!mounted || foto == null) return;
+    // Se revisa antes de subir; la API vuelve a validar y decide.
+    final motivo = ValidacionFoto.validar(foto.bytes);
+    if (motivo != null) {
+      setState(() => _errorFoto = motivo);
+      return;
+    }
+    await _subirFoto(foto);
+  }
+
+  Future<void> _subirFoto(FotoElegida foto) async {
+    if (_fotoOcupada != null) return;
+    setState(() {
+      _fotoOcupada = MensajesPerfil.subiendoFoto;
+      _vistaPrevia = foto.bytes;
+      _fotoPendiente = foto;
+      _errorFoto = null;
+    });
+    try {
+      final token = await _token();
+      final nueva = await _servicio.subirFoto(token, foto.bytes, foto.nombre);
+      if (!mounted) return;
+      setState(() {
+        _perfil = _perfil!.conFoto(nueva);
+        _fotoOcupada = null;
+        _vistaPrevia = null;
+        _fotoPendiente = null;
+      });
+      _avisar(MensajesPerfil.fotoActualizada);
+    } catch (error) {
+      if (!mounted) return;
+      // La foto anterior no cambia: solo se ofrece reintentar.
+      setState(() {
+        _fotoOcupada = null;
+        _vistaPrevia = null;
+        _errorFoto = _mensajeDe(error);
+      });
+    }
+  }
+
+  Future<void> _quitarFoto() async {
+    if (_fotoOcupada != null) return;
+    final confirmado = await confirmarAccion(
+      context,
+      titulo: MensajesPerfil.quitarTitulo,
+      parrafos: const [MensajesPerfil.quitarCuerpo],
+      textoConfirmar: MensajesPerfil.quitarFoto,
+    );
+    if (!confirmado || !mounted) return;
+    setState(() {
+      _fotoOcupada = MensajesPerfil.quitandoFoto;
+      _errorFoto = null;
+      _fotoPendiente = null;
+    });
+    try {
+      await _servicio.quitarFoto(await _token());
+      if (!mounted) return;
+      setState(() {
+        _perfil = _perfil!.conFoto(null);
+        _fotoOcupada = null;
+      });
+      _avisar(MensajesPerfil.fotoEliminada);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _fotoOcupada = null;
+        _errorFoto = _mensajeDe(error);
       });
     }
   }
@@ -149,7 +275,9 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
       );
       if (!mounted) return;
       setState(() {
-        _perfil = nuevo;
+        // Editar los datos no toca la foto: si la respuesta no la trae, se
+        // conserva la que ya se veía.
+        _perfil = nuevo.foto == null ? nuevo.conFoto(actual.foto) : nuevo;
         _editando = false;
         _guardando = false;
       });
@@ -195,12 +323,6 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
           const SnackBar(content: Text(MensajesPerfil.iniciaConNuevoCorreo)),
         );
     }
-  }
-
-  String _obtenerInicial(String nombre) {
-    final limpio = nombre.trim();
-    if (limpio.isEmpty) return 'U';
-    return limpio[0].toUpperCase();
   }
 
   InputDecoration _decoracionCampo({
@@ -321,7 +443,21 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
           children: [
-            // Encabezado superior: Nombre grande a la izquierda + Avatar verde con inicial a la derecha
+            SeccionFotoPerfil(
+              nombre: perfil.nombre,
+              proveedor: _proveedorFoto,
+              url: perfil.foto?.url,
+              vistaPrevia: _vistaPrevia,
+              ocupado: _fotoOcupada,
+              error: _errorFoto,
+              onElegir: _elegirFoto,
+              onQuitar: _quitarFoto,
+              onReintentar: _fotoPendiente == null
+                  ? null
+                  : () => _subirFoto(_fotoPendiente!),
+            ),
+            const SizedBox(height: Espacios.xl),
+            // Encabezado: nombre grande.
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -349,24 +485,6 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
                         ),
                       ),
                     ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: const BoxDecoration(
-                    color: Color.fromARGB(255, 142, 69, 184),
-                    shape: BoxShape.circle,
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    _obtenerInicial(perfil.nombre),
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
-                    ),
                   ),
                 ),
               ],

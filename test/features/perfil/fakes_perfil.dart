@@ -1,11 +1,15 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:servia/core/network/api_exception.dart';
 import 'package:servia/features/auth/data/auth_service.dart';
+import 'package:servia/features/perfil/data/foto_perfil.dart';
 import 'package:servia/features/perfil/data/perfil_cliente.dart';
 import 'package:servia/features/perfil/data/perfil_cliente_service.dart';
+import 'package:servia/features/perfil/data/selector_foto.dart';
 
 /// Anota en [eventos] cada llamada a la API y a getIdToken, en orden.
 class UsuarioPerfilFalso extends Fake implements User {
@@ -64,13 +68,29 @@ class PerfilClienteFalso extends PerfilClienteService {
     this.error,
     this.errorAlGuardar,
     this.correosOcupados = const {},
+    this.errorAlSubirFoto,
+    this.errorAlQuitarFoto,
+    this.esperaSubida,
+    this.patchSinFoto = false,
   });
 
   final List<String> eventos;
   final Object? error;
   final Object? errorAlGuardar;
   final Set<String> correosOcupados;
+  final Object? errorAlSubirFoto;
+  final Object? errorAlQuitarFoto;
+
+  /// Si se da, la subida de la foto espera a que se complete.
+  final Completer<void>? esperaSubida;
+
+  /// Simula una API anterior cuyo PATCH no trae `foto`.
+  final bool patchSinFoto;
   int actualizaciones = 0;
+  int subidas = 0;
+  int quitadas = 0;
+  Uint8List? ultimosBytes;
+  String? ultimoNombre;
   Map<String, String?> ultimoPatch = {};
   PerfilCliente guardado = const PerfilCliente(
     nombre: 'Ana Pérez',
@@ -103,7 +123,56 @@ class PerfilClienteFalso extends PerfilClienteService {
       nombre: nombre ?? guardado.nombre,
       correo: correo ?? guardado.correo,
       telefono: telefono ?? guardado.telefono,
+      foto: guardado.foto,
     );
-    return guardado;
+    return patchSinFoto ? guardado.conFoto(null) : guardado;
+  }
+
+  @override
+  Future<FotoPerfil> subirFoto(
+    String token,
+    Uint8List bytes,
+    String nombre,
+  ) async {
+    eventos.add('POST-FOTO');
+    subidas++;
+    ultimosBytes = bytes;
+    ultimoNombre = nombre;
+    if (esperaSubida != null) await esperaSubida!.future;
+    if (errorAlSubirFoto != null) throw errorAlSubirFoto!;
+    final foto = FotoPerfil(
+      id: 'f$subidas',
+      url: 'https://supabase.test/clientes/uid/f$subidas.png',
+    );
+    guardado = guardado.conFoto(foto);
+    return foto;
+  }
+
+  @override
+  Future<void> quitarFoto(String token) async {
+    eventos.add('DELETE-FOTO');
+    quitadas++;
+    if (errorAlQuitarFoto != null) throw errorAlQuitarFoto!;
+    guardado = guardado.conFoto(null);
+  }
+}
+
+/// PNG de 1x1 válido: se decodifica en las pruebas y trae la firma PNG.
+final Uint8List png1x1 = base64.decode(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC',
+);
+
+/// Hace de la galería: devuelve [resultado] y cuenta las veces que se abrió.
+class SelectorFotoFalso implements SelectorFoto {
+  SelectorFotoFalso(this.resultado, {this.error});
+  FotoElegida? resultado;
+  final Object? error;
+  int aperturas = 0;
+
+  @override
+  Future<FotoElegida?> elegir() async {
+    aperturas++;
+    if (error != null) throw error!;
+    return resultado;
   }
 }
