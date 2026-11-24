@@ -17,7 +17,7 @@ import 'package:servia/features/negocios/data/negocio_resumen.dart';
 import 'package:servia/features/negocios/data/ubicacion_negocio.dart';
 import 'package:servia/features/negocios/pages/detalle_servicio_page.dart';
 import 'package:servia/features/negocios/pages/disponibilidad_page.dart';
-import 'package:servia/features/negocios/pages/mapa_cercanos_page.dart';
+import 'package:servia/features/negocios/pages/inicio_con_mapa.dart';
 import 'package:servia/features/negocios/pages/perfil_negocio_page.dart';
 import 'package:servia/features/perfil/data/cuenta_con_reservas.dart';
 import 'package:servia/features/perfil/data/foto_perfil.dart';
@@ -267,8 +267,8 @@ void main() {
           },
           null,
         ),
-        'mapa de negocios cercanos': (
-          () => MapaCercanosPage(
+        'inicio con mapa y hoja': (
+          () => Scaffold(body: InicioConMapa(
             negociosService: _CercanosMapaFalso(),
             proveedorUbicacion: () async => (lat: 21.12, lng: -101.68),
             constructorMapa: (_, datos) => ColoredBox(
@@ -303,8 +303,12 @@ void main() {
                 ),
               ),
             ),
-          ),
-          null,
+          )),
+          (t) async {
+            // La tarjeta flotante del pin tocado también debe caber.
+            await t.tap(find.text('0.8 km'));
+            await t.pumpAndSettle();
+          },
         ),
         'perfil del negocio': (
           () => PerfilNegocioPage(
