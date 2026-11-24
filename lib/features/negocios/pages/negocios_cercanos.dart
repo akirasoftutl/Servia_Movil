@@ -6,6 +6,7 @@ import '../data/negocio_cercano.dart';
 import '../data/negocios_service.dart';
 import '../data/ubicacion_cliente.dart';
 import '../mensajes.dart';
+import 'mapa_cercanos_page.dart';
 import 'tarjeta_negocio.dart';
 
 // Márgenes literales de la lista del rediseño (`lista_negocios_page.dart`).
@@ -16,9 +17,15 @@ const _bordeBoton = Color(0xFFD1D5DB);
 const _estiloMensaje = TextStyle(fontSize: 14, color: Color(0xFF6B7280));
 
 class NegociosCercanos extends StatefulWidget {
-  const NegociosCercanos({super.key, this.service, this.proveedorUbicacion});
+  const NegociosCercanos({
+    super.key,
+    this.service,
+    this.proveedorUbicacion,
+    this.constructorMapa,
+  });
   final NegociosService? service;
   final ProveedorUbicacionCliente? proveedorUbicacion;
+  final ConstructorMapaCercanos? constructorMapa;
 
   @override
   State<NegociosCercanos> createState() => _NegociosCercanosState();
@@ -79,22 +86,57 @@ class _NegociosCercanosState extends State<NegociosCercanos> {
     }
   }
 
+  void _abrirMapa() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => MapaCercanosPage(
+          negociosService: _service,
+          proveedorUbicacion: _ubicacion,
+          constructorMapa: widget.constructorMapa,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_visible) return const SizedBox.shrink();
+    final mostrarVerMapa = !_cargando && !_error && _negocios.isNotEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(_margen, Espacios.l, _margen, 0),
-          child: Text(
-            MensajesNegocios.cercaDeTi,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: _texto,
-              letterSpacing: -0.3,
-            ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(_margen, Espacios.l, _margen, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                MensajesNegocios.cercaDeTi,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: _texto,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              if (mostrarVerMapa) ...[
+                const SizedBox(height: Espacios.xs),
+                OutlinedButton.icon(
+                  onPressed: _abrirMapa,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: _texto,
+                    side: const BorderSide(color: _bordeBoton),
+                    shape: const StadiumBorder(),
+                    minimumSize: const Size(Medidas.tactil, Medidas.tactil),
+                  ),
+                  icon: const Icon(Icons.map_outlined, size: 18),
+                  label: const Text(
+                    MensajesNegocios.verMapa,
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
         if (_cargando)

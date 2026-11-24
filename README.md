@@ -73,6 +73,22 @@ En Android, `google_sign_in` usa Credential Manager, que devuelve `canceled` tam
 4. Desinstala la app del dispositivo (Credential Manager guarda el fallo) y vuelve a ejecutarla.
 
 Si el mensaje sigue apareciendo, ejecuta con `flutter run` y revisa el `flutter log`: se imprime `GoogleSignIn: canceled <descripción>`; `Account reauth failed` confirma que el SHA o el paquete no coinciden.
+## Mapa de Google
+
+La pantalla **Ver mapa** de «Cerca de ti» usa el SDK de Google Maps para Android (`google_maps_flutter`). La llave de la API **no se commitea**: `android/app/build.gradle.kts` la lee de `android/local.properties` (ignorado por Git) o de la variable de entorno `MAPS_API_KEY`, con valor vacío por defecto para que la compilación y las pruebas funcionen sin llave.
+
+1. En Google Cloud Console, activa **Maps SDK for Android** y crea una API key.
+2. Restringe la llave a **Maps SDK for Android**, al paquete Android `com.akirasoft.servia` y a las huellas **SHA-1** de firma (depuración y release).
+3. Configúrala en local agregando a `android/local.properties`:
+   ```properties
+   MAPS_API_KEY=TU_LLAVE_DE_GOOGLE_MAPS
+   ```
+   O exportándola en tu entorno antes de compilar:
+   ```bash
+   export MAPS_API_KEY=TU_LLAVE_DE_GOOGLE_MAPS
+   ```
+
+Sin llave configurada, el lienzo del mapa se muestra vacío/gris, pero la lista de lugares cercanos y el resto de la aplicación siguen funcionando sin cierres.
 
 # Pruebas y Análisis de Código
 
