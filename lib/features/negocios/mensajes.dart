@@ -11,9 +11,16 @@ class MensajesNegocios {
 
   static const destacados = 'Destacados';
   static const cercaDeTi = 'Cerca de ti';
+  static const verMapa = 'Ver mapa';
+  static const tuUbicacion = 'Tu ubicación';
   static const errorCercanos = 'No se pudieron cargar los negocios cercanos.';
   static const sinCercanos = 'No hay negocios cerca de ti.';
   static String distancia(double km) => 'a ${km.toStringAsFixed(1)} km';
+  static String distanciaCorta(double km) => '${km.toStringAsFixed(1)} km';
+  static String lugaresCercanos(int cantidad) =>
+      cantidad == 1 ? '1 lugar cercano' : '$cantidad lugares cercanos';
+  static String descripcionPin(String nombre, double km) =>
+      '$nombre ${distancia(km)}';
 
   static const errorRed =
       'No se pudo conectar. Revisa tu conexión e inténtalo de nuevo.';
