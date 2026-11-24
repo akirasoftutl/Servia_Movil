@@ -1,3 +1,4 @@
+import 'dart:convert' show base64;
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -15,8 +16,10 @@ import 'package:servia/features/negocios/pages/perfil_negocio_page.dart';
 import 'package:servia/features/perfil/pages/mi_perfil_page.dart';
 import 'package:servia/features/reservas/pages/confirmacion_reserva_page.dart';
 import 'package:servia/features/reservas/pages/resumen_reserva_page.dart';
+import 'package:servia/features/negocios/data/fotos_negocio.dart';
 import 'package:servia/features/negocios/data/servicio.dart';
 
+import '../features/negocios/datos_prueba.dart' show serviciosPrueba;
 import '../features/negocios/fakes.dart';
 import '../features/perfil/fakes_perfil.dart';
 import '../features/reservas/fakes.dart';
@@ -60,6 +63,39 @@ const servicio = Servicio(
   descripcion: 'Lavado, corte con máquina y tijera, perfilado de barba.',
   precio: 280,
   duracionMin: 75,
+);
+
+// Servicio con las 3 imágenes que permite T19 (HU-C32).
+const servicioConImagenes = Servicio(
+  id: 's2',
+  nombre: 'Corte y arreglo de barba con toalla caliente',
+  descripcion: 'Lavado, corte con máquina y tijera, perfilado de barba.',
+  precio: 280,
+  duracionMin: 75,
+  imagenes: [
+    FotoNegocio(id: 'i1', url: 'https://supabase.test/s2/i1.jpg'),
+    FotoNegocio(id: 'i2', url: 'https://supabase.test/s2/i2.jpg'),
+    FotoNegocio(id: 'i3', url: 'https://supabase.test/s2/i3.jpg'),
+  ],
+);
+
+class _ServiciosConImagenes extends DetalleServiceFalso {
+  @override
+  Future<List<Servicio>> obtenerServicios(String negocioId) async => [
+    servicioConImagenes,
+    ...serviciosPrueba,
+  ];
+
+  @override
+  Future<Servicio> obtenerServicio(String negocioId, String servicioId) async =>
+      servicioConImagenes;
+}
+
+// PNG de 1x1 para que las imágenes de prueba se decodifiquen sin red.
+ImageProvider _imagenDePrueba(String _) => MemoryImage(
+  base64.decode(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC',
+  ),
 );
 
 final ahora = DateTime.utc(2026, 11, 3, 16, 15);
@@ -111,6 +147,25 @@ void main() {
             aceptaReservas: true,
             negocioNombre: 'Salón Aurora',
             negociosService: DetalleServiceFalso(),
+          ),
+          null,
+        ),
+        'perfil con servicios con imágenes': (
+          () => PerfilNegocioPage(
+            negocioId: 'abc123',
+            negociosService: _ServiciosConImagenes(),
+            proveedorFotos: _imagenDePrueba,
+          ),
+          null,
+        ),
+        'detalle del servicio con imágenes': (
+          () => DetalleServicioPage(
+            negocioId: 'abc123',
+            servicioId: 's2',
+            aceptaReservas: true,
+            negocioNombre: 'Salón Aurora',
+            negociosService: _ServiciosConImagenes(),
+            proveedorImagenes: _imagenDePrueba,
           ),
           null,
         ),
