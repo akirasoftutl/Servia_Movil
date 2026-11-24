@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../auth/data/auth_service.dart';
+import '../../favoritos/mensajes.dart';
 import '../../ayuda/data/soporte_service.dart';
 import '../../ayuda/mensajes.dart';
 import '../../ayuda/pages/ayuda_page.dart';
@@ -193,6 +194,13 @@ class _HomePageState extends State<HomePage> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      if (estaLogueado)
+                        IconButton(
+                          tooltip: MensajesFavoritos.titulo,
+                          onPressed: () =>
+                              Navigator.of(context).pushNamed('/favoritos'),
+                          icon: const Icon(Icons.favorite_border),
+                        ),
                       if (estaLogueado)
                         IconButton(
                           tooltip: MensajesNotificaciones.campana,

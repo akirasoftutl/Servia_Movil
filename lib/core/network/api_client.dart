@@ -53,6 +53,17 @@ class ApiClient {
     return _client.patch(url, headers: headers, body: body).timeout(limite);
   }
 
+  /// `PUT`; sin [body] no manda `Content-Type` (por ejemplo, favoritos).
+  Future<http.Response> put(String endpoint, {String? token, String? body}) {
+    final url = Uri.parse('$baseUrl$endpoint');
+    final headers = <String, String>{
+      'Accept': 'application/json',
+      if (body != null) 'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+    return _client.put(url, headers: headers, body: body).timeout(limite);
+  }
+
   /// Usado para dar de baja el token FCM al cerrar sesión (MVP-28).
   Future<http.Response> delete(
     String endpoint, {

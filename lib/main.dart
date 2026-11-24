@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'core/firebase/firebase_options.dart';
 import 'core/theme/tema_servia.dart';
 import 'features/auth/pages/auth_gate.dart';
+import 'features/favoritos/rutas_favoritos.dart';
 import 'features/negocios/rutas_negocios.dart';
 import 'features/notificaciones/data/servicio_push.dart';
 import 'features/notificaciones/rutas_notificaciones.dart';
@@ -42,6 +43,7 @@ class ServiaApp extends StatelessWidget {
       onGenerateRoute: (ajustes) =>
           generarRutaReservas(ajustes) ??
           generarRutaNotificaciones(ajustes, push: push) ??
+          generarRutaFavoritos(ajustes) ??
           generarRutaNegocios(ajustes),
       onUnknownRoute: generarRutaNoDisponible,
     );
