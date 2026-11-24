@@ -1,6 +1,7 @@
 import 'fotos_negocio.dart';
 import 'lectura_json.dart';
 import 'negocios_service.dart';
+import 'ubicacion_negocio.dart';
 
 class NegocioResumen {
   final String id;
@@ -13,12 +14,17 @@ class NegocioResumen {
   /// URL de la portada incluida en el listado de negocios.
   final String? imagenUrl;
 
+  /// Coordenadas opcionales incluidas en el listado/cercanos; si faltan o son
+  /// inválidas el negocio sigue siendo usable sin pin en el mapa.
+  final UbicacionNegocio? ubicacion;
+
   const NegocioResumen({
     required this.id,
     required this.nombre,
     this.categoriaId,
     required this.aceptaReservas,
     this.imagenUrl,
+    this.ubicacion,
   });
 
   factory NegocioResumen.fromJson(Map<String, dynamic> json) {
@@ -30,6 +36,7 @@ class NegocioResumen {
       categoriaId: _leerCategoriaId(json),
       aceptaReservas: leerBooleano(json, 'aceptaReservas'),
       imagenUrl: _leerImagenUrl(json),
+      ubicacion: UbicacionNegocio.leer(json['ubicacion']),
     );
   }
 
