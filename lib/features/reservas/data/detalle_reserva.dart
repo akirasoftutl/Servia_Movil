@@ -21,6 +21,11 @@ class DetalleReserva extends ReservaResumen {
     required this.motivo,
     required this.cancelable,
     required this.cancelableHasta,
+    required this.negocioId,
+    required this.servicioId,
+    this.reprogramable = false,
+    this.reprogramableHasta,
+    this.motivoNoReprogramable,
   });
 
   final num? precio;
@@ -32,6 +37,19 @@ class DetalleReserva extends ReservaResumen {
   final String? motivo;
   final bool cancelable;
   final DateTime? cancelableHasta;
+
+  /// Ids de la reserva guardada: sirven para elegir otro horario o servicio.
+  final String negocioId;
+  final String servicioId;
+
+  /// Reprogramación (T18, T19, HU-C74): la decide la API, la app no la calcula.
+  final bool reprogramable;
+
+  /// Último instante en que se puede reprogramar (UTC); null si ya no se puede.
+  final DateTime? reprogramableHasta;
+
+  /// Texto en español de la API cuando no se puede reprogramar.
+  final String? motivoNoReprogramable;
 
   factory DetalleReserva.fromJson(Map<String, dynamic> json) {
     final resumen = ReservaResumen.fromJson(json);
@@ -60,6 +78,12 @@ class DetalleReserva extends ReservaResumen {
       motivo: leerTextoOpcional(json, 'motivo'),
       cancelable: leerBooleano(json, 'cancelable'),
       cancelableHasta: _fechaOpcional(json, 'cancelableHasta'),
+      negocioId: leerTexto(negocio, 'id'),
+      servicioId: leerTexto(leerObjeto(json['servicio']), 'id'),
+      // Sin el campo (API anterior) no se ofrece cambiar nada.
+      reprogramable: json['reprogramable'] == true,
+      reprogramableHasta: _fechaOpcional(json, 'reprogramableHasta'),
+      motivoNoReprogramable: leerTextoOpcional(json, 'motivoNoReprogramable'),
     );
   }
 }

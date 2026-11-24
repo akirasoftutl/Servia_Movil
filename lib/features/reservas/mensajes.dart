@@ -99,6 +99,53 @@ class MensajesReservas {
     return errorRed;
   }
 
+  // Cambiar fecha, hora o servicio (T18, T19; HU-C71 a HU-C74).
+  static const cambiarFechaHora = 'Cambiar fecha u hora';
+  static const tituloReprogramar = 'Cambiar tu reserva';
+  static const citaActual = 'Tu cita actual';
+  static const servicioDeLaCita = 'Servicio';
+  static const cambiarDeServicio = 'Cambiar de servicio';
+  static const ocultarServicios = 'Dejar el servicio actual';
+  static const cargandoServicios = 'Cargando los servicios...';
+  static const sinOtrosServicios =
+      'Este negocio no tiene otros servicios activos.';
+  static const errorServicios =
+      'No se pudieron cargar los servicios. Inténtalo de nuevo.';
+  static const servicioElegido = 'Servicio elegido';
+  static const elegirFechaHora = 'Elegir nueva fecha y hora';
+  static const puedesCambiarHasta = 'Puedes cambiar esta reserva hasta el';
+  static const confirmarCambio = 'Confirmar cambio';
+  static const ahoraEs = 'Ahora';
+  static const nuevaCita = 'Nueva cita';
+  static const servicioAntes = 'Antes';
+  static const avisoVuelvePendiente =
+      'Tu reserva volverá a quedar Pendiente y el negocio tendrá que aceptarla de nuevo.';
+  static const siCambiar = 'Sí, cambiar';
+  static const reprogramando = 'Cambiando...';
+  static const reprogramacionExitosa =
+      'Tu reserva se cambió. El negocio debe aceptarla de nuevo.';
+  static const errorReprogramacion =
+      'No se pudo cambiar tu reserva. Inténtalo de nuevo.';
+
+  /// «Tu reserva quedó Pendiente para el … a las …. El negocio debe confirmarla.»
+  static String reprogramada(String fecha, String hora) =>
+      'Tu reserva quedó Pendiente para el $fecha a las $hora. '
+      'El negocio debe confirmarla.';
+
+  /// Mensaje de [error] al enviar el cambio. El 409 trae el texto de la API.
+  static String mensajeDeReprogramacion(Object error) {
+    if (sesionInvalidaDetalle(error)) return sesionVencidaConsulta;
+    if (error is ApiException) {
+      if (error.statusCode == 400 || error.statusCode == 409) {
+        return error.mensaje;
+      }
+      if (error.statusCode == 404) return reservaYaNoDisponible;
+      return error.statusCode >= 500 ? errorApi : errorReprogramacion;
+    }
+    if (error is FormatException) return errorReprogramacion;
+    return errorRed;
+  }
+
   // Detalle de reserva (MVP-20).
   static const tituloDetalle = 'Detalle de la reserva';
   static const cargandoDetalle = 'Cargando tu reserva...';

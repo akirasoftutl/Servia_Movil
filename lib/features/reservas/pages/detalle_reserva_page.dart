@@ -5,13 +5,18 @@ import '../../../core/network/api_exception.dart';
 import '../../../core/theme/tokens.dart';
 import '../../../core/widgets/estados.dart';
 import '../../../core/widgets/etiqueta_estado.dart';
+import '../../../core/widgets/aviso.dart';
 import '../../auth/data/auth_service.dart';
+import '../../negocios/data/disponibilidad_service.dart';
+import '../../negocios/data/negocios_service.dart';
 import '../../negocios/formatos.dart';
 import '../data/detalle_reserva.dart';
 import '../data/reservas_service.dart';
 import '../fechas_reserva.dart';
 import '../mensajes.dart';
+import '../resultado_reprogramacion.dart';
 import 'mis_reservas_page.dart';
+import 'reprogramar_reserva_page.dart';
 
 /// MVP-20, RN-45: consulta el detalle propio usando únicamente su id.
 class DetalleReservaPage extends StatefulWidget {
@@ -20,11 +25,15 @@ class DetalleReservaPage extends StatefulWidget {
     required this.id,
     this.authService,
     this.reservasService,
+    this.negociosService,
+    this.disponibilidadService,
     this.ahora,
   });
   final String id;
   final AuthService? authService;
   final ReservasService? reservasService;
+  final NegociosService? negociosService;
+  final DisponibilidadService? disponibilidadService;
   final DateTime Function()? ahora;
 
   @override
@@ -40,6 +49,10 @@ class _DetalleReservaPageState extends State<DetalleReservaPage> {
   int _version = 0;
   bool _enviando = false;
   bool _dialogoAbierto = false;
+  bool _reprogramando = false;
+
+  /// Resultado de la última reprogramación: nueva fecha y estado Pendiente.
+  String? _avisoReprogramacion;
 
   @override
   void initState() {
@@ -89,8 +102,47 @@ class _DetalleReservaPageState extends State<DetalleReservaPage> {
     }
   }
 
+  /// T18, T19: la API decide si se puede; aquí se elige y se vuelve a leer.
+  Future<void> _reprogramar(DetalleReserva reserva) async {
+    if (_enviando || _dialogoAbierto || _reprogramando) return;
+    setState(() => _reprogramando = true);
+    final resultado = await Navigator.push<ResultadoReprogramacion>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ReprogramarReservaPage(
+          reserva: reserva,
+          authService: _auth,
+          reservasService: _reservas,
+          negociosService: widget.negociosService,
+          disponibilidadService: widget.disponibilidadService,
+          ahora: widget.ahora,
+        ),
+      ),
+    );
+    if (!mounted) return;
+    setState(() => _reprogramando = false);
+    if (resultado == null) return;
+    final mensaje = switch (resultado.tipo) {
+      TipoResultadoReprogramacion.reprogramada =>
+        MensajesReservas.reprogramacionExitosa,
+      _ => resultado.mensaje!,
+    };
+    final nueva = resultado.reserva?.reserva.inicio;
+    setState(
+      () => _avisoReprogramacion = nueva == null
+          ? null
+          : MensajesReservas.reprogramada(
+              formatearFechaLarga(fechaEnMexico(nueva)),
+              horaEnMexico(nueva),
+            ),
+    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(mensaje)));
+    await _cargar();
+  }
+
   Future<void> _cancelar() async {
-    if (_enviando || _dialogoAbierto) return;
+    if (_enviando || _dialogoAbierto || _reprogramando) return;
     final id = widget.id;
     final version = _version;
     setState(() => _dialogoAbierto = true);
@@ -286,9 +338,20 @@ class _DetalleReservaPageState extends State<DetalleReservaPage> {
       'cancelada' => MensajesReservas.motivoCancelacion,
       _ => null,
     };
+    // T18: el permiso y el motivo vienen de la API; no se recalculan las 24 h.
+    final motivoNoReprogramable = r.motivoNoReprogramable?.trim() ?? '';
+    final explicarNoReprogramable =
+        !r.reprogramable &&
+        (r.estado == 'pendiente' || r.estado == 'confirmada') &&
+        r.inicio.isAfter((widget.ahora ?? DateTime.now)()) &&
+        motivoNoReprogramable.isNotEmpty;
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, Espacios.xxl),
       children: [
+        if (_avisoReprogramacion != null) ...[
+          Aviso(texto: _avisoReprogramacion!, tipo: TipoAviso.informacion),
+          const SizedBox(height: Espacios.l),
+        ],
         _seccion(MensajesReservas.folio, [
           SelectableText(
             r.folio,
@@ -343,6 +406,20 @@ class _DetalleReservaPageState extends State<DetalleReservaPage> {
             MensajesReservas.limiteCancelacion,
             style: TextStyle(fontSize: 14, color: _textoSecundario),
           ),
+        if (explicarNoReprogramable) ...[
+          Aviso(texto: motivoNoReprogramable, tipo: TipoAviso.informacion),
+          const SizedBox(height: Espacios.l),
+        ],
+        if (r.reprogramable) ...[
+          OutlinedButton(
+            key: const ValueKey('reprogramar-reserva'),
+            onPressed: _enviando || _dialogoAbierto || _reprogramando
+                ? null
+                : () => _reprogramar(r),
+            child: const Text(MensajesReservas.cambiarFechaHora),
+          ),
+          const SizedBox(height: Espacios.m),
+        ],
         if (accion != null) ...[
           if (fueraDePlazo) const SizedBox(height: Espacios.l),
           SizedBox(

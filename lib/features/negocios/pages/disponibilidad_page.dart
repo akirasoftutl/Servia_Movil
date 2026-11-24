@@ -18,6 +18,8 @@ class DisponibilidadPage extends StatefulWidget {
     this.service,
     this.ahora = DateTime.now,
     this.aviso,
+    this.cargarDias,
+    this.cargarHoras,
   });
 
   final String negocioId;
@@ -27,6 +29,11 @@ class DisponibilidadPage extends StatefulWidget {
 
   /// Mensaje al volver a elegir horario (por ejemplo, el horario se ocupó).
   final String? aviso;
+
+  /// Para reprogramar (T18): consultan la disponibilidad privada de la reserva
+  /// (con el token del cliente) en lugar de la ruta pública del servicio.
+  final Future<List<DiaDisponibilidad>> Function()? cargarDias;
+  final Future<List<HoraDisponibilidad>> Function(String fecha)? cargarHoras;
 
   @override
   State<DisponibilidadPage> createState() => _DisponibilidadPageState();
@@ -78,10 +85,9 @@ class _DisponibilidadPageState extends State<DisponibilidadPage>
     });
     final consulta = _consulta;
     try {
-      final dias = await _service.obtenerDias(
-        widget.negocioId,
-        widget.servicioId,
-      );
+      final dias =
+          await widget.cargarDias?.call() ??
+          await _service.obtenerDias(widget.negocioId, widget.servicioId);
       if (!mounted || consulta != _consulta) return;
       setState(() => _dias = dias);
     } catch (error) {
@@ -99,11 +105,13 @@ class _DisponibilidadPageState extends State<DisponibilidadPage>
       _errorHoras = null;
     });
     try {
-      final horas = await _service.obtenerHoras(
-        widget.negocioId,
-        widget.servicioId,
-        fecha,
-      );
+      final horas =
+          await widget.cargarHoras?.call(fecha) ??
+          await _service.obtenerHoras(
+            widget.negocioId,
+            widget.servicioId,
+            fecha,
+          );
       if (!mounted || consulta != _consulta) return;
       setState(() => _horas = horas);
       _programarVencimiento();
