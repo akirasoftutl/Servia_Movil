@@ -30,6 +30,8 @@ class MensajesNegocios {
   static const buscar = 'Buscar negocios o servicios';
   static const limpiar = 'Limpiar búsqueda';
   static const todas = 'Todas';
+  static const filtrarPorCategoria = 'Filtrar servicios por categoría';
+  static String categoriaDelServicio(String nombre) => 'Categoría: $nombre';
   static const ordenarPor = 'Ordenar por';
   static String ordenarPorOpcion(String etiqueta) => '$ordenarPor: $etiqueta';
   static const ordenNombre = 'Nombre (A-Z)';
