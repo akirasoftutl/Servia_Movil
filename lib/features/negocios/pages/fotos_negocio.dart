@@ -27,7 +27,7 @@ class PortadaNegocio extends StatelessWidget {
     child: SizedBox(
       width: double.infinity,
       height: _altoPortada,
-      child: _ImagenFotoNegocio(
+      child: ImagenFotoNegocio(
         url: foto.url,
         proveedor: proveedor,
         ancho: double.infinity,
@@ -68,7 +68,7 @@ class GaleriaFotosNegocio extends StatelessWidget {
             itemBuilder: (context, indice) => SizedBox(
               key: Key('foto-galeria-$indice'),
               width: _anchoGaleria,
-              child: _ImagenFotoNegocio(
+              child: ImagenFotoNegocio(
                 url: fotos[indice].url,
                 proveedor: proveedor,
                 ancho: _anchoGaleria,
@@ -83,8 +83,11 @@ class GaleriaFotosNegocio extends StatelessWidget {
   }
 }
 
-class _ImagenFotoNegocio extends StatelessWidget {
-  const _ImagenFotoNegocio({
+/// Imagen con esquinas redondeadas y marcador neutro si no carga. La usan la
+/// portada, la galería y las imágenes de cada servicio.
+class ImagenFotoNegocio extends StatelessWidget {
+  const ImagenFotoNegocio({
+    super.key,
     required this.url,
     required this.proveedor,
     required this.ancho,

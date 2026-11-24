@@ -11,6 +11,8 @@ import '../data/servicio.dart';
 import '../formatos.dart';
 import '../mensajes.dart';
 import 'disponibilidad_page.dart';
+import 'fotos_negocio.dart';
+import 'imagenes_servicio.dart';
 
 enum _EstadoDetalle { cargando, error, listo }
 
@@ -26,6 +28,7 @@ class DetalleServicioPage extends StatefulWidget {
     this.onSeleccionDisponibilidad,
     this.flujoReserva = const FlujoReserva(),
     this.ahora = DateTime.now,
+    this.proveedorImagenes = NetworkImage.new,
   });
 
   final String negocioId;
@@ -39,6 +42,8 @@ class DetalleServicioPage extends StatefulWidget {
   final FlujoReserva flujoReserva;
   // Reloj que se pasa a la disponibilidad; por defecto, la hora real.
   final DateTime Function() ahora;
+  // Carga de las imágenes del servicio; se sustituye en pruebas.
+  final ProveedorImagenNegocio proveedorImagenes;
 
   @override
   State<DetalleServicioPage> createState() => _DetalleServicioPageState();
@@ -158,6 +163,7 @@ class _DetalleServicioPageState extends State<DetalleServicioPage> {
         contenido = _ContenidoServicio(
           servicio: _servicio!,
           aceptaReservas: widget.aceptaReservas,
+          proveedorImagenes: widget.proveedorImagenes,
           onConsultar: _abrirDisponibilidad,
         );
     }
@@ -232,9 +238,11 @@ class _ContenidoServicio extends StatelessWidget {
   const _ContenidoServicio({
     required this.servicio,
     required this.aceptaReservas,
+    required this.proveedorImagenes,
     required this.onConsultar,
   });
 
+  final ProveedorImagenNegocio proveedorImagenes;
   final VoidCallback onConsultar;
   final Servicio servicio;
   final bool aceptaReservas;
@@ -255,6 +263,13 @@ class _ContenidoServicio extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // 0. Imágenes del servicio (HU-C32); sin imágenes no ocupan nada
+                ImagenesServicio(
+                  imagenes: servicio.imagenes,
+                  nombreServicio: servicio.nombre,
+                  proveedor: proveedorImagenes,
+                ),
+
                 // 1. Título grande en negrita
                 Text(
                   servicio.nombre,
