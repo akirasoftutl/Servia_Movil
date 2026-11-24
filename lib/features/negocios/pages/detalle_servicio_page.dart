@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/widgets/estados.dart';
+import '../../favoritos/data/favoritos_servicios_controlador.dart';
+import '../../favoritos/data/servicio_favorito.dart';
+import '../../favoritos/pages/boton_favorito_servicio.dart';
 import '../../reservas/flujo_reserva.dart';
 import '../../reservas/mensajes.dart';
 import '../../reservas/resultado_reserva.dart';
@@ -29,6 +32,7 @@ class DetalleServicioPage extends StatefulWidget {
     this.flujoReserva = const FlujoReserva(),
     this.ahora = DateTime.now,
     this.proveedorImagenes = NetworkImage.new,
+    this.favoritos,
   });
 
   final String negocioId;
@@ -44,6 +48,8 @@ class DetalleServicioPage extends StatefulWidget {
   final DateTime Function() ahora;
   // Carga de las imágenes del servicio; se sustituye en pruebas.
   final ProveedorImagenNegocio proveedorImagenes;
+  // Favoritos de servicios de la cuenta; por defecto, los de la app (HU-C84).
+  final FavoritosServiciosControlador? favoritos;
 
   @override
   State<DetalleServicioPage> createState() => _DetalleServicioPageState();
@@ -51,6 +57,7 @@ class DetalleServicioPage extends StatefulWidget {
 
 class _DetalleServicioPageState extends State<DetalleServicioPage> {
   late final NegociosService _service;
+  late final FavoritosServiciosControlador _favoritos;
   Servicio? _servicio;
   Object? _error;
   _EstadoDetalle _estado = _EstadoDetalle.cargando;
@@ -62,6 +69,9 @@ class _DetalleServicioPageState extends State<DetalleServicioPage> {
   void initState() {
     super.initState();
     _service = widget.negociosService ?? NegociosService();
+    _favoritos = widget.favoritos ?? FavoritosServiciosControlador.instancia;
+    // Para saber si el servicio ya es favorito (HU-C84).
+    _favoritos.cargar();
     _cargar();
   }
 
@@ -208,18 +218,33 @@ class _DetalleServicioPageState extends State<DetalleServicioPage> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: IconButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(
-                            Icons.close,
-                            color: Color(0xFF111827),
-                            size: 26,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          if (_servicio != null)
+                            BotonFavoritoServicio(
+                              controlador: _favoritos,
+                              servicio: ServicioFavorito(
+                                servicioId: _servicio!.id,
+                                nombre: _servicio!.nombre,
+                                precio: _servicio!.precio,
+                                duracionMin: _servicio!.duracionMin,
+                                negocioId: widget.negocioId,
+                                negocioNombre: widget.negocioNombre,
+                                aceptaReservas: widget.aceptaReservas,
+                              ),
+                            ),
+                          IconButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            icon: const Icon(
+                              Icons.close,
+                              color: Color(0xFF111827),
+                              size: 26,
+                            ),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
                           ),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                        ),
+                        ],
                       ),
                     ],
                   ),

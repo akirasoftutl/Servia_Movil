@@ -172,15 +172,16 @@ void main() {
 
     setUp(() {
       api = ApiFavoritosFalsa();
-      api.serviciosDe('ana').add(
-        servicioFavorito('n1', 's1', nombre: 'Masaje relajante'),
-      );
+      api
+          .serviciosDe('ana')
+          .add(servicioFavorito('n1', 's1', nombre: 'Masaje relajante'));
     });
 
     Future<void> montar(WidgetTester tester) async {
       await tester.pumpWidget(const SizedBox());
       tema = temaDeLaApp(tester);
       final sesion = SesionFavoritos('ana');
+      await tester.pumpWidget(const SizedBox());
       await tester.pumpWidget(
         MaterialApp(
           theme: tema,
@@ -196,55 +197,68 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('pestañas, tarjeta y corazón usan colores, fuente y radios del tema',
-        (tester) async {
-      await montar(tester);
-      final c = tema.colorScheme;
+    testWidgets(
+      'pestañas, tarjeta y corazón usan colores, fuente y radios del tema',
+      (tester) async {
+        await montar(tester);
+        final c = tema.colorScheme;
 
-      // Las pestañas toman su estilo del tema, sin colores propios.
-      final barra = tester.widget<TabBar>(find.byType(TabBar));
-      expect(barra.labelColor, isNull);
-      expect(barra.indicatorColor, isNull);
-      expect(barra.labelStyle, isNull);
-      expect(tema.tabBarTheme.labelColor, isNotNull);
+        // Las pestañas toman su estilo del tema, sin colores propios.
+        final barra = tester.widget<TabBar>(find.byType(TabBar));
+        expect(barra.labelColor, isNull);
+        expect(barra.indicatorColor, isNull);
+        expect(barra.labelStyle, isNull);
+        final seleccionada = tester
+            .renderObject<RenderParagraph>(
+              find.text(MensajesFavoritos.tabServicios),
+            )
+            .text
+            .style!;
+        expect(seleccionada.color, c.primary);
+        expect(seleccionada.fontFamily, 'PlusJakartaSans');
+        final otra = tester
+            .renderObject<RenderParagraph>(
+              find.text(MensajesFavoritos.tabNegocios),
+            )
+            .text
+            .style!;
+        expect(otra.color, c.onSurfaceVariant);
 
-      // Tarjeta: superficie, borde y radio de tarjeta de los tokens.
-      final tarjeta = tester.widget<Container>(
-        find.descendant(
-          of: find.byType(TarjetaServicioFavorito),
-          matching: find.byWidgetPredicate(
-            (w) =>
-                w is Container &&
-                w.decoration is BoxDecoration &&
-                (w.decoration! as BoxDecoration).border != null,
+        // Tarjeta: superficie, borde y radio de tarjeta de los tokens.
+        final tarjeta = tester.widget<Container>(
+          find.descendant(
+            of: find.byType(TarjetaServicioFavorito),
+            matching: find.byWidgetPredicate(
+              (w) =>
+                  w is Container &&
+                  w.decoration is BoxDecoration &&
+                  (w.decoration! as BoxDecoration).border != null,
+            ),
           ),
-        ),
-      );
-      final decoracion = tarjeta.decoration! as BoxDecoration;
-      expect(decoracion.color, c.surface);
-      expect(decoracion.borderRadius, Radios.tarjeta);
-      expect(
-        (decoracion.border! as Border).top.color,
-        ColoresServia.borde,
-      );
+        );
+        final decoracion = tarjeta.decoration! as BoxDecoration;
+        expect(decoracion.color, c.surface);
+        expect(decoracion.borderRadius, Radios.tarjeta);
+        expect((decoracion.border! as Border).top.color, ColoresServia.borde);
 
-      // Nombre con la fuente y el color del tema.
-      final nombre = tester
-          .renderObject<RenderParagraph>(find.text('Masaje relajante'))
-          .text
-          .style!;
-      expect(nombre.fontFamily, 'PlusJakartaSans');
-      expect(nombre.color, c.onSurface);
+        // Nombre con la fuente y el color del tema.
+        final nombre = tester
+            .renderObject<RenderParagraph>(find.text('Masaje relajante'))
+            .text
+            .style!;
+        expect(nombre.fontFamily, 'PlusJakartaSans');
+        expect(nombre.color, c.onSurface);
 
-      // Corazón marcado con el primario y área táctil de 48 dp.
-      final corazon = tester.widget<IconButton>(find.byType(IconButton).last);
-      expect(corazon.isSelected, isTrue);
-      expect(corazon.style!.foregroundColor!.resolve({}), c.primary);
-      expect(
-        tester.getSize(find.byType(IconButton).last).shortestSide,
-        greaterThanOrEqualTo(Medidas.tactil),
-      );
-    });
+        // Corazón marcado con el primario y área táctil de 48 dp.
+        final corazon = tester.widget<IconButton>(find.byType(IconButton).last);
+        expect(corazon.isSelected, isTrue);
+        expect(corazon.style!.foregroundColor!.resolve({}), c.primary);
+        expect(
+          tester.getSize(find.byType(IconButton).last).shortestSide,
+          greaterThanOrEqualTo(Medidas.tactil),
+        );
+      },
+    );
 
     testWidgets('vacío y error de servicios usan EstadoVacio y EstadoError', (
       tester,
@@ -255,6 +269,7 @@ void main() {
 
       api.erroresServicios['GET'] = (codigo: 500, mensaje: 'Falló');
       final sesion = SesionFavoritos('ana');
+      await tester.pumpWidget(const SizedBox());
       await tester.pumpWidget(
         MaterialApp(
           theme: tema,

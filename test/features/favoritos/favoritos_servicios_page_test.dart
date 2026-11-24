@@ -69,9 +69,9 @@ void main() {
 
   testWidgets('las pestañas no mezclan negocios con servicios', (tester) async {
     api.de('ana').add(negocioFavorito('b1', nombre: 'Spa Aurora'));
-    api.serviciosDe('ana').add(
-      servicioFavorito('b1', 's1', nombre: 'Masaje relajante'),
-    );
+    api
+        .serviciosDe('ana')
+        .add(servicioFavorito('b1', 's1', nombre: 'Masaje relajante'));
     await abrir(tester, negocios, servicios);
     expect(find.text('Spa Aurora'), findsOneWidget);
     expect(find.text('Masaje relajante'), findsNothing);
@@ -127,38 +127,47 @@ void main() {
     },
   );
 
-  testWidgets('cargando, y sin servicios: «Todavía no tienes servicios favoritos.»', (
-    tester,
-  ) async {
-    await abrir(tester, negocios, servicios);
-    api.retener = Completer<void>();
-    await tester.tap(find.text('Servicios'));
-    await tester.pump(const Duration(milliseconds: 400));
-    expect(find.byType(EstadoCargando), findsOneWidget);
+  testWidgets(
+    'cargando, y sin servicios: «Todavía no tienes servicios favoritos.»',
+    (tester) async {
+      await abrir(tester, negocios, servicios);
+      api.retener = Completer<void>();
+      await tester.tap(find.text('Servicios'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
+      expect(find.byType(EstadoCargando), findsOneWidget);
 
-    api.retener!.complete();
-    await tester.pumpAndSettle();
-    expect(find.byType(EstadoVacio), findsOneWidget);
-    expect(find.text('Todavía no tienes servicios favoritos.'), findsOneWidget);
-  });
+      api.retener!.complete();
+      await tester.pumpAndSettle();
+      expect(find.byType(EstadoVacio), findsOneWidget);
+      expect(
+        find.text('Todavía no tienes servicios favoritos.'),
+        findsOneWidget,
+      );
+    },
+  );
 
-  testWidgets('error: «No se pudieron cargar tus favoritos.» y Reintentar recarga', (
-    tester,
-  ) async {
-    api.erroresServicios['GET'] = (codigo: 500, mensaje: 'Falló');
-    await abrir(tester, negocios, servicios);
-    await irAServicios(tester);
-    expect(find.byType(EstadoError), findsOneWidget);
-    expect(find.text('No se pudieron cargar tus favoritos.'), findsOneWidget);
+  testWidgets(
+    'error: «No se pudieron cargar tus favoritos.» y Reintentar recarga',
+    (tester) async {
+      api.erroresServicios['GET'] = (codigo: 500, mensaje: 'Falló');
+      await abrir(tester, negocios, servicios);
+      await irAServicios(tester);
+      expect(find.byType(EstadoError), findsOneWidget);
+      expect(find.text('No se pudieron cargar tus favoritos.'), findsOneWidget);
 
-    api.erroresServicios.clear();
-    api.serviciosDe('ana').add(servicioFavorito('n1', 's1', nombre: 'Masaje'));
-    await tester.tap(find.text('Reintentar'));
-    await tester.pumpAndSettle();
+      api.erroresServicios.clear();
+      api
+          .serviciosDe('ana')
+          .add(servicioFavorito('n1', 's1', nombre: 'Masaje'));
+      await tester.tap(find.text('Reintentar'));
+      await tester.pumpAndSettle();
 
-    expect(find.byType(EstadoError), findsNothing);
-    expect(find.text('Masaje'), findsOneWidget);
-  });
+      expect(find.byType(EstadoError), findsNothing);
+      expect(find.text('Masaje'), findsOneWidget);
+    },
+  );
 
   testWidgets('un error en servicios no afecta a la pestaña de negocios', (
     tester,
@@ -185,33 +194,36 @@ void main() {
     expect(find.text('Reintentar'), findsNothing);
   });
 
-  testWidgets('tocar un servicio abre su detalle con los datos de la respuesta', (
-    tester,
-  ) async {
-    api.serviciosDe('ana').add(
-      servicioFavorito(
-        'abc123',
-        's2',
-        negocioNombre: 'Salón Aurora',
-        aceptaReservas: false,
-      ),
-    );
-    await abrir(tester, negocios, servicios);
-    await irAServicios(tester);
+  testWidgets(
+    'tocar un servicio abre su detalle con los datos de la respuesta',
+    (tester) async {
+      api
+          .serviciosDe('ana')
+          .add(
+            servicioFavorito(
+              'abc123',
+              's2',
+              negocioNombre: 'Salón Aurora',
+              aceptaReservas: false,
+            ),
+          );
+      await abrir(tester, negocios, servicios);
+      await irAServicios(tester);
 
-    await tester.tap(find.byType(TarjetaServicioFavorito));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byType(TarjetaServicioFavorito));
+      await tester.pumpAndSettle();
 
-    final detalle = tester.widget<DetalleServicioPage>(
-      find.byType(DetalleServicioPage),
-    );
-    expect(detalle.negocioId, 'abc123');
-    expect(detalle.servicioId, 's2');
-    expect(detalle.aceptaReservas, isFalse);
-    expect(detalle.negocioNombre, 'Salón Aurora');
-    expect(negociosFalso.negocioConsultado, 'abc123');
-    expect(negociosFalso.servicioConsultado, 's2');
-  });
+      final detalle = tester.widget<DetalleServicioPage>(
+        find.byType(DetalleServicioPage),
+      );
+      expect(detalle.negocioId, 'abc123');
+      expect(detalle.servicioId, 's2');
+      expect(detalle.aceptaReservas, isFalse);
+      expect(detalle.negocioNombre, 'Salón Aurora');
+      expect(negociosFalso.negocioConsultado, 'abc123');
+      expect(negociosFalso.servicioConsultado, 's2');
+    },
+  );
 
   testWidgets(
     'quitar con el corazón lo saca de la lista sin recargar y al final queda el vacío',
@@ -265,39 +277,43 @@ void main() {
     );
   });
 
-  testWidgets('los favoritos de negocios siguen funcionando igual en su pestaña', (
-    tester,
-  ) async {
-    api.de('ana').addAll([
-      negocioFavorito('b2', nombre: 'Barbería Luna'),
-      negocioFavorito('b1', nombre: 'Spa Aurora'),
-    ]);
-    await abrir(tester, negocios, servicios);
+  testWidgets(
+    'los favoritos de negocios siguen funcionando igual en su pestaña',
+    (tester) async {
+      api.de('ana').addAll([
+        negocioFavorito('b2', nombre: 'Barbería Luna'),
+        negocioFavorito('b1', nombre: 'Spa Aurora'),
+      ]);
+      await abrir(tester, negocios, servicios);
 
-    await tester.tap(find.byTooltip(MensajesFavoritos.quitar).first);
-    await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip(MensajesFavoritos.quitar).first);
+      await tester.pumpAndSettle();
 
-    expect(find.text('Barbería Luna'), findsNothing);
-    expect(api.metodos(), contains('DELETE /favoritos/negocios/b2'));
-    expect(api.de('ana').map((n) => n['id']), ['b1']);
-  });
+      expect(find.text('Barbería Luna'), findsNothing);
+      expect(api.metodos(), contains('DELETE /favoritos/negocios/b2'));
+      expect(api.de('ana').map((n) => n['id']), ['b1']);
+    },
+  );
 
-  testWidgets('al entrar con otra cuenta no se ven los servicios de la anterior', (
-    tester,
-  ) async {
-    api.serviciosDe('ana').add(servicioFavorito('n1', 's1', nombre: 'Masaje'));
-    await abrir(tester, negocios, servicios);
-    await irAServicios(tester);
-    expect(find.text('Masaje'), findsOneWidget);
+  testWidgets(
+    'al entrar con otra cuenta no se ven los servicios de la anterior',
+    (tester) async {
+      api
+          .serviciosDe('ana')
+          .add(servicioFavorito('n1', 's1', nombre: 'Masaje'));
+      await abrir(tester, negocios, servicios);
+      await irAServicios(tester);
+      expect(find.text('Masaje'), findsOneWidget);
 
-    sesion.usuario = UsuarioFavoritos('beto');
-    await abrir(tester, negocios, servicios);
-    await irAServicios(tester);
+      sesion.usuario = UsuarioFavoritos('beto');
+      await abrir(tester, negocios, servicios);
+      await irAServicios(tester);
 
-    expect(find.text('Masaje'), findsNothing);
-    expect(
-      find.text('Todavía no tienes servicios favoritos.'),
-      findsOneWidget,
-    );
-  });
+      expect(find.text('Masaje'), findsNothing);
+      expect(
+        find.text('Todavía no tienes servicios favoritos.'),
+        findsOneWidget,
+      );
+    },
+  );
 }

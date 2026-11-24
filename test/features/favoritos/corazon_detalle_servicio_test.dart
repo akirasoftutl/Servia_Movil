@@ -83,7 +83,9 @@ void main() {
     expect(find.byTooltip(MensajesFavoritos.agregar), findsOneWidget);
   });
 
-  testWidgets('el mismo servicioId de otro negocio no lo marca', (tester) async {
+  testWidgets('el mismo servicioId de otro negocio no lo marca', (
+    tester,
+  ) async {
     api.serviciosDe('ana').add(servicioFavorito('otro', 's2'));
     await abrirDetalle(tester, controlador);
     expect(find.byIcon(Icons.favorite_border), findsOneWidget);
@@ -114,20 +116,21 @@ void main() {
     },
   );
 
-  testWidgets('404: vuelve a su estado y dice «Este servicio no está disponible.»', (
-    tester,
-  ) async {
-    await abrirDetalle(tester, controlador);
-    api.serviciosNoDisponibles.add('abc123/s2');
+  testWidgets(
+    '404: vuelve a su estado y dice «Este servicio no está disponible.»',
+    (tester) async {
+      await abrirDetalle(tester, controlador);
+      api.serviciosNoDisponibles.add('abc123/s2');
 
-    await tester.tap(find.byTooltip(MensajesFavoritos.agregar));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip(MensajesFavoritos.agregar));
+      await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.favorite_border), findsOneWidget);
-    expect(find.text('Este servicio no está disponible.'), findsOneWidget);
-    expect(find.byType(AlertDialog), findsNothing);
-    expect(boton(tester).onPressed, isNotNull);
-  });
+      expect(find.byIcon(Icons.favorite_border), findsOneWidget);
+      expect(find.text('Este servicio no está disponible.'), findsOneWidget);
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(boton(tester).onPressed, isNotNull);
+    },
+  );
 
   testWidgets('409: vuelve a su estado y muestra el mensaje de la API', (
     tester,

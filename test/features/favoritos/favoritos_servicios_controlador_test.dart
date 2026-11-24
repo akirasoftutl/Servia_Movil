@@ -40,12 +40,15 @@ void main() {
       expect(controlador.esFavorito('n1', 's1'), isFalse);
     });
 
-    test('el mismo servicioId de otro negocio no es el mismo favorito', () async {
-      api.serviciosDe('ana').add(servicioFavorito('n1', 's1'));
-      await controlador.cargar();
-      expect(controlador.esFavorito('n1', 's1'), isTrue);
-      expect(controlador.esFavorito('n2', 's1'), isFalse);
-    });
+    test(
+      'el mismo servicioId de otro negocio no es el mismo favorito',
+      () async {
+        api.serviciosDe('ana').add(servicioFavorito('n1', 's1'));
+        await controlador.cargar();
+        expect(controlador.esFavorito('n1', 's1'), isTrue);
+        expect(controlador.esFavorito('n2', 's1'), isFalse);
+      },
+    );
 
     test('no mezcla los favoritos de negocios con los de servicios', () async {
       api.de('ana').add(negocioFavorito('n1'));
@@ -167,15 +170,18 @@ void main() {
       expect(api.peticiones, isEmpty);
     });
 
-    test('mientras guarda, otro toque sobre el mismo servicio se ignora', () async {
-      await controlador.cargar();
-      api.retener = Completer<void>();
-      final primero = controlador.alternar(servicioDe('n1', 's1'));
-      await controlador.alternar(servicioDe('n1', 's1'));
-      api.retener!.complete();
-      await primero;
-      expect(api.metodos().where((m) => m.startsWith('PUT')), hasLength(1));
-    });
+    test(
+      'mientras guarda, otro toque sobre el mismo servicio se ignora',
+      () async {
+        await controlador.cargar();
+        api.retener = Completer<void>();
+        final primero = controlador.alternar(servicioDe('n1', 's1'));
+        await controlador.alternar(servicioDe('n1', 's1'));
+        api.retener!.complete();
+        await primero;
+        expect(api.metodos().where((m) => m.startsWith('PUT')), hasLength(1));
+      },
+    );
   });
 
   group('cuenta (RN-46)', () {
@@ -191,18 +197,24 @@ void main() {
       expect(controlador.items, isEmpty);
     });
 
-    test('al entrar con otra cuenta no se ven los servicios de la anterior', () async {
-      api.serviciosDe('ana').add(servicioFavorito('n1', 's1'));
-      await controlador.cargar();
-      expect(controlador.items, hasLength(1));
+    test(
+      'al entrar con otra cuenta no se ven los servicios de la anterior',
+      () async {
+        api.serviciosDe('ana').add(servicioFavorito('n1', 's1'));
+        await controlador.cargar();
+        expect(controlador.items, hasLength(1));
 
-      sesion.usuario = UsuarioFavoritos('beto');
-      await controlador.cargar();
+        sesion.usuario = UsuarioFavoritos('beto');
+        await controlador.cargar();
 
-      expect(controlador.items, isEmpty);
-      expect(controlador.esFavorito('n1', 's1'), isFalse);
-      expect(api.peticiones.last.headers['Authorization'], 'Bearer token-beto');
-    });
+        expect(controlador.items, isEmpty);
+        expect(controlador.esFavorito('n1', 's1'), isFalse);
+        expect(
+          api.peticiones.last.headers['Authorization'],
+          'Bearer token-beto',
+        );
+      },
+    );
 
     test('la instancia de la app existe y empieza vacía', () {
       expect(FavoritosServiciosControlador.instancia.items, isEmpty);

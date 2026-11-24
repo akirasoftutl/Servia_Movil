@@ -84,16 +84,19 @@ void main() {
   });
 
   group('agregarServicio', () {
-    test('PUT /favoritos/servicios/{negocioId}/{servicioId} sin cuerpo', () async {
-      await servicio.agregarServicio('token-ana', 'n1', 's1');
+    test(
+      'PUT /favoritos/servicios/{negocioId}/{servicioId} sin cuerpo',
+      () async {
+        await servicio.agregarServicio('token-ana', 'n1', 's1');
 
-      expect(api.metodos(), ['PUT /favoritos/servicios/n1/s1']);
-      final peticion = api.peticiones.single;
-      expect(peticion.bodyBytes, isEmpty);
-      expect(peticion.headers.containsKey('Content-Type'), isFalse);
-      expect(peticion.headers['Authorization'], 'Bearer token-ana');
-      expect(api.serviciosDe('ana').map((s) => s['servicioId']), ['s1']);
-    });
+        expect(api.metodos(), ['PUT /favoritos/servicios/n1/s1']);
+        final peticion = api.peticiones.single;
+        expect(peticion.bodyBytes, isEmpty);
+        expect(peticion.headers.containsKey('Content-Type'), isFalse);
+        expect(peticion.headers['Authorization'], 'Bearer token-ana');
+        expect(api.serviciosDe('ana').map((s) => s['servicioId']), ['s1']);
+      },
+    );
 
     test('es idempotente: repetirlo no duplica', () async {
       await servicio.agregarServicio('token-ana', 'n1', 's1');
@@ -170,9 +173,7 @@ void main() {
       api.erroresServicios['DELETE'] = (codigo: 500, mensaje: 'Falló');
       await expectLater(
         servicio.quitarServicio('token-ana', 'n1', 's1'),
-        throwsA(
-          isA<ApiException>().having((e) => e.statusCode, 'código', 500),
-        ),
+        throwsA(isA<ApiException>().having((e) => e.statusCode, 'código', 500)),
       );
     });
   });
