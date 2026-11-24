@@ -17,6 +17,7 @@ import 'package:servia/features/negocios/mensajes.dart';
 import 'package:servia/features/negocios/pages/lista_negocios_page.dart';
 import 'package:servia/features/negocios/pages/perfil_negocio_page.dart';
 import 'package:servia/features/negocios/pages/seccion_destacados.dart';
+import 'package:servia/features/negocios/pages/tarjeta_negocio.dart';
 
 import '../../core/tema_de_la_app.dart';
 import 'fakes.dart';
@@ -35,7 +36,10 @@ Future<void> abrir(WidgetTester tester, ListaConDestacados fake) async {
   await tester.pumpWidget(const SizedBox());
   final tema = temaDeLaApp(tester);
   await tester.pumpWidget(
-    MaterialApp(theme: tema, home: ListaNegociosPage(negociosService: fake)),
+    MaterialApp(
+      theme: tema,
+      home: ListaNegociosPage(negociosService: fake),
+    ),
   );
   await tester.pumpAndSettle();
 }
@@ -68,7 +72,10 @@ void main() {
         );
       });
       final negocios = await servicio.obtenerDestacados();
-      expect(negocios.map((n) => n.id), ['x2', 'x1'], reason: 'orden de la API');
+      expect(negocios.map((n) => n.id), [
+        'x2',
+        'x1',
+      ], reason: 'orden de la API');
       expect(negocios.first.imagenUrl, 'https://img.test/x2.jpg');
       expect(negocios.first.categoriaId, 'cabello');
       expect(negocios.last.categoriaId, isNull);
@@ -82,24 +89,29 @@ void main() {
       expect(await servicio.obtenerDestacados(), isEmpty);
     });
 
-    test('un 500 es ApiException y una forma inválida es FormatException', () async {
-      await expectLater(
-        servicioCon(
-          (_) async => http.Response('dato privado', 500),
-        ).obtenerDestacados(),
-        throwsA(
-          isA<ApiException>()
-              .having((e) => e.statusCode, 'estado', 500)
-              .having((e) => e.mensaje, 'mensaje', isNot(contains('privado'))),
-        ),
-      );
-      await expectLater(
-        servicioCon(
-          (_) async => http.Response('{"items":"no"}', 200),
-        ).obtenerDestacados(),
-        throwsA(isA<FormatException>()),
-      );
-    });
+    test(
+      'un 500 es ApiException y una forma inválida es FormatException',
+      () async {
+        await expectLater(
+          servicioCon((_) async => http.Response('dato privado', 500))
+              .obtenerDestacados(),
+          throwsA(
+            isA<ApiException>()
+                .having((e) => e.statusCode, 'estado', 500)
+                .having(
+                  (e) => e.mensaje,
+                  'mensaje',
+                  isNot(contains('privado')),
+                ),
+          ),
+        );
+        await expectLater(
+          servicioCon((_) async => http.Response('{"items":"no"}', 200))
+              .obtenerDestacados(),
+          throwsA(isA<FormatException>()),
+        );
+      },
+    );
   });
 
   group('sección «Destacados» del inicio', () {
@@ -109,8 +121,14 @@ void main() {
       await abrir(tester, conDestacados());
       expect(tituloSeccion(), findsOneWidget);
       expect(find.byType(SeccionDestacados), findsOneWidget);
-      final d2 = tester.getTopLeft(find.text('Destacado d2'));
-      final d1 = tester.getTopLeft(find.text('Destacado d1'));
+      Offset tarjeta(String nombre) => tester.getTopLeft(
+        find.ancestor(
+          of: find.text(nombre),
+          matching: find.byType(TarjetaNegocio),
+        ),
+      );
+      final d2 = tarjeta('Destacado d2');
+      final d1 = tarjeta('Destacado d1');
       expect(d2.dx, lessThan(d1.dx), reason: 'd2 va primero, como la API');
       expect(d2.dy, d1.dy, reason: 'fila horizontal');
       // La categoría sale del catálogo que ya carga la lista; sin categoría
@@ -164,7 +182,8 @@ void main() {
     testWidgets('si la consulta falla no hay sección ni error visible', (
       tester,
     ) async {
-      final fake = conDestacados()..errorDestacados = const ApiException(500, 'x');
+      final fake = conDestacados()
+        ..errorDestacados = const ApiException(500, 'x');
       await abrir(tester, fake);
       expect(fake.consultasDestacados, 1);
       expect(tituloSeccion(), findsNothing);
@@ -173,7 +192,9 @@ void main() {
       expect(find.text('Negocio a'), findsWidgets);
     });
 
-    testWidgets('la lista aparece sin esperar a los destacados', (tester) async {
+    testWidgets('la lista aparece sin esperar a los destacados', (
+      tester,
+    ) async {
       final pendientes = Completer<List<NegocioResumen>>();
       final fake = conDestacados()..destacadosPendientes = pendientes;
       tester.view.physicalSize = const Size(800, 3000);
@@ -205,6 +226,17 @@ void main() {
       expect(tituloSeccion(), findsOneWidget);
     });
 
+    testWidgets(
+      'se oculta ya mientras se escribe, antes de aplicar la búsqueda',
+      (tester) async {
+        await abrir(tester, conDestacados());
+        await tester.enterText(find.byType(TextField), 'aur');
+        await tester.pump(const Duration(milliseconds: 100));
+        expect(tituloSeccion(), findsNothing);
+        await tester.pumpAndSettle();
+      },
+    );
+
     testWidgets('con una categoría elegida no se muestra y vuelve con «Todo»', (
       tester,
     ) async {
@@ -223,7 +255,7 @@ void main() {
       expect(fake.consultasDestacados, 1);
       // Cambiar el orden no cambia los destacados: no se vuelven a pedir.
       fake.ordenes.clear();
-      await tester.tap(find.byType(PopupMenuButton<OrdenNegocios>));
+      await tester.tap(find.byType(DropdownButton<OrdenNegocios>));
       await tester.pumpAndSettle();
       await tester.tap(find.text(MensajesNegocios.ordenRecientes).last);
       await tester.pumpAndSettle();
@@ -249,18 +281,19 @@ void main() {
   });
 
   group('estilos de la sección salen del tema', () {
-    Future<void> montar(WidgetTester tester, ThemeData tema) => tester.pumpWidget(
-      MaterialApp(
-        theme: tema,
-        home: Scaffold(
-          body: SeccionDestacados(
-            negocios: [destacado('d1'), destacado('d2')],
-            nombreCategoria: (_) => 'Cabello y barba',
-            onAbrir: (_) {},
+    Future<void> montar(WidgetTester tester, ThemeData tema) =>
+        tester.pumpWidget(
+          MaterialApp(
+            theme: tema,
+            home: Scaffold(
+              body: SeccionDestacados(
+                negocios: [destacado('d1'), destacado('d2')],
+                nombreCategoria: (_) => 'Cabello y barba',
+                onAbrir: (_) {},
+              ),
+            ),
           ),
-        ),
-      ),
-    );
+        );
 
     testWidgets('el título usa titleLarge del tema y el margen de Espacios', (
       tester,
@@ -269,14 +302,18 @@ void main() {
       final tema = temaDeLaApp(tester);
       await montar(tester, tema);
       final titulo = tester.widget<Text>(tituloSeccion());
-      expect(titulo.style, tema.textTheme.titleLarge);
+      final esperado = tema.textTheme.titleLarge!;
+      expect(titulo.style!.color, esperado.color);
+      expect(titulo.style!.fontSize, esperado.fontSize);
+      expect(titulo.style!.fontWeight, esperado.fontWeight);
+      expect(titulo.style!.fontFamily, esperado.fontFamily);
       expect(tester.getTopLeft(tituloSeccion()).dx, Espacios.l);
       final semantica = tester.ensureSemantics();
-      addTearDown(semantica.dispose);
       expect(
         tester.getSemantics(tituloSeccion()),
         matchesSemantics(label: MensajesNegocios.destacados, isHeader: true),
       );
+      semantica.dispose();
     });
 
     testWidgets('cambia con el tema: ningún estilo es literal', (tester) async {
