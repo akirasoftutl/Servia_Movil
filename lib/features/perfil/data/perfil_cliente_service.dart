@@ -1,10 +1,12 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_exception.dart';
 import '../mensajes.dart';
+import 'foto_perfil.dart';
 import 'perfil_cliente.dart';
 
 /// Lee y guarda el perfil del cliente con la API (`/usuarios/yo`, MVP-05).
@@ -38,6 +40,58 @@ class PerfilClienteService {
       body: jsonEncode(cuerpo),
     );
     return _leer(respuesta, 200);
+  }
+
+  /// Sube la foto de perfil (`POST /usuarios/yo/foto`, multipart con el campo
+  /// `archivo`); si ya había una, la API la reemplaza.
+  Future<FotoPerfil> subirFoto(
+    String token,
+    Uint8List bytes,
+    String nombre,
+  ) async {
+    final respuesta = await _api.postArchivo(
+      '/usuarios/yo/foto',
+      token: token,
+      campo: 'archivo',
+      bytes: bytes,
+      nombre: nombre,
+    );
+    if (respuesta.statusCode == 201) {
+      final foto = FotoPerfil.deJson(jsonDecode(respuesta.body));
+      if (foto != null) return foto;
+      throw ApiException(respuesta.statusCode, MensajesPerfil.errorGeneral);
+    }
+    throw _errorDeFoto(respuesta, MensajesPerfil.fotoNoGuardada);
+  }
+
+  /// Quita la foto (`DELETE /usuarios/yo/foto`, 204; no falla si no había).
+  Future<void> quitarFoto(String token) async {
+    final respuesta = await _api.delete('/usuarios/yo/foto', token: token);
+    if (respuesta.statusCode == 204) return;
+    throw _errorDeFoto(respuesta, MensajesPerfil.fotoNoQuitada);
+  }
+
+  /// 400, 413 y 503 traen un mensaje en español de la API; se conserva.
+  ApiException _errorDeFoto(http.Response respuesta, String porDefecto503) {
+    final codigo = respuesta.statusCode;
+    final deLaApi = _mensajeDeLaApi(respuesta.body);
+    final String mensaje;
+    if (codigo == 400) {
+      mensaje = deLaApi ?? MensajesPerfil.fotoFormato;
+    } else if (codigo == 413) {
+      mensaje = deLaApi ?? MensajesPerfil.fotoGrande;
+    } else if (codigo == 401) {
+      mensaje = MensajesPerfil.sesionInvalida;
+    } else if (codigo == 403) {
+      mensaje = MensajesPerfil.cuentaDesactivada;
+    } else if (codigo == 404) {
+      mensaje = MensajesPerfil.sinPerfil;
+    } else if (codigo >= 500) {
+      mensaje = deLaApi ?? porDefecto503;
+    } else {
+      mensaje = MensajesPerfil.errorGeneral;
+    }
+    return ApiException(codigo, mensaje);
   }
 
   PerfilCliente _leer(http.Response respuesta, int esperado) {
