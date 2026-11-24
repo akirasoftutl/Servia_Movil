@@ -29,7 +29,8 @@ class NegociosService {
       path: '/negocios/cercanos',
       queryParameters: {'lat': '$lat', 'lng': '$lng', 'radioKm': '20'},
     );
-    final datos = await _consultar(ruta.toString());
+    final cuerpo = leerObjeto(await _consultar(ruta.toString()));
+    final datos = cuerpo['items'];
     if (datos is! List) {
       throw const FormatException('Lista de cercanos inválida.');
     }

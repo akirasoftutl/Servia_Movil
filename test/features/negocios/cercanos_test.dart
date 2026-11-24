@@ -64,9 +64,13 @@ Map<String, Object> cercano(int id, double km) => {
   'id': 'n$id',
   'nombre': 'Negocio $id',
   'categoriaId': 'cabello',
+  'fotos': {'portada': null, 'galeria': <Object>[]},
   'aceptaReservas': true,
   'distanciaKm': km,
 };
+
+/// Cuerpo real de `GET /negocios/cercanos` (RespuestaNegociosCercanosDto).
+String cuerpoCercanos(List<Object?> items) => jsonEncode({'items': items});
 
 NegociosService servicio({
   required Future<http.Response> Function(http.Request) cercanos,
@@ -74,7 +78,7 @@ NegociosService servicio({
   api: ApiClient(
     client: MockClient((peticion) async {
       if (peticion.url.path == '/negocios/cercanos') return cercanos(peticion);
-      if (peticion.url.path == '/categorias') return http.Response('[]', 200);
+      if (peticion.url.path == '/categorias') return http.Response(cuerpoCercanos([]), 200);
       if (peticion.url.path == '/negocios') {
         return http.Response('{"items":[],"siguiente":null}', 200);
       }
@@ -114,7 +118,7 @@ void main() {
         UbicacionFalsa(),
         servicio(
           cercanos: (_) async =>
-              http.Response(falla ? '{}' : '[]', falla ? 503 : 200),
+              http.Response(falla ? '{}' : cuerpoCercanos([]), falla ? 503 : 200),
         ),
       );
       final titulo = tester.getTopLeft(find.text(MensajesNegocios.cercaDeTi));
@@ -156,7 +160,7 @@ void main() {
       await inicio(
         tester,
         UbicacionFalsa(),
-        servicio(cercanos: (_) async => http.Response('[]', 200)),
+        servicio(cercanos: (_) async => http.Response(cuerpoCercanos([]), 200)),
       );
       expect(
         tester.getTopLeft(find.text(MensajesNegocios.cercaDeTi)).dy,
@@ -201,7 +205,7 @@ void main() {
                     proveedorUbicacion: () async => (lat: 21.1, lng: -101.7),
                     service: servicio(
                       cercanos: (_) async => http.Response(
-                        jsonEncode([
+                        cuerpoCercanos([
                           {
                             ...cercano(1, 19.9),
                             'nombre': 'Peluquería del centro histórico',
@@ -270,8 +274,14 @@ void main() {
                 proveedorUbicacion: () async => (lat: 21.1, lng: -101.7),
                 service: servicio(
                   cercanos: (_) async => http.Response(
-                    jsonEncode([
-                      {...cercano(1, 1.2), 'imagenUrl': portada},
+                    cuerpoCercanos([
+                      {
+                        ...cercano(1, 1.2),
+                        'fotos': {
+                          'portada': {'id': 'f1', 'url': portada},
+                          'galeria': <Object>[],
+                        },
+                      },
                       cercano(2, 3),
                     ]),
                     200,
@@ -316,7 +326,7 @@ void main() {
       cercanos: (peticion) async {
         consultas.add(peticion);
         return http.Response(
-          jsonEncode([
+          cuerpoCercanos([
             cercano(6, 6),
             cercano(2, 1.2),
             cercano(1, 0.5),
@@ -376,7 +386,7 @@ void main() {
         servicio(
           cercanos: (_) async {
             consultas++;
-            return http.Response('[]', 200);
+            return http.Response(cuerpoCercanos([]), 200);
           },
         ),
       );
@@ -405,7 +415,7 @@ void main() {
         cercanos: (_) async {
           consultas++;
           return http.Response(
-            consultas == 1 ? '{}' : '[]',
+            consultas == 1 ? '{}' : cuerpoCercanos([]),
             consultas == 1 ? 503 : 200,
           );
         },
@@ -443,7 +453,7 @@ void main() {
     final titulo = tester.widget<Text>(find.text(MensajesNegocios.cercaDeTi));
     expect(titulo.style?.fontSize, 20);
     expect(titulo.style?.color, const Color(0xFF111827));
-    pendiente.complete(http.Response('[]', 200));
+    pendiente.complete(http.Response(cuerpoCercanos([]), 200));
     await tester.pumpAndSettle();
     expect(find.text(MensajesNegocios.sinCercanos), findsOneWidget);
   });
@@ -494,7 +504,7 @@ void main() {
       for (final distancia in [-1, '1.2', null]) {
         final api = servicio(
           cercanos: (_) async => http.Response(
-            jsonEncode([
+            cuerpoCercanos([
               {...cercano(1, 1), 'distanciaKm': distancia},
             ]),
             200,
@@ -507,9 +517,43 @@ void main() {
       }
       final api = servicio(
         cercanos: (_) async =>
-            http.Response(jsonEncode([cercano(7, 20.1)]), 200),
+            http.Response(cuerpoCercanos([cercano(7, 20.1)]), 200),
       );
       expect(await api.obtenerCercanos(lat: 21, lng: -101), isEmpty);
     },
   );
+
+  test('cercanos lee items del contrato real y ordena con tope de 5', () async {
+    final api = servicio(
+      cercanos: (_) async => http.Response(
+        cuerpoCercanos([
+          cercano(3, 3),
+          cercano(1, 1),
+          cercano(2, 2),
+          cercano(4, 4),
+          cercano(5, 5),
+          cercano(6, 6),
+        ]),
+        200,
+      ),
+    );
+    final resultado = await api.obtenerCercanos(lat: 21, lng: -101);
+    expect(resultado.map((c) => c.negocio.id), ['n1', 'n2', 'n3', 'n4', 'n5']);
+  });
+
+  for (final cuerpo in [
+    '[]',
+    '{}',
+    '{"items":null}',
+    '{"items":{}}',
+    '{"items":"x"}',
+  ]) {
+    test('cercanos rechaza cuerpo sin items lista: $cuerpo', () async {
+      final api = servicio(cercanos: (_) async => http.Response(cuerpo, 200));
+      await expectLater(
+        api.obtenerCercanos(lat: 21, lng: -101),
+        throwsFormatException,
+      );
+    });
+  }
 }
