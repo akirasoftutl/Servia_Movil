@@ -11,6 +11,7 @@ import '../data/orden_negocios.dart';
 import '../mensajes.dart';
 import 'perfil_negocio_page.dart';
 import 'pie_lista.dart';
+import 'seccion_destacados.dart';
 import 'selector_orden_negocios.dart';
 
 enum _EstadoLista { cargando, error, lista }
@@ -49,6 +50,10 @@ class _ListaNegociosState extends State<ListaNegocios> {
   int _version = 0;
   final _items = <NegocioResumen>[];
   List<Categoria> _categorias = [];
+  // Destacados de la API (HU-C26). Se cargan aparte de la lista: si fallan o
+  // vienen vacíos la sección no aparece y no se muestra ningún error.
+  List<NegocioResumen> _destacados = const [];
+  int _versionDestacados = 0;
   _EstadoLista _estado = _EstadoLista.cargando;
   String? _siguiente;
   String? _cursorPendiente;
@@ -63,6 +68,7 @@ class _ListaNegociosState extends State<ListaNegocios> {
     _scroll.addListener(_alDesplazarse);
     _cargar();
     _cargarCategorias();
+    _cargarDestacados();
   }
 
   @override
@@ -87,7 +93,9 @@ class _ListaNegociosState extends State<ListaNegocios> {
     _espera = Timer(_esperaBusqueda, _reiniciar);
   }
 
-  void _reiniciar() {
+  /// [destacados] es falso solo al cambiar el orden, que no los afecta. Con
+  /// una búsqueda o una categoría la sección está oculta: no se consulta.
+  void _reiniciar({bool destacados = true}) {
     _espera?.cancel();
     setState(() {
       _version++;
@@ -100,6 +108,9 @@ class _ListaNegociosState extends State<ListaNegocios> {
     });
     if (_scroll.hasClients) _scroll.jumpTo(0);
     _cargar();
+    if (destacados && _consulta == null && _categoriaId == null) {
+      _cargarDestacados();
+    }
   }
 
   void _limpiarBusqueda() {
@@ -117,7 +128,7 @@ class _ListaNegociosState extends State<ListaNegocios> {
   void _elegirOrden(OrdenNegocios orden) {
     if (orden == _orden) return;
     setState(() => _orden = orden);
-    _reiniciar();
+    _reiniciar(destacados: false);
   }
 
   void _alDesplazarse() {
@@ -140,6 +151,18 @@ class _ListaNegociosState extends State<ListaNegocios> {
     } catch (_) {
       if (!mounted) return;
     }
+  }
+
+  Future<void> _cargarDestacados() async {
+    final version = ++_versionDestacados;
+    List<NegocioResumen> destacados;
+    try {
+      destacados = await _service.obtenerDestacados();
+    } catch (_) {
+      destacados = const [];
+    }
+    if (!mounted || version != _versionDestacados) return;
+    setState(() => _destacados = destacados);
   }
 
   Future<void> _cargar({bool siguientePagina = false}) async {
@@ -270,6 +293,13 @@ class _ListaNegociosState extends State<ListaNegocios> {
     );
   }
 
+  /// Ni con una búsqueda (aplicada o a medio escribir) ni con una categoría.
+  bool get _hayDestacados =>
+      _destacados.isNotEmpty &&
+      _consulta == null &&
+      _textoConsulta == null &&
+      _categoriaId == null;
+
   Widget _contenido() {
     switch (_estado) {
       case _EstadoLista.cargando:
@@ -323,7 +353,6 @@ class _ListaNegociosState extends State<ListaNegocios> {
         }
 
         // Vista principal estilo Fresha: secciones horizontales + lista "Lugares cercanos"
-        final recomendados = _items.take(5).toList();
         final nuevos = _items.length > 2
             ? _items.skip(1).take(5).toList()
             : _items;
@@ -343,29 +372,14 @@ class _ListaNegociosState extends State<ListaNegocios> {
               ),
               const SizedBox(height: 24),
             ],
-            const _TituloSeccion(titulo: 'Recomendado'),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 252,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: recomendados.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 14),
-                itemBuilder: (context, i) {
-                  final negocio = recomendados[i];
-                  return _TarjetaNegocioCarrusel(
-                    negocio: negocio,
-                    categoria: _nombreCategoria(negocio.categoriaId),
-                    imagenUrl: _imagenDeNegocio(negocio),
-                    etiquetaSuperior: 'Destacado',
-                    onTap: () => _abrirDetalleNegocio(negocio),
-                  );
-                },
+            if (_hayDestacados) ...[
+              SeccionDestacados(
+                negocios: _destacados,
+                nombreCategoria: _nombreCategoria,
+                onAbrir: _abrirDetalleNegocio,
               ),
-            ),
-
-            const SizedBox(height: 24),
+              const SizedBox(height: Espacios.xl),
+            ],
 
             // Sección 2: Nuevo en Servia (Carrusel horizontal)
             const _TituloSeccion(titulo: 'Nuevo en Servia'),
@@ -398,13 +412,17 @@ class _ListaNegociosState extends State<ListaNegocios> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Lugares cercanos',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF111827),
-                      letterSpacing: -0.3,
+                  // Expanded: con texto grande el título baja de línea en
+                  // lugar de desbordar la fila.
+                  Expanded(
+                    child: Text(
+                      'Lugares cercanos',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111827),
+                        letterSpacing: -0.3,
+                      ),
                     ),
                   ),
                   Text(

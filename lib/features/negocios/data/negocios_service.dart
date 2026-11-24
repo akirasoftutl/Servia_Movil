@@ -44,6 +44,20 @@ class NegociosService {
     return List.unmodifiable(negocios.take(5));
   }
 
+  /// Los que más reservas Completadas tuvieron en los últimos 30 días, hasta
+  /// 10 y en el orden de la API (Servia_BE#118, HU-C26). Es pública, sin
+  /// parámetros ni paginación; sin Completadas devuelve `{"items": []}`.
+  Future<List<NegocioResumen>> obtenerDestacados() async {
+    final cuerpo = leerObjeto(await _consultar('/negocios/destacados'));
+    final datos = cuerpo['items'];
+    if (datos is! List) {
+      throw const FormatException('Lista de destacados inválida.');
+    }
+    return List.unmodifiable(
+      datos.map((dato) => NegocioResumen.fromJson(leerObjeto(dato))),
+    );
+  }
+
   Future<PaginaNegocios> listarNegocios({
     String? cursor,
     String? q,

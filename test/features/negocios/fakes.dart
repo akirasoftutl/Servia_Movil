@@ -65,6 +65,10 @@ class ListaServiceFalso extends NegociosServiceFalso {
       categorias ?? await super.obtenerCategorias();
   late Future<PaginaNegocios> Function(String? cursor) responder;
 
+  /// Sin destacados por omisión: las pruebas de la lista no tocan la red.
+  @override
+  Future<List<NegocioResumen>> obtenerDestacados() async => [];
+
   ListaServiceFalso() {
     responder = (_) async => const PaginaNegocios(items: [], siguiente: null);
   }
