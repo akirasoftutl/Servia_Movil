@@ -28,6 +28,49 @@ class DisponibilidadService {
     fecha: fecha,
   )).map((dato) => HoraDisponibilidad.fromJson(leerObjeto(dato))).toList();
 
+  /// Días con la propia reserva libre (`GET /reservas/mias/{id}/disponibilidad`,
+  /// T18): ruta privada, con el token del cliente. [servicioId] solo si cambia.
+  Future<List<DiaDisponibilidad>> obtenerDiasDeReserva(
+    String token,
+    String reservaId, {
+    String? servicioId,
+  }) async => (await _consultarReserva(
+    token,
+    reservaId,
+    servicioId: servicioId,
+  )).map((dato) => DiaDisponibilidad.fromJson(leerObjeto(dato))).toList();
+
+  Future<List<HoraDisponibilidad>> obtenerHorasDeReserva(
+    String token,
+    String reservaId,
+    String fecha, {
+    String? servicioId,
+  }) async => (await _consultarReserva(
+    token,
+    reservaId,
+    fecha: fecha,
+    servicioId: servicioId,
+  )).map((dato) => HoraDisponibilidad.fromJson(leerObjeto(dato))).toList();
+
+  Future<List<dynamic>> _consultarReserva(
+    String token,
+    String reservaId, {
+    String? fecha,
+    String? servicioId,
+  }) async {
+    if (reservaId.isEmpty || reservaId.contains('/')) {
+      throw const ApiException(404, 'Esta reserva ya no está disponible.');
+    }
+    final ruta = Uri(
+      path: '/reservas/mias/${Uri.encodeComponent(reservaId)}/disponibilidad',
+      queryParameters: {
+        'fecha': ?fecha,
+        'servicioId': ?servicioId,
+      },
+    );
+    return _leerLista(ruta.toString(), token: token);
+  }
+
   Future<List<dynamic>> _consultar(
     String negocioId,
     String servicioId, {
@@ -41,7 +84,11 @@ class DisponibilidadService {
       queryParameters: fecha == null ? null : {'fecha': fecha},
     );
     // MVP-17 es público: sin Firebase ni token. ApiClient aplica su tiempo límite.
-    final respuesta = await _api.get(ruta.toString());
+    return _leerLista(ruta.toString());
+  }
+
+  Future<List<dynamic>> _leerLista(String ruta, {String? token}) async {
+    final respuesta = await _api.get(ruta, token: token);
     if (respuesta.statusCode != 200) {
       throw ApiException(
         respuesta.statusCode,

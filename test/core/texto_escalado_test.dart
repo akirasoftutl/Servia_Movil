@@ -17,7 +17,9 @@ import 'package:servia/features/negocios/pages/detalle_servicio_page.dart';
 import 'package:servia/features/negocios/pages/disponibilidad_page.dart';
 import 'package:servia/features/negocios/pages/perfil_negocio_page.dart';
 import 'package:servia/features/perfil/pages/mi_perfil_page.dart';
+import 'package:servia/features/reservas/data/detalle_reserva.dart';
 import 'package:servia/features/reservas/pages/confirmacion_reserva_page.dart';
+import 'package:servia/features/reservas/pages/reprogramar_reserva_page.dart';
 import 'package:servia/features/reservas/pages/resumen_reserva_page.dart';
 import 'package:servia/features/negocios/data/fotos_negocio.dart';
 import 'package:servia/features/negocios/data/servicio.dart';
@@ -30,6 +32,7 @@ import '../features/ayuda/fakes_ayuda.dart';
 import '../features/negocios/fakes.dart';
 import '../features/negocios/fakes_destacados.dart';
 import '../features/perfil/fakes_perfil.dart';
+import '../features/reservas/escenario_reprogramar.dart';
 import '../features/reservas/fakes.dart';
 import 'tema_de_la_app.dart';
 
@@ -149,6 +152,15 @@ ImageProvider _imagenDePrueba(String _) => MemoryImage(
 );
 
 final ahora = DateTime.utc(2026, 11, 3, 16, 15);
+
+Widget _reprogramar(EscenarioReprogramar e) => ReprogramarReservaPage(
+  reserva: DetalleReserva.fromJson(detalleApi()),
+  authService: e.sesion,
+  reservasService: e.reservas,
+  negociosService: e.negocios,
+  disponibilidadService: e.disponibilidad,
+  ahora: () => ahora,
+);
 
 void main() {
   setUpAll(cargarFuente);
@@ -315,6 +327,34 @@ void main() {
             ahora: () => ahora,
           ),
           null,
+        ),
+        'detalle de reserva con «Cambiar fecha u hora»': (
+          () => EscenarioReprogramar().detallePage(),
+          null,
+        ),
+        'cambiar fecha u hora de una reserva': (
+          () => _reprogramar(EscenarioReprogramar()),
+          null,
+        ),
+        'cambiar de servicio de una reserva': (
+          () => _reprogramar(EscenarioReprogramar()),
+          (t) async {
+            await t.tap(find.text('Cambiar de servicio'));
+            await t.pumpAndSettle();
+          },
+        ),
+        'confirmar el cambio de una reserva': (
+          () => _reprogramar(EscenarioReprogramar()),
+          (t) async {
+            await t.ensureVisible(find.text('Elegir nueva fecha y hora'));
+            await t.tap(find.text('Elegir nueva fecha y hora'));
+            await t.pumpAndSettle();
+            await t.tap(find.text('4'));
+            await t.pumpAndSettle();
+            await t.ensureVisible(find.byKey(const ValueKey('hora-09:30')));
+            await t.tap(find.byKey(const ValueKey('hora-09:30')));
+            await t.pumpAndSettle();
+          },
         ),
         'confirmación de la reserva': (
           () => ConfirmacionReservaPage(

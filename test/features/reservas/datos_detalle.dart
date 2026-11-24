@@ -21,4 +21,7 @@ const datosDetalle = <String, dynamic>{
   'motivo': null,
   'cancelable': true,
   'cancelableHasta': '2026-11-10T05:30:00.000Z',
+  'reprogramable': true,
+  'reprogramableHasta': '2026-11-10T05:30:00.000Z',
+  'motivoNoReprogramable': null,
 };
