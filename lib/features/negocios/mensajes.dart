@@ -30,6 +30,8 @@ class MensajesNegocios {
   static const buscar = 'Buscar negocios o servicios';
   static const limpiar = 'Limpiar búsqueda';
   static const todas = 'Todas';
+  static const filtrarPorCategoria = 'Filtrar servicios por categoría';
+  static String categoriaDelServicio(String nombre) => 'Categoría: $nombre';
   static const ordenarPor = 'Ordenar por';
   static String ordenarPorOpcion(String etiqueta) => '$ordenarPor: $etiqueta';
   static const ordenNombre = 'Nombre (A-Z)';
@@ -52,8 +54,15 @@ class MensajesNegocios {
   static const horario = 'Horario de atención';
   static const galeria = 'Galería';
 
+  static const sesionVencida =
+      'Tu sesión ya no es válida. Inicia sesión de nuevo.';
+
   static String mensajeDeError(Object error, {bool esServicio = false}) {
     if (error is ApiException) {
+      // Solo la disponibilidad de una reserva propia pide sesión (T18).
+      if (error.statusCode == 401 || error.statusCode == 403) {
+        return sesionVencida;
+      }
       if (error.statusCode == 404) {
         return esServicio ? servicioNoDisponible : noDisponible;
       }
@@ -70,5 +79,8 @@ class MensajesNegocios {
       puedeReintentarBusqueda(error) ? mensajeDeError(error) : busquedaInvalida;
 
   static bool puedeReintentar(Object error) =>
-      error is! ApiException || error.statusCode != 404;
+      error is! ApiException ||
+      (error.statusCode != 404 &&
+          error.statusCode != 401 &&
+          error.statusCode != 403);
 }

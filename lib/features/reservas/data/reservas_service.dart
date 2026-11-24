@@ -6,6 +6,7 @@ import '../../negocios/data/lectura_json.dart';
 import '../mensajes.dart';
 import 'detalle_reserva.dart';
 import 'reserva_creada.dart';
+import 'reserva_reprogramada.dart';
 import 'reserva_resumen.dart';
 
 /// Datos de la solicitud de reserva (`POST /reservas`).
@@ -102,6 +103,45 @@ class ReservasService {
     if (respuesta.statusCode == 200) return;
     var mensaje = MensajesReservas.errorCancelacion;
     if (respuesta.statusCode == 409) {
+      try {
+        final datos = jsonDecode(respuesta.body);
+        if (datos is Map<String, dynamic> &&
+            datos['message'] is String &&
+            (datos['message'] as String).trim().isNotEmpty) {
+          mensaje = datos['message'] as String;
+        }
+      } on FormatException {
+        // Conserva un mensaje claro si el servidor no devuelve JSON.
+      }
+    }
+    throw ApiException(respuesta.statusCode, mensaje);
+  }
+
+  /// Mueve la reserva a otra fecha u hora, y opcionalmente a otro servicio del
+  /// mismo negocio (T18, T19). La API decide si se puede (RN-40, RN-50) y la
+  /// deja Pendiente. [inicio] es ISO 8601 con zona.
+  /// El mensaje en español de un 400 o 409 viene de la API.
+  Future<ReservaReprogramada> reprogramar(
+    String token,
+    String id,
+    String inicio, {
+    String? servicioId,
+  }) async {
+    final respuesta = await _api.patch(
+      '/reservas/mias/${Uri.encodeComponent(id)}/reprogramar',
+      token: token,
+      body: jsonEncode({
+        'inicio': inicio,
+        'servicioId': ?servicioId,
+      }),
+    );
+    if (respuesta.statusCode == 200) {
+      return ReservaReprogramada.fromJson(
+        leerObjeto(jsonDecode(respuesta.body)),
+      );
+    }
+    var mensaje = MensajesReservas.errorReprogramacion;
+    if (respuesta.statusCode == 400 || respuesta.statusCode == 409) {
       try {
         final datos = jsonDecode(respuesta.body);
         if (datos is Map<String, dynamic> &&

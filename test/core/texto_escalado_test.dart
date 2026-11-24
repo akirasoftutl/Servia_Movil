@@ -20,12 +20,15 @@ import 'package:servia/features/perfil/data/foto_perfil.dart';
 import 'package:servia/features/perfil/data/perfil_cliente.dart';
 import 'package:servia/features/perfil/data/selector_foto.dart';
 import 'package:servia/features/perfil/pages/mi_perfil_page.dart';
+import 'package:servia/features/reservas/data/detalle_reserva.dart';
 import 'package:servia/features/reservas/pages/confirmacion_reserva_page.dart';
+import 'package:servia/features/reservas/pages/reprogramar_reserva_page.dart';
 import 'package:servia/features/reservas/pages/resumen_reserva_page.dart';
 import 'package:servia/features/negocios/data/fotos_negocio.dart';
 import 'package:servia/features/negocios/data/servicio.dart';
 
 import '../features/negocios/datos_prueba.dart' show serviciosPrueba;
+
 import 'package:servia/core/network/api_exception.dart';
 
 import '../features/favoritos/fakes_favoritos.dart';
@@ -33,6 +36,7 @@ import '../features/ayuda/fakes_ayuda.dart';
 import '../features/negocios/fakes.dart';
 import '../features/negocios/fakes_destacados.dart';
 import '../features/perfil/fakes_perfil.dart';
+import '../features/reservas/escenario_reprogramar.dart';
 import '../features/reservas/fakes.dart';
 import 'tema_de_la_app.dart';
 
@@ -102,6 +106,48 @@ class _ServiciosConImagenes extends DetalleServiceFalso {
       servicioConImagenes;
 }
 
+// Servicios con categoría de catálogo y personalizada (Móvil#76, T18/T19).
+const _corteCategoria = CategoriaServicio(
+  id: 'corte-caballero',
+  nombre: 'Corte y arreglo de barba para caballero',
+);
+const _serviciosConCategorias = [
+  Servicio(
+    id: 's2',
+    nombre: 'Corte y arreglo de barba con toalla caliente',
+    descripcion: 'Lavado, corte con máquina y tijera, perfilado de barba.',
+    precio: 280,
+    duracionMin: 75,
+    categoriaServicio: _corteCategoria,
+  ),
+  Servicio(
+    id: 's3',
+    nombre: 'Perfilado de barba',
+    descripcion: 'Perfilado con navaja.',
+    precio: 120,
+    duracionMin: 30,
+    categoriaServicio: CategoriaServicio(id: 'barba', nombre: 'Barba'),
+  ),
+  Servicio(
+    id: 's4',
+    nombre: 'Peinado de gala',
+    descripcion: 'Peinado para eventos.',
+    precio: 300,
+    duracionMin: 60,
+    categoriaPersonalizada: 'Peinados de gala para bodas y eventos',
+  ),
+];
+
+class _ServiciosConCategorias extends DetalleServiceFalso {
+  @override
+  Future<List<Servicio>> obtenerServicios(String negocioId) async =>
+      _serviciosConCategorias;
+
+  @override
+  Future<Servicio> obtenerServicio(String negocioId, String servicioId) async =>
+      _serviciosConCategorias.firstWhere((s) => s.id == servicioId);
+}
+
 // PNG de 1x1 para que las imágenes de prueba se decodifiquen sin red.
 ImageProvider _imagenDePrueba(String _) => MemoryImage(
   base64.decode(
@@ -123,6 +169,15 @@ Widget _miPerfilConFoto() => MiPerfilPage(
     ),
   selectorFoto: SelectorFotoFalso(null),
   proveedorFoto: _imagenDePrueba,
+);
+
+Widget _reprogramar(EscenarioReprogramar e) => ReprogramarReservaPage(
+  reserva: DetalleReserva.fromJson(detalleApi()),
+  authService: e.sesion,
+  reservasService: e.reservas,
+  negociosService: e.negocios,
+  disponibilidadService: e.disponibilidad,
+  ahora: () => ahora,
 );
 
 void main() {
@@ -165,8 +220,7 @@ void main() {
                 destacado('d1'),
                 const NegocioResumen(
                   id: 'd2',
-                  nombre:
-                      'Estética Lupita: cortes, color y peinados para toda la familia',
+                  nombre: 'Estética Lupita: cortes, color y peinados para toda la familia',
                   categoriaId: 'cabello',
                   aceptaReservas: false,
                 ),
@@ -214,6 +268,19 @@ void main() {
           ),
           null,
         ),
+        'detalle del servicio con corazón': (
+          () => DetalleServicioPage(
+            negocioId: 'abc123',
+            servicioId: 's2',
+            aceptaReservas: true,
+            negocioNombre: 'Salón Aurora',
+            negociosService: DetalleServiceFalso(),
+            favoritos: ApiFavoritosFalsa().controladorServicios(
+              SesionFavoritos('ana'),
+            ),
+          ),
+          null,
+        ),
         'detalle del servicio con imágenes': (
           () => DetalleServicioPage(
             negocioId: 'abc123',
@@ -222,6 +289,33 @@ void main() {
             negocioNombre: 'Salón Aurora',
             negociosService: _ServiciosConImagenes(),
             proveedorImagenes: _imagenDePrueba,
+          ),
+          null,
+        ),
+        'perfil con filtro de categorías de servicio': (
+          () => PerfilNegocioPage(
+            negocioId: 'abc123',
+            negociosService: _ServiciosConCategorias(),
+          ),
+          null,
+        ),
+        'detalle del servicio con categoría': (
+          () => DetalleServicioPage(
+            negocioId: 'abc123',
+            servicioId: 's2',
+            aceptaReservas: true,
+            negocioNombre: 'Salón Aurora',
+            negociosService: _ServiciosConCategorias(),
+          ),
+          null,
+        ),
+        'detalle del servicio con categoría personalizada': (
+          () => DetalleServicioPage(
+            negocioId: 'abc123',
+            servicioId: 's4',
+            aceptaReservas: true,
+            negocioNombre: 'Salón Aurora',
+            negociosService: _ServiciosConCategorias(),
           ),
           null,
         ),
@@ -251,6 +345,34 @@ void main() {
           ),
           null,
         ),
+        'detalle de reserva con «Cambiar fecha u hora»': (
+          () => EscenarioReprogramar().detallePage(),
+          null,
+        ),
+        'cambiar fecha u hora de una reserva': (
+          () => _reprogramar(EscenarioReprogramar()),
+          null,
+        ),
+        'cambiar de servicio de una reserva': (
+          () => _reprogramar(EscenarioReprogramar()),
+          (t) async {
+            await t.tap(find.text('Cambiar de servicio'));
+            await t.pumpAndSettle();
+          },
+        ),
+        'confirmar el cambio de una reserva': (
+          () => _reprogramar(EscenarioReprogramar()),
+          (t) async {
+            await t.ensureVisible(find.text('Elegir nueva fecha y hora'));
+            await t.tap(find.text('Elegir nueva fecha y hora'));
+            await t.pumpAndSettle();
+            await t.tap(find.text('4'));
+            await t.pumpAndSettle();
+            await t.ensureVisible(find.byKey(const ValueKey('hora-09:30')));
+            await t.tap(find.byKey(const ValueKey('hora-09:30')));
+            await t.pumpAndSettle();
+          },
+        ),
         'confirmación de la reserva': (
           () => ConfirmacionReservaPage(
             reserva: reservaCreada(),
@@ -267,8 +389,7 @@ void main() {
             api.de('ana').addAll([
               negocioFavorito(
                 'b1',
-                nombre:
-                    'Estética Lupita: cortes, color y peinados para toda la familia',
+                nombre: 'Estética Lupita: cortes, color y peinados para toda la familia',
                 aceptaReservas: false,
               ),
               negocioFavorito('b2', nombre: 'Salón Aurora'),
@@ -280,9 +401,37 @@ void main() {
           },
           null,
         ),
+        'Mis favoritos, pestaña Servicios': (
+          () {
+            final api = ApiFavoritosFalsa();
+            api.serviciosDe('ana').addAll([
+              servicioFavorito(
+                'n1',
+                's1',
+                nombre: 'Corte de cabello, peinado y tratamiento hidratante',
+                negocioNombre: 'Estética Lupita: cortes, color y peinados para toda la familia',
+                precio: 1250.5,
+                duracionMin: 135,
+              ),
+              servicioFavorito('n2', 's2', aceptaReservas: false),
+            ]);
+            final sesion = SesionFavoritos('ana');
+            return FavoritosPage(
+              controlador: api.controlador(sesion),
+              serviciosControlador: api.controladorServicios(sesion),
+              negociosService: NegociosServiceFalso(),
+            );
+          },
+          (t) async {
+            await t.tap(find.text('Servicios'));
+            await t.pumpAndSettle();
+          },
+        ),
         'Mis favoritos vacío': (
           () => FavoritosPage(
-            controlador: ApiFavoritosFalsa().controlador(SesionFavoritos('ana')),
+            controlador: ApiFavoritosFalsa().controlador(
+              SesionFavoritos('ana'),
+            ),
             negociosService: NegociosServiceFalso(),
           ),
           null,
@@ -346,15 +495,14 @@ void main() {
               find.byKey(const Key('campo-descripcion')),
               'Cada vez que intento reservar la pantalla se queda cargando.',
             );
-            await t.ensureVisible(find.byKey(const Key('boton-enviar-reporte')));
+            await t.ensureVisible(
+              find.byKey(const Key('boton-enviar-reporte')),
+            );
             await t.tap(find.byKey(const Key('boton-enviar-reporte')));
             await t.pumpAndSettle();
           },
         ),
-        'Mi perfil con foto': (
-          () => _miPerfilConFoto(),
-          null,
-        ),
+        'Mi perfil con foto': (() => _miPerfilConFoto(), null),
         'Mi perfil con foto y el diálogo de quitarla': (
           () => _miPerfilConFoto(),
           (t) async {

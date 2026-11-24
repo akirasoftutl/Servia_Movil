@@ -22,6 +22,15 @@ class MensajesFavoritos {
   static const soloClientes =
       'Solo las cuentas de cliente tienen negocios favoritos.';
 
+  static const tabNegocios = 'Negocios';
+  static const tabServicios = 'Servicios';
+  static const sinServicios = 'Todavía no tienes servicios favoritos.';
+  static const servicioNoDisponible = 'Este servicio no está disponible.';
+
+  /// Tope de servicios de la API (T19); solo si el 409 no trae mensaje.
+  static const limiteServicios =
+      'Llegaste al máximo de 100 servicios favoritos. Quita alguno para agregar otro.';
+
   /// Tope de la API (T19); se usa solo si la respuesta 409 no trae mensaje.
   static const limite =
       'Llegaste al máximo de 100 favoritos. Quita alguno para agregar otro.';
@@ -39,16 +48,21 @@ class MensajesFavoritos {
       _sesion(error) ? _deSesion(error as ApiException) : errorCarga;
 
   /// Mensaje al agregar o quitar un favorito (404 y 409 como en la API).
-  static String mensajeDeCambio(Object error) {
+  /// Con [servicio] los textos son los de un servicio favorito (HU-C84).
+  static String mensajeDeCambio(Object error, {bool servicio = false}) {
     if (error is ApiException) {
       switch (error.statusCode) {
         case 401:
         case 403:
           return _deSesion(error);
         case 404:
-          return MensajesNegocios.noDisponible;
+          return servicio
+              ? servicioNoDisponible
+              : MensajesNegocios.noDisponible;
         case 409:
-          return error.mensaje.trim().isEmpty ? limite : error.mensaje;
+          return error.mensaje.trim().isEmpty
+              ? (servicio ? limiteServicios : limite)
+              : error.mensaje;
       }
       if (error.statusCode >= 500) return MensajesNegocios.errorApi;
       return errorGuardar;
