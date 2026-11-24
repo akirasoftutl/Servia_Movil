@@ -22,9 +22,16 @@ class TarjetaNegocio extends StatelessWidget {
     super.key,
     required this.negocio,
     required this.categoria,
+    this.onTap,
   });
   final NegocioResumen negocio;
-  final String categoria;
+
+  /// Sin categoría (la API la declara `string | null`) no se muestra la línea.
+  final String? categoria;
+
+  /// Por omisión abre `/negocios/{id}`; la portada de inicio abre el perfil
+  /// con el servicio que ya tiene.
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -33,11 +40,13 @@ class TarjetaNegocio extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(_radio),
-        onTap: () {
-          if (esIdValido(negocio.id)) {
-            Navigator.pushNamed(context, '/negocios/${negocio.id}');
-          }
-        },
+        onTap:
+            onTap ??
+            () {
+              if (esIdValido(negocio.id)) {
+                Navigator.pushNamed(context, '/negocios/${negocio.id}');
+              }
+            },
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -81,26 +90,28 @@ class TarjetaNegocio extends StatelessWidget {
                               color: _texto,
                             ),
                           ),
-                          const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.place_outlined,
-                                size: 15,
-                                color: _textoSecundario,
-                              ),
-                              const SizedBox(width: 3),
-                              Expanded(
-                                child: Text(
-                                  categoria,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: _textoSecundario,
+                          if (categoria case final categoria?) ...[
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.place_outlined,
+                                  size: 15,
+                                  color: _textoSecundario,
+                                ),
+                                const SizedBox(width: 3),
+                                Expanded(
+                                  child: Text(
+                                    categoria,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: _textoSecundario,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
+                          ],
                           const SizedBox(height: 6),
                           Text(
                             negocio.aceptaReservas

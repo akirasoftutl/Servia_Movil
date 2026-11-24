@@ -9,6 +9,7 @@ class MensajesNegocios {
   static const errorMapa = 'No se pudo cargar el mapa.';
   static const errorAppMapas = 'No se pudo abrir la app de mapas.';
 
+  static const destacados = 'Destacados';
   static const cercaDeTi = 'Cerca de ti';
   static const errorCercanos = 'No se pudieron cargar los negocios cercanos.';
   static const sinCercanos = 'No hay negocios cerca de ti.';

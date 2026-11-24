@@ -46,6 +46,9 @@ class ApiFalsa {
         conToken |= r.headers.containsKey('Authorization');
         final propia = interceptar?.call(r.url);
         if (propia != null) return propia;
+        if (r.url.path == '/negocios/destacados') {
+          return http.Response('{"items":[]}', 200);
+        }
         if (r.url.path == '/categorias') {
           return http.Response(
             jsonEncode([

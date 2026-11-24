@@ -84,6 +84,9 @@ void main() {
   testWidgets('la lista muestra un negocio sin categoría junto a los demás', (
     tester,
   ) async {
+    tester.view.physicalSize = const Size(800, 3000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     final fake = ListaServiceFalso();
     fake.responder = (_) async => PaginaNegocios.fromJson({
       'items': [publico('a'), publico('b', categoriaId: null), publico('c')],
