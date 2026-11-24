@@ -45,6 +45,24 @@ class SesionPerfilFalsa extends AuthService {
 
   final cambios = StreamController<User?>.broadcast();
 
+  /// Reautenticación con la contraseña (eliminar la cuenta, HU-C14).
+  Object? errorAlReautenticar;
+  String? ultimaContrasena;
+
+  @override
+  Future<void> reautenticar(String contrasena) async {
+    eventos.add('reautenticar');
+    ultimaContrasena = contrasena;
+    if (errorAlReautenticar != null) throw errorAlReautenticar!;
+  }
+
+  @override
+  Future<void> cerrarSesionTrasEliminar() async {
+    eventos.add('cerrar-sesion');
+    usuario = null;
+    cambios.add(null);
+  }
+
   @override
   User? get usuarioActual => usuario;
 
@@ -86,6 +104,9 @@ class PerfilClienteFalso extends PerfilClienteService {
 
   /// Simula una API anterior cuyo PATCH no trae `foto`.
   final bool patchSinFoto;
+  /// Error de `DELETE /usuarios/yo`; se puede cambiar entre intentos.
+  Object? errorAlEliminar;
+  int eliminaciones = 0;
   int actualizaciones = 0;
   int subidas = 0;
   int quitadas = 0;
@@ -146,6 +167,13 @@ class PerfilClienteFalso extends PerfilClienteService {
     );
     guardado = guardado.conFoto(foto);
     return foto;
+  }
+
+  @override
+  Future<void> eliminarCuenta(String token) async {
+    eventos.add('DELETE-CUENTA');
+    eliminaciones++;
+    if (errorAlEliminar != null) throw errorAlEliminar!;
   }
 
   @override

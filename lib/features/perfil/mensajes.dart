@@ -40,4 +40,27 @@ class MensajesPerfil {
   static String semanticaFoto(String nombre) => 'Foto de perfil de $nombre';
   static String semanticaSinFoto(String nombre) =>
       'Sin foto de perfil; se muestra la inicial de $nombre';
+
+  // Eliminar la cuenta (HU-C14).
+  static const eliminarCuenta = 'Eliminar mi cuenta';
+  static const eliminarConfirmar = 'Eliminar cuenta';
+  static const eliminarTitulo = '¿Eliminar tu cuenta?';
+  static const eliminarSeElimina =
+      'Se eliminan tu perfil y tus datos personales, tus favoritos y tu foto, y dejas de recibir avisos en este teléfono.';
+  static const eliminarSeConserva =
+      'Tus reservas pasadas se conservan para el historial del negocio, sin tu nombre ni tus datos personales.';
+  static const eliminarIrreversible =
+      'No se puede deshacer. Para confirmar, escribe tu contraseña.';
+  static const contrasenaActual = 'Contraseña actual';
+  static const eliminarContrasenaObligatoria =
+      'La contraseña actual es obligatoria.';
+  static const eliminandoCuenta = 'Eliminando tu cuenta…';
+  static const cuentaEliminada = 'Tu cuenta se eliminó.';
+  static const verMisReservas = 'Ver mis reservas';
+  static const mostrarContrasena = 'Mostrar contraseña';
+  static const ocultarContrasena = 'Ocultar contraseña';
+  static const eliminarConReservas =
+      'No puedes eliminar tu cuenta porque tienes reservas pendientes o confirmadas. Cancélalas o espera a que terminen.';
+  static const eliminarNoSePudo =
+      'No se pudo eliminar tu cuenta. Vuelve a intentarlo en unos minutos.';
 }

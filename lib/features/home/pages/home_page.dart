@@ -166,6 +166,7 @@ class _HomePageState extends State<HomePage> {
           key: _clavesPantallas[3],
           authService: _auth,
           perfilClienteService: widget.perfilClienteService,
+          reservasService: widget.reservasService,
         )
       else
         SizedBox.shrink(key: _clavesPantallas[3]),

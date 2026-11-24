@@ -12,12 +12,16 @@ import '../../auth/mensajes.dart';
 import '../../auth/pages/cambiar_contrasena_page.dart';
 import '../../auth/validaciones.dart';
 import '../../negocios/pages/fotos_negocio.dart' show ProveedorImagenNegocio;
+import '../../reservas/data/reservas_service.dart';
+import '../../reservas/pages/mis_reservas_page.dart';
 import '../data/perfil_cliente.dart';
 import '../data/perfil_cliente_service.dart';
 import '../data/selector_foto.dart';
 import '../data/validacion_foto.dart';
 import '../mensajes.dart';
 import 'dialogo_confirmacion.dart';
+import 'dialogo_eliminar_cuenta.dart';
+import 'estilos_perfil.dart';
 import 'seccion_foto_perfil.dart';
 
 class MiPerfilPage extends StatefulWidget {
@@ -27,6 +31,7 @@ class MiPerfilPage extends StatefulWidget {
     this.perfilClienteService,
     this.selectorFoto,
     this.proveedorFoto,
+    this.reservasService,
   });
 
   final AuthService? authService;
@@ -37,6 +42,9 @@ class MiPerfilPage extends StatefulWidget {
 
   /// Cómo se descarga la foto guardada; por defecto, por red.
   final ProveedorImagenNegocio? proveedorFoto;
+
+  /// Para «Ver mis reservas» cuando la cuenta no se puede eliminar.
+  final ReservasService? reservasService;
 
   @override
   State<MiPerfilPage> createState() => _MiPerfilPageState();
@@ -208,6 +216,50 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
         _fotoOcupada = null;
         _errorFoto = _mensajeDe(error);
       });
+    }
+  }
+
+  /// Reautentica con la contraseña y pide a la API eliminar la cuenta con un
+  /// token nuevo. Lanza el error que corresponda (lo muestra el diálogo).
+  Future<void> _intentarEliminarCuenta(String contrasena) async {
+    await _auth.reautenticar(contrasena);
+    final usuario = _auth.usuarioActual;
+    if (usuario == null) throw ApiException(401, MensajesPerfil.sesionInvalida);
+    final token = await usuario.getIdToken(true);
+    await _servicio.eliminarCuenta(token!);
+  }
+
+  Future<void> _eliminarCuenta() async {
+    final navegador = Navigator.of(context);
+    final avisos = ScaffoldMessenger.of(context);
+    final resultado = await showDialog<ResultadoEliminarCuenta>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => DialogoEliminarCuenta(eliminar: _intentarEliminarCuenta),
+    );
+    switch (resultado) {
+      case ResultadoEliminarCuenta.eliminada:
+        // La cuenta ya no existe: se limpia la sesión local y se vuelve al
+        // inicio de sesión con la despedida.
+        await _auth.cerrarSesionTrasEliminar();
+        navegador.popUntil((ruta) => ruta.isFirst);
+        avisos
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(content: Text(MensajesPerfil.cuentaEliminada)),
+          );
+      case ResultadoEliminarCuenta.verReservas:
+        if (!mounted) return;
+        await navegador.push(
+          MaterialPageRoute<void>(
+            builder: (_) => MisReservasPage(
+              authService: _auth,
+              reservasService: widget.reservasService,
+            ),
+          ),
+        );
+      case ResultadoEliminarCuenta.cancelada || null:
+        break;
     }
   }
 
@@ -700,6 +752,17 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
                     ],
                   ),
                 ),
+              ),
+            ),
+
+            const SizedBox(height: Espacios.l),
+            Center(
+              child: TextButton.icon(
+                key: const Key('boton-eliminar-cuenta'),
+                onPressed: _eliminarCuenta,
+                icon: const Icon(Icons.delete_forever_outlined),
+                label: const Text(MensajesPerfil.eliminarCuenta),
+                style: estiloAccionQuitar(context),
               ),
             ),
           ],
