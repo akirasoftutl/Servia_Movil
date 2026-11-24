@@ -173,6 +173,19 @@ void main() {
           ),
           null,
         ),
+        'detalle del servicio con corazón': (
+          () => DetalleServicioPage(
+            negocioId: 'abc123',
+            servicioId: 's2',
+            aceptaReservas: true,
+            negocioNombre: 'Salón Aurora',
+            negociosService: DetalleServiceFalso(),
+            favoritos: ApiFavoritosFalsa().controladorServicios(
+              SesionFavoritos('ana'),
+            ),
+          ),
+          null,
+        ),
         'detalle del servicio con imágenes': (
           () => DetalleServicioPage(
             negocioId: 'abc123',
@@ -238,6 +251,33 @@ void main() {
             );
           },
           null,
+        ),
+        'Mis favoritos, pestaña Servicios': (
+          () {
+            final api = ApiFavoritosFalsa();
+            api.serviciosDe('ana').addAll([
+              servicioFavorito(
+                'n1',
+                's1',
+                nombre: 'Corte de cabello, peinado y tratamiento hidratante',
+                negocioNombre:
+                    'Estética Lupita: cortes, color y peinados para toda la familia',
+                precio: 1250.5,
+                duracionMin: 135,
+              ),
+              servicioFavorito('n2', 's2', aceptaReservas: false),
+            ]);
+            final sesion = SesionFavoritos('ana');
+            return FavoritosPage(
+              controlador: api.controlador(sesion),
+              serviciosControlador: api.controladorServicios(sesion),
+              negociosService: NegociosServiceFalso(),
+            );
+          },
+          (t) async {
+            await t.tap(find.text('Servicios'));
+            await t.pumpAndSettle();
+          },
         ),
         'Mis favoritos vacío': (
           () => FavoritosPage(
