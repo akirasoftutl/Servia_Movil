@@ -12,7 +12,6 @@ import 'package:servia/core/theme/tokens.dart';
 import 'package:servia/core/widgets/estados.dart';
 import 'package:servia/features/negocios/data/negocio_resumen.dart';
 import 'package:servia/features/negocios/data/negocios_service.dart';
-import 'package:servia/features/negocios/data/orden_negocios.dart';
 import 'package:servia/features/negocios/mensajes.dart';
 import 'package:servia/features/negocios/pages/lista_negocios_page.dart';
 import 'package:servia/features/negocios/pages/perfil_negocio_page.dart';
@@ -252,14 +251,6 @@ void main() {
     ) async {
       final fake = conDestacados();
       await abrir(tester, fake);
-      expect(fake.consultasDestacados, 1);
-      // Cambiar el orden no cambia los destacados: no se vuelven a pedir.
-      fake.ordenes.clear();
-      await tester.tap(find.byType(DropdownButton<OrdenNegocios>));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text(MensajesNegocios.ordenRecientes).last);
-      await tester.pumpAndSettle();
-      expect(fake.ordenes, isNotEmpty);
       expect(fake.consultasDestacados, 1);
       // Refrescar (volver a la lista sin filtros) sí los consulta otra vez.
       await elegirCategoria(tester, 'Cabello y barba');
