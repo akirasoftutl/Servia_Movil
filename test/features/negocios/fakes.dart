@@ -4,7 +4,6 @@ import 'package:servia/features/negocios/data/categoria.dart';
 import 'package:servia/features/negocios/data/negocio.dart';
 import 'package:servia/features/negocios/data/negocio_resumen.dart';
 import 'package:servia/features/negocios/data/negocios_service.dart';
-import 'package:servia/features/negocios/data/orden_negocios.dart';
 import 'package:servia/features/negocios/data/servicio.dart';
 
 import 'datos_prueba.dart';
@@ -56,8 +55,6 @@ class ListaServiceFalso extends NegociosServiceFalso {
   final llamadas = <String?>[];
   final filtros = <({String? q, String? categoriaId})>[];
 
-  /// El orden con el que se pidió cada página, en el mismo orden que `llamadas`.
-  final ordenes = <OrdenNegocios>[];
   List<Categoria>? categorias;
 
   @override
@@ -78,10 +75,8 @@ class ListaServiceFalso extends NegociosServiceFalso {
     String? cursor,
     String? q,
     String? categoriaId,
-    OrdenNegocios orden = OrdenNegocios.nombre,
   }) {
     llamadas.add(cursor);
-    ordenes.add(orden);
     filtros.add((q: q, categoriaId: categoriaId));
     return responder(cursor);
   }
